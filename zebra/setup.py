@@ -6,15 +6,15 @@ compile_args = ["-march=native", "-std=c++20"]
 
 ext_modules = [
     Pybind11Extension(
-        "postprocc",
-        sorted(glob("postproc_ops/src/*.cpp")),
-        include_dirs=["postproc_ops/include", "postproc_ops/build/_deps/vectorclass-src"],
+        "zebra",
+        sorted(glob("src/*.cpp")),
+        include_dirs=["include", "build/_deps/vectorclass-src"],
         extra_compile_args=compile_args
     )
 ]
 
 setup(
-    name="postprocc",
+    name="zebra",
     version="0.0.1",
     description="Optimized C++ implementations of postprocessing operators.",
     author="Tierry Hörmann",
