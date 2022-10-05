@@ -1,10 +1,13 @@
 from ast import arg
 from contextlib import closing
 import socket
+import types
 from typing import Callable, Dict, List
 import dask.array as da
 import xarray as xr
 import numpy as np
+import inspect
+import re
 
 def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     """
@@ -105,3 +108,24 @@ def check_socket_open(host: str = "localhost", port: int = 80) -> bool:
     """Returns whether a port is in use / open (`True`) or not (`False`)."""
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
         return sock.connect_ex((host, port)) == 0
+
+def list_funcs_matching(module: types.ModuleType, regex: str | None = None, signature: Callable | inspect.Signature | None = None) -> List[Callable]:
+    """
+    Returns a list of functions from a module matching the given parameters.
+
+    Arguments:
+    ---
+    - module: ModuleType. The module from which to list the functions
+    - regex: str, optional. A regex which matches the function names to be returned.
+    - signature: Signature | Callable, optional. A common signature for the functions to be returned.
+    If a callable is specified, the signature of the callable will be used.
+    """
+    if isinstance(signature, Callable):
+        signature = inspect.signature(signature)
+    out = [
+        f 
+        for name, f in inspect.getmembers(module, inspect.isfunction)
+        if (regex is None or re.match(regex, name)) and \
+            (signature is None or signature == inspect.signature(f))
+    ]
+    return out
