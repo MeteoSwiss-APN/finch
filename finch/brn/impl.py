@@ -9,20 +9,11 @@ from .. import util
 from .. import data
 from . import input
 
-FThetaV = Callable[[xr.DataArray, xr.DataArray, xr.DataArray], xr.DataArray]
-"""Function signature for implementations of thetav."""
-FBRN = Callable[[xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray], xr.DataArray]
-"""Function signature for implementations of brn."""
-
-fthetav_regex = "thetav*"
-"""Function name regex for discovering implementations of thetav"""
-fbrn_regex = "brn*"
-"""Function name regex for discovering implementations of brn"""
-
 def thetav_xr(
     p: xr.DataArray,
     t: xr.DataArray,
-    qv: xr.DataArray):
+    qv: xr.DataArray
+    ) -> xr.DataArray:
 
     pc_rvd = const.PC_R_V / const.PC_R_D
     pc_rdocp = const.PC_R_D/const.PC_CP_D
@@ -37,7 +28,8 @@ def brn_xr(p: xr.DataArray,
     v: xr.DataArray,
     hhl: xr.DataArray,
     hsurf: xr.DataArray, 
-    client: dask.distributed.Client = None) -> xr.DataArray:
+    client: dask.distributed.Client = None
+    ) -> xr.DataArray:
     
     nlevels = len(p.coords["generalVerticalLayer"])
 
@@ -82,20 +74,35 @@ def block_brn_np(p: np.ndarray, t, qv, u, v, hhl, hsurf) -> np.ndarray:
     brn = brn_1 / brn_2
     return brn
 
-def thetav_blocked_np(*arrays):
+def thetav_blocked_np(
+    p: xr.DataArray,
+    t: xr.DataArray,
+    qv: xr.DataArray
+    ) -> xr.DataArray:
     """
     thetav implementation using `custom_map_blocks` and numpy arrays
     """
-    return util.custom_map_blocks(block_thetav_np, *arrays, name="thetav")
+    return util.custom_map_blocks(block_thetav_np, p, t, qv, name="thetav")
 
-def brn_blocked_np(*arrays):
+def brn_blocked_np(p: xr.DataArray, 
+    t: xr.DataArray,
+    qv: xr.DataArray,
+    u: xr.DataArray,
+    v: xr.DataArray,
+    hhl: xr.DataArray,
+    hsurf: xr.DataArray, 
+    ) -> xr.DataArray:
     """
     brn implementation using `custom_map_blocks` and numpy arrays
     """
-    arrays = input.reorder_dims(arrays, "xyz") # ensure correct dimension order
+    arrays = input.reorder_dims([t, qv, u, v, hhl, hsurf], "xyz") # ensure correct dimension order
     return util.custom_map_blocks(block_brn_np, *arrays, name="brn")
 
-def thetav_blocked_cpp(*arrays) -> np.ndarray:
+def thetav_blocked_cpp(
+    p: xr.DataArray,
+    t: xr.DataArray,
+    qv: xr.DataArray
+    ) -> xr.DataArray:
     """
     thetav implementation using `custom_map_blocks` and numpy arrays with the zebra backend
     """
@@ -103,9 +110,16 @@ def thetav_blocked_cpp(*arrays) -> np.ndarray:
         out = np.zeros_like(p)
         zebra.thetav(p, t, qv, out)
         return out
-    return util.custom_map_blocks(wrapper, *arrays, name="thetav")
+    return util.custom_map_blocks(wrapper, p, t, qv, name="thetav")
 
-def brn_blocked_cpp(*arrays) -> np.ndarray:
+def brn_blocked_cpp(p: xr.DataArray, 
+    t: xr.DataArray,
+    qv: xr.DataArray,
+    u: xr.DataArray,
+    v: xr.DataArray,
+    hhl: xr.DataArray,
+    hsurf: xr.DataArray
+    ) -> xr.DataArray:
     """
     brn implementation using `custom_map_blocks` and numpy arrays with the zebra backend
     """
@@ -113,4 +127,4 @@ def brn_blocked_cpp(*arrays) -> np.ndarray:
         out = np.zeros_like(arrays[0])
         zebra.brn(*arrays, out)
         return out
-    return util.custom_map_blocks(wrapper, *arrays, name="brn")
+    return util.custom_map_blocks(wrapper, p, t, qv, u, v, hhl, hsurf, name="brn")
