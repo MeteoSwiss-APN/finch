@@ -24,7 +24,7 @@ def start_slurm(scheduler_port: int = 8785, dashboard_port: int = 8877, cores_pe
                 queue="postproc",
                 cores=cores_per_node,
                 memory=memory_per_node,
-                job_extra=["--exclusive"],
+                job_extra_directives=["--exclusive"],
                 n_workers=cores_per_node,
                 processes=cores_per_node,
                 log_directory=env.scratch_dir + "/out",
@@ -40,7 +40,7 @@ def start_slurm(scheduler_port: int = 8785, dashboard_port: int = 8877, cores_pe
 
 def start_scheduler(debug: bool = False) -> Client | None:
     """
-    Starts a new default schedule or connects to an existing one.
+    Starts a new default scheduler or connects to an existing one.
     If `debug` is `False`, a client connected to a SLURM cluster scheduler will be returned.
     If no scheduler is available at the default port, a new one will be started.
     If `debug` is `True`, `None` is returned and dask is configured to run a synchronous scheduler.

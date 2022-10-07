@@ -95,7 +95,7 @@ def brn_blocked_np(p: xr.DataArray,
     """
     brn implementation using `custom_map_blocks` and numpy arrays
     """
-    arrays = input.reorder_dims([t, qv, u, v, hhl, hsurf], "xyz") # ensure correct dimension order
+    arrays = input.reorder_dims([p, t, qv, u, v, hhl, hsurf], "xyz") # ensure correct dimension order
     return util.custom_map_blocks(block_brn_np, *arrays, name="brn")
 
 def thetav_blocked_cpp(

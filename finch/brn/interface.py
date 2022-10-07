@@ -1,7 +1,7 @@
 import inspect
 from typing import Callable
 import xarray as xr
-import impl
+from . import impl
 from .. import util
 
 brn = impl.brn_blocked_cpp
@@ -12,7 +12,7 @@ thetav = impl.thetav_blocked_cpp
 THETAV_SIG = inspect.signature(thetav)
 """Function signature for implementations of thetav."""
 
-BRN_SIG = inspect.Signature(brn)
+BRN_SIG = inspect.signature(brn)
 """Function signature for implementations of brn."""
 
 THETAV_REGEX = "thetav*"
