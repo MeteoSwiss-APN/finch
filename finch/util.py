@@ -8,6 +8,7 @@ import xarray as xr
 import numpy as np
 import inspect
 import re
+from dask_jobqueue.slurm import SLURMJob
 
 def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     """
@@ -129,3 +130,15 @@ def list_funcs_matching(module: types.ModuleType, regex: str | None = None, sign
             (signature is None or signature == inspect.signature(f))
     ]
     return out
+
+class SLURMRunner(SLURMJob):
+    """
+    Instances of this class can execute arbitrary shell commands on the slurm cluster.
+    """
+    def __init__(self, name=None, queue=None, project=None, account=None, walltime=None, job_cpu=None, job_mem=None, config_name=None):
+        super().__init__(None, name, queue, project, account, walltime, job_cpu, job_mem, None)
+
+    async def start(self, cmd: list[str]):
+        self._command_template = " ".join(map(str, cmd))
+        await super().start()
+        
