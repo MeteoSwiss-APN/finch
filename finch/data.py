@@ -2,8 +2,10 @@ from typing import List, Dict, Any
 import xarray as xr
 import dask.array as da
 import numpy as np
+from . import config
 
-grib_dir = '/scratch/cosuna/postproc_np_products/grib_files/cosmo-1e/'
+data_config = config["data"]
+grib_dir = data_config["base_grib_dir"]
 """The base directory from where to load grib files"""
 netcdf_dir = "/scratch/thoerman/netcdf/"
 """The base directory from where to load and store netCDF files"""
@@ -40,7 +42,7 @@ def load_array_grib(
     key_filters: Dict[str, Any] = {},
     parallel: bool = True,
     cache: bool = True,
-    index_path: str = "tmp/grib.idx",
+    index_path: str = tmp_dir + "/grib.idx",
     load_coords: bool = True,
     **kwargs) -> xr.DataArray:
     """
