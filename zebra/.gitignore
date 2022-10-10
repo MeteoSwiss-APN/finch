@@ -3,3 +3,6 @@ build
 
 # IDEs
 .vscode
+
+# skbuild
+_skbuild

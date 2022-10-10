@@ -1,5 +1,6 @@
 from ast import arg
 from contextlib import closing
+import pathlib
 import socket
 import types
 from typing import Callable, Dict, List
@@ -9,6 +10,7 @@ import numpy as np
 import inspect
 import re
 from dask_jobqueue.slurm import SLURMJob
+from . import environment as env
 
 def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     """
@@ -141,4 +143,14 @@ class SLURMRunner(SLURMJob):
     async def start(self, cmd: list[str]):
         self._command_template = " ".join(map(str, cmd))
         await super().start()
-        
+
+def get_absolute(path: pathlib.Path | str, prefix: pathlib.Path | str = env.proj_root) -> pathlib.Path | str:
+    ispathlib = isinstance(path, pathlib.Path)
+    path = pathlib.Path(path)
+    prefix = pathlib.Path(prefix).absolute()
+    if not path.is_absolute():
+        path = pathlib.Path(prefix, path)
+    if ispathlib:
+        return path
+    else:
+        return str(path)

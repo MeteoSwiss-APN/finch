@@ -22,7 +22,7 @@ brn_single_run = True
 """Whether to perform a single run experiment with brn"""
 brn_imp_to_inspect = finch.brn_.impl.brn_blocked_np
 """The brn implementation to inspect during the single run experiment"""
-brn_single_data_file_type = "zarr"
+brn_single_data_file_type = "grib"
 """The file type for the input data for the brn single run experiment"""
 brn_single_reps = 1
 """The number of repetitions to do the brn single run experiment"""
