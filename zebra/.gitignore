@@ -4,5 +4,5 @@ build
 # IDEs
 .vscode
 
-# skbuild
+#scikit-build
 _skbuild
