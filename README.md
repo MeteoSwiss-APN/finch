@@ -4,6 +4,31 @@
 
 Image distributed through Creative Commons License from https://commons.wikimedia.org/wiki/File:201903_Zebra_finch.svg
 
+# Overview
+
+Finch provides parallelized prototypes for ICON data processing operators for a distributed infrastructure.
+It is deisgned as an experimental library plus a run script, which runs configurable experiments.
+
+# Setup
+
+## Conda
+
+An `environments.yml` is provided to setup a conda environment with all required dependencies.
+```
+conda env create -f environment.yml
+conda activate finch
+```
+
+## Run experiments
+```
+python run.py
+```
+
+## Run tests
+```
+pytest
+```
+
 # Configuration
 
 Finch uses the Python's configparser library for configuration with `.ini` files and extended interpolation.
