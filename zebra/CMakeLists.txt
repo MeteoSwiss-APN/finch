@@ -33,6 +33,14 @@ add_library(cebra
   src/brn.cpp
 )
 
+install(TARGETS zebra LIBRARY
+  DESTINATION zebra
+)
+
+install(TARGETS cebra LIBRARY
+  DESTINATION cebra
+)
+
 # tests
 
 FetchContent_Declare(

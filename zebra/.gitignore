@@ -3,3 +3,6 @@ build
 
 # IDEs
 .vscode
+
+#scikit-build
+_skbuild
