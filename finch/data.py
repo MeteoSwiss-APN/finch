@@ -5,13 +5,13 @@ import numpy as np
 from . import config
 
 data_config = config["data"]
-grib_dir = data_config["base_grib_dir"]
+grib_dir = data_config["grib_dir"]
 """The base directory from where to load grib files"""
-netcdf_dir = "/scratch/thoerman/netcdf/"
+netcdf_dir = data_config["netcdf_dir"]
 """The base directory from where to load and store netCDF files"""
-zarr_dir = "/scratch/thoerman/zarr/"
+zarr_dir = data_config["zarr_dir"]
 """The base directory from where to load and store zarr files"""
-tmp_dir = "/scratch/thoerman/tmp"
+tmp_dir = config["global"]["tmp_dir"]
 """A directory which can be used as a temporary storage"""
 
 def translate_order(order: List[str] | str, index: Dict[str, str]) -> str | List[str]:
