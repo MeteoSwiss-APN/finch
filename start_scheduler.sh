@@ -5,7 +5,8 @@
 
 srun --nodes=1 --partition=postproc --pty python -i -c "
 import finch;
+import finch.environment as env;
 finch.start_scheduler(verbose=True);
-print(\"You can scale the cluster with \`cluster.scale(...)\` within this console.\");
+print(\"You can scale the cluster with \`env.cluster.scale(...)\` within this console.\");
 print(\"Exit with Ctrl-D\")
 "

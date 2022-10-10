@@ -5,6 +5,7 @@ from dask.distributed import Client
 import argparse
 from . import util
 from . import environment as env
+from .config import config
 
 def start_slurm(scheduler_port: int = 8785, dashboard_port: int = 8877, cores_per_node: int = 20, memory_per_node: str = "24GiB", verbose=False) -> Client:
     """
@@ -21,6 +22,7 @@ def start_slurm(scheduler_port: int = 8785, dashboard_port: int = 8877, cores_pe
     """
     dashboard_address = f":{dashboard_port}"
     if not util.check_socket_open(port=scheduler_port):
+        scratch_dir = config["global"]["scratch_dir"]
         cluster = SLURMCluster(
                 queue="postproc",
                 cores=cores_per_node,
@@ -28,10 +30,11 @@ def start_slurm(scheduler_port: int = 8785, dashboard_port: int = 8877, cores_pe
                 job_extra_directives=["--exclusive"],
                 n_workers=cores_per_node,
                 processes=cores_per_node,
-                log_directory=env.scratch_dir + "/out",
+                log_directory=scratch_dir + "/out",
                 scheduler_options={"port": scheduler_port, "dashboard_address": dashboard_address},
-                local_directory=env.scratch_dir
+                local_directory=scratch_dir
             )
+        env.cluster = cluster
         if verbose:
             print("SLURM cluster started at address: %s" % cluster.scheduler_address)
             print("Dashboard available at address: http://localhost%s/status" % dashboard_address)

@@ -12,3 +12,6 @@ default_custom_config = os.path.join(proj_root, "config", "custom.ini")
 
 custom_config_env_var = "CONFIG"
 """The name of the environment variable specifying the location of a custom configuration file."""
+
+cluster = None
+"""The currently active dask.distributed cluster"""

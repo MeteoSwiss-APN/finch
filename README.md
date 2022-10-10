@@ -6,7 +6,7 @@ Image distributed through Creative Commons License from https://commons.wikimedi
 
 # Overview
 
-Finch provides parallelized prototypes for ICON data processing operators for a distributed infrastructure.
+Finch provides parallelized prototypes for ICON data processing operators for a distributed infrastructure with SLURM.
 It is deisgned as an experimental library plus a run script, which runs configurable experiments.
 
 # Setup
@@ -28,6 +28,21 @@ python run.py
 ```
 pytest
 ```
+
+# Usage
+
+## Start a distributed scheduler on the cluster
+
+Dask provides a dashboard for monitoring task activities.
+This is a very powerful tool to get insights into how well parallelized the code actually is and where there is still potential for optimization.
+
+The dashboard is attached to a running scheduler session.
+Therefore we provide a script which runs a scheduler on a compute node, to which finch will automatically connect.
+The script can be started as follows.
+```
+bash start_scheduler.sh
+```
+This opens up an interactive python session, which can be used to scale the cluster.
 
 # Configuration
 
