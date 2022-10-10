@@ -28,7 +28,7 @@ class TestBRN:
         # modify top level (for brn to not be zero everywhere)
         inout[1][:, :, -1] -= 1.
         inout[-1][:, :, -1] = tv - tv1
-        inout = [xr.DataArray(da.Array(x), dims=self.dims).chunk(self.chunks) for x in inout]
+        inout = [xr.DataArray(da.from_array(x), dims=self.dims).chunk(self.chunks) for x in inout]
         return inout[:-1], inout[-1]
 
     def get_brn_test_data(self) -> Tuple[list[xr.DataArray], xr.DataArray]:
@@ -36,39 +36,40 @@ class TestBRN:
         tv = np.array(tv.data)
         tv_top = tv[0, 0, -1]
         tv = tv[0, 0, 0]
-        cs = np.full(self.shape[-1], tv).cumsum() + tv_top
+        cs = np.full(self.shape[-1], tv)
         cs[0] = tv_top
+        cs = cs.cumsum()
         hhl = 3.
         hsurf = 1.5
         u = 42.
         v = 69.
         nlevels_da = np.arange(self.shape[-1], 0, -1).astype(float)
         brn_1 = finch.const.PC_G * (hhl-hsurf)* (tv - tv_top) * nlevels_da
+        brn_1[-1] = 0 # the top is always zero
         brn_2 = cs*(u*u + v*v)
         brn = brn_1 / brn_2
         brn = np.tile(brn, self.shape[:-1] + [1])
         inout = [
-            *input,
             np.full(self.shape, u),
             np.full(self.shape, v),
             np.full(self.shape, hhl),
             np.full(self.shape[:-1], hsurf),
             brn
         ]
-        dims = [self.dims]*6 + [self.dims[:-1]] + [self.dims]
-        inout = [xr.DataArray(da.Array(x), dims=d).chunk(self.chunks) for x, d in zip(inout, dims)]
+        dims = [self.dims]*3 + [self.dims[:-1]] + [self.dims]
+        inout = input + [xr.DataArray(da.from_array(x), dims=d).chunk(self.chunks) for x, d in zip(inout, dims)]
         return inout[:-1], inout[-1]
 
     def test_thetav(self):
         """Tests all thetav implementations on the test data"""
         input, output = self.get_thetav_test_data()
         for tv in brn.list_thetav_implementations():
-            out = tv(*input)
-            assert da.allclose(out.data, output.data).compute()
+            out = tv(*input).transpose(*output.dims)
+            assert da.allclose(out.data, output.data).compute(), f"Function {tv.__name__} returned a wrong array."
 
     def test_brn(self):
         """Tests all brn implementations on the test data"""
         input, output = self.get_brn_test_data()
         for fbrn in brn.list_brn_implementations():
-            out = fbrn(*input)
-            assert da.allclose(out.data, output.data).compute()
+            out = fbrn(*input).transpose(*output.dims)
+            assert da.allclose(out.data, output.data).compute(), f"Function {fbrn.__name__} returned a wrong array."

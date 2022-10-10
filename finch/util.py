@@ -3,7 +3,8 @@ from contextlib import closing
 import pathlib
 import socket
 import types
-from typing import Callable, Dict, List
+from typing import Dict, List
+from collections.abc import Callable
 import typing
 import dask.array as da
 import xarray as xr

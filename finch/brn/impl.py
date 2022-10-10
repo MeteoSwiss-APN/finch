@@ -37,7 +37,7 @@ def brn_xr(p: xr.DataArray,
 
     nlevels_xr =xr.DataArray(data=np.arange(nlevels,0,-1), dims=["generalVerticalLayer"])
 
-    brn_1 = const.PC_G * (hhl-hsurf)*(thetav - thetav.isel(generalVerticalLayer=79)) * nlevels_xr
+    brn_1 = const.PC_G * (hhl-hsurf)*(thetav - thetav.isel(generalVerticalLayer=-1)) * nlevels_xr
     brn_2 = (thetav_sum)*(u*u + v*v)
 
     brn = brn_1 / brn_2
@@ -65,7 +65,7 @@ def block_brn_np(p: np.ndarray, t, qv, u, v, hhl, hsurf) -> np.ndarray:
     thetav_sum = np.flip(thetav, 2).cumsum(axis=2)
     nlevels_da = np.reshape(np.arange(nlevels,0,-1), (1, 1, nlevels))
 
-    brn_1 = const.PC_G * (hhl-hsurf)*(thetav - thetav[:, :, 79:80]) * nlevels_da
+    brn_1 = const.PC_G * (hhl-hsurf)*(thetav - thetav[:, :, -1:]) * nlevels_da
     brn_2 = (thetav_sum)*(u*u + v*v)
 
     brn = brn_1 / brn_2
@@ -95,7 +95,7 @@ def brn_blocked_np(p: xr.DataArray,
     arrays = input.reorder_dims([p, t, qv, u, v, hhl, hsurf], "xyz") # ensure correct dimension order
     return util.custom_map_blocks(block_brn_np, *arrays, name="brn")
 
-def thetav_blocked_cpp(
+def _thetav_blocked_cpp(
     p: xr.DataArray,
     t: xr.DataArray,
     qv: xr.DataArray
@@ -109,7 +109,7 @@ def thetav_blocked_cpp(
         return out
     return util.custom_map_blocks(wrapper, p, t, qv, name="thetav")
 
-def brn_blocked_cpp(p: xr.DataArray, 
+def _brn_blocked_cpp(p: xr.DataArray, 
     t: xr.DataArray,
     qv: xr.DataArray,
     u: xr.DataArray,
