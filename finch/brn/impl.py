@@ -27,15 +27,12 @@ def brn_xr(p: xr.DataArray,
     u: xr.DataArray,
     v: xr.DataArray,
     hhl: xr.DataArray,
-    hsurf: xr.DataArray, 
-    client: dask.distributed.Client = None
+    hsurf: xr.DataArray
     ) -> xr.DataArray:
     
     nlevels = len(p.coords["generalVerticalLayer"])
 
     thetav = thetav_xr(p,t,qv)
-    if client:
-        thetav = client.persist(thetav)
     thetav_sum = thetav.isel(generalVerticalLayer=slice(None, None, -1)).cumsum(dim='generalVerticalLayer')
 
     nlevels_xr =xr.DataArray(data=np.arange(nlevels,0,-1), dims=["generalVerticalLayer"])

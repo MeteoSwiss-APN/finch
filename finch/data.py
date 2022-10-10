@@ -1,3 +1,4 @@
+import enum
 from typing import List, Dict, Any
 import xarray as xr
 import dask.array as da
@@ -13,6 +14,12 @@ zarr_dir = data_config["zarr_dir"]
 """The base directory from where to load and store zarr files"""
 tmp_dir = config["global"]["tmp_dir"]
 """A directory which can be used as a temporary storage"""
+
+class Formats(enum.Enum):
+    """Supported file formats"""
+    GRIB = enum.auto()
+    NETCDF = enum.auto()
+    ZARR = enum.auto()
 
 def translate_order(order: List[str] | str, index: Dict[str, str]) -> str | List[str]:
     """

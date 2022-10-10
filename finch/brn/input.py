@@ -62,7 +62,7 @@ def load_input_grib(chunk_size=None, horizontal_chunk_size=None):
 
     return out1 + [hhl, hsurf]
 
-def load_input(data_file_type="grib", dim_order = "xyz", data_cube=False, chunk_size=30) -> List[xr.DataArray]:
+def load_input(format: data.Formats = data.Formats.GRIB, dim_order: str = "xyz", data_cube: bool = False, chunk_size: int = 30) -> List[xr.DataArray]:
     """
     Loads the input for the brn computation
     """
@@ -70,20 +70,20 @@ def load_input(data_file_type="grib", dim_order = "xyz", data_cube=False, chunk_
     dim_names[dim_names.index("z")] = "generalVerticalLayer"
     
     if data_cube:
-        if data_file_type == "zarr":
+        if format == data.Formats.ZARR:
             cube = data.load_zarr(f"brn_data_{dim_order}_cube", dim_names=dim_names, chunks=[chunk_size, -1, -1], names=["data"], inline_array=True)[0]
-        elif data_file_type == "netcdf":
+        elif format == data.Formats.NETCDF:
             cube = data.load_netcdf(f"brn_data_{dim_order}_cube.nc", chunks={"x": 30})[0]
         else:
             raise UnsupportedOperation()
         arrays = data.split_cube(cube, split_dim = "generalVerticalLayer", splits = [80]*6 + [1])
     else:
-        if data_file_type == "zarr":
+        if format == data.Formats.ZARR:
             arrays = data.load_zarr(f"brn_data_{dim_order}_da", dim_names=dim_names, names=input_array_names[:-1], chunks=[chunk_size, -1, -1])
             arrays += data.load_zarr(f"brn_data_{dim_order}_da", dim_names=["x", "y"], names=input_array_names[-1:], chunks=[chunk_size, -1])
-        elif data_file_type == "netcdf":
+        elif format == data.Formats.NETCDF:
             arrays = data.load_netcdf(f"brn_data_{dim_order}.nc", chunks={"x": 30})
-        elif data_file_type == "grib":
+        elif format == data.Formats.GRIB:
             dim_order = "zxy"
             arrays = load_input_grib(chunk_size=1)
         else:

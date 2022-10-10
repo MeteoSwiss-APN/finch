@@ -4,6 +4,7 @@ import pathlib
 import socket
 import types
 from typing import Callable, Dict, List
+import typing
 import dask.array as da
 import xarray as xr
 import numpy as np
@@ -112,7 +113,26 @@ def check_socket_open(host: str = "localhost", port: int = 80) -> bool:
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
         return sock.connect_ex((host, port)) == 0
 
-def list_funcs_matching(module: types.ModuleType, regex: str | None = None, signature: Callable | inspect.Signature | None = None) -> List[Callable]:
+def sig_matches_hint(
+    sig: inspect.Signature,
+    hint: type
+) -> bool:
+    """
+    Returns `True` if the function signature and the `Callable` type hint match.
+    """
+    if typing.get_origin(hint) != Callable:
+        return False
+    params, ret = typing.get_args(hint)
+    if sig.return_annotation != ret:
+        return False
+    if len(sig.parameters) != len(params):
+        return False
+    return all(
+        ps.annotation == ph for ps, ph in zip(sig.parameters.values(), params)
+    )
+    
+
+def list_funcs_matching(module: types.ModuleType, regex: str | None = None, type_hint: type | None = None) -> List[Callable]:
     """
     Returns a list of functions from a module matching the given parameters.
 
@@ -120,16 +140,13 @@ def list_funcs_matching(module: types.ModuleType, regex: str | None = None, sign
     ---
     - module: ModuleType. The module from which to list the functions
     - regex: str, optional. A regex which matches the function names to be returned.
-    - signature: Signature | Callable, optional. A common signature for the functions to be returned.
-    If a callable is specified, the signature of the callable will be used.
+    - signature: type, optional. A `Callable` type hint specifying the signature of the functions to be returned.
     """
-    if isinstance(signature, Callable):
-        signature = inspect.signature(signature)
     out = [
         f 
         for name, f in inspect.getmembers(module, inspect.isfunction)
         if (regex is None or re.match(regex, name)) and \
-            (signature is None or signature == inspect.signature(f))
+            (type_hint is None or sig_matches_hint(inspect.signature(f), type_hint))
     ]
     return out
 

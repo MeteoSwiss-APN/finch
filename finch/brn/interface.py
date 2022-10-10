@@ -9,10 +9,16 @@ brn = impl.brn_blocked_cpp
 thetav = impl.thetav_blocked_cpp
 """The default thetav implementation"""
 
-THETAV_SIG = inspect.signature(thetav)
+THETAV_SIG = Callable[
+    [xr.DataArray, xr.DataArray, xr.DataArray],
+    xr.DataArray
+]
 """Function signature for implementations of thetav."""
 
-BRN_SIG = inspect.signature(brn)
+BRN_SIG = Callable[
+    [xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray],
+    xr.DataArray
+]
 """Function signature for implementations of brn."""
 
 THETAV_REGEX = "thetav*"
@@ -20,10 +26,10 @@ THETAV_REGEX = "thetav*"
 BRN_REGEX = "brn*"
 """Function name regex for discovering implementations of brn"""
 
-def list_thetav_implementations() -> list[Callable]:
+def list_thetav_implementations() -> list[THETAV_SIG]:
     util.list_funcs_matching(impl, THETAV_REGEX, THETAV_SIG)
 
-def list_brn_implementations() -> list[Callable]:
+def list_brn_implementations() -> list[BRN_SIG]:
     util.list_funcs_matching(impl, BRN_REGEX, BRN_SIG)
 
 def list_thetav_input_preps(thetav_imps: list[Callable], filetype: str = "zarr") -> list[Callable]:
