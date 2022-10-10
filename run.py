@@ -20,7 +20,7 @@ run_brn = True
 
 brn_single_run = True
 """Whether to perform a single run experiment with brn"""
-brn_imp_to_inspect = finch.brn_.impl.brn_blocked_np
+brn_imp_to_inspect = finch.brn.impl.brn_blocked_np
 """The brn implementation to inspect during the single run experiment"""
 brn_single_data_file_type = "grib"
 """The file type for the input data for the brn single run experiment"""
@@ -38,7 +38,7 @@ client = finch.start_scheduler(debug=debug)
 # brn experiments
 if run_brn:
     if brn_single_run:
-        arrays = finch.brn_.load_input(data_file_type=brn_single_data_file_type)
+        arrays = finch.brn.load_input(data_file_type=brn_single_data_file_type)
         runtime = finch.measure_runtimes(
             [lambda *x: brn_imp_to_inspect(*x).compute()], 
             [lambda : arrays], iterations=brn_single_reps
