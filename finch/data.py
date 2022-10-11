@@ -15,7 +15,7 @@ zarr_dir = data_config["zarr_dir"]
 tmp_dir = config["global"]["tmp_dir"]
 """A directory which can be used as a temporary storage"""
 
-class Formats(enum.Enum):
+class Format(enum.Enum):
     """Supported file formats"""
     GRIB = enum.auto()
     NETCDF = enum.auto()
