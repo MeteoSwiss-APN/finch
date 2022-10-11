@@ -3,7 +3,7 @@ import xarray as xr
 import dask.array as da
 import dask
 import numpy as np
-import zebra
+# import zebra
 from .. import constants as const
 from .. import util
 from .. import data

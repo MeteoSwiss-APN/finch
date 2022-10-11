@@ -49,9 +49,15 @@ class cmake_build_ext(build_ext):
 compile_args = ["-march=native", "-std=c++20"]
 
 ext_modules = [
-    CMakeExtension(
+    # CMakeExtension(
+    #     "zebra",
+    #     "."
+    # )
+    Pybind11Extension(
         "zebra",
-        "."
+        sorted(glob("src/*.cpp")),
+        include_dirs=["include", "build/_deps/vectorclass-src"],
+        compile_args=compile_args
     )
 ]
 
@@ -62,7 +68,7 @@ setup(
     author="Tierry Hörmann",
     author_email="Tierry.Hoermann@meteoswiss.ch",
     ext_modules=ext_modules,
-    cmdclass={
-        "build_ext": cmake_build_ext
-        }
-    )
+    # cmdclass={
+    #     "build_ext": cmake_build_ext
+    #     }
+)
