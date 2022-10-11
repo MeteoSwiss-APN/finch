@@ -15,3 +15,9 @@ custom_config_env_var = "CONFIG"
 
 cluster = None
 """The currently active dask.distributed cluster"""
+
+hostname = os.environ.get("SLURMD_NODENAME", default="localhost")
+"""
+The network hostname where finch is running.
+This is either the SLURM node name if finch is running on a compute node or `localhost`.
+"""

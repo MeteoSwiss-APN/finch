@@ -2,7 +2,6 @@ from dask_jobqueue import SLURMCluster
 import os
 import dask
 from dask.distributed import Client
-import argparse
 from . import util
 from . import environment as env
 from .config import config
@@ -37,7 +36,7 @@ def start_slurm(scheduler_port: int = 8785, dashboard_port: int = 8877, cores_pe
         env.cluster = cluster
         if verbose:
             print("SLURM cluster started at address: %s" % cluster.scheduler_address)
-            print("Dashboard available at address: http://localhost%s/status" % dashboard_address)
+            print(f"Dashboard available at address: http://{env.hostname}{dashboard_address}/status")
     else:
         if verbose:
             print(f"Did not start new cluster. Port {scheduler_port} is already in use.")
