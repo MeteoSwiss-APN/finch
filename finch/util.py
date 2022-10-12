@@ -15,6 +15,7 @@ import re
 from dask_jobqueue.slurm import SLURMJob
 from . import environment as env
 import tqdm
+from wonderwords import RandomWord
 
 def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     """
@@ -164,17 +165,17 @@ class SLURMRunner(SLURMJob):
         self._command_template = " ".join(map(str, cmd))
         await super().start()
 
-def get_absolute(path: pathlib.Path | str, prefix: pathlib.Path | str = env.proj_root) -> pathlib.Path | str:
+def get_absolute(path: pathlib.Path | str, context: pathlib.Path | str = env.proj_root) -> pathlib.Path | str:
     """
-    Returns the abolute path with the given prefix if a relative path was given.
+    Returns the abolute path in the given context if a relative path was given.
     If an absolute path is given, it is directly returned.
     Both `pathlib.Path` and `str` repesentations are accepted. The return type depends on which type `path` has.
     """
     ispathlib = isinstance(path, pathlib.Path)
     path = pathlib.Path(path)
-    prefix = pathlib.Path(prefix).absolute()
+    context = pathlib.Path(context).absolute()
     if not path.is_absolute():
-        path = pathlib.Path(prefix, path)
+        path = pathlib.Path(context, path)
     if ispathlib:
         return path
     else:
@@ -199,3 +200,16 @@ def get_pbar(pbar: bool | tqdm.tqdm, iterations: int) -> tqdm.tqdm:
             return None
     else:
         return pbar
+
+def random_entity_name(excludes: list[str] = []) -> str:
+    """
+    Returns a random name for an entity, such as a file or a variable.
+    """
+    excludes = set(excludes)
+    r = RandomWord()
+    out = None
+    while out is None or out in excludes:
+        adj = r.word(include_parts_of_speech=["adjectives"])
+        noun = r.word(include_parts_of_speech=["nouns"])
+        out = adj + "_" + noun
+    return out
