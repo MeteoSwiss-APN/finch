@@ -31,12 +31,12 @@ def load_input_grib(chunk_size=None, horizontal_chunk_size=None):
         chunks.update({"x": horizontal_chunk_size})
 
     # load data from first grib file
-    grib_file = "/lfff00000000"
+    grib_file = "lfff00000000"
     short_names = ["P", "T", "QV", "U", "V"]
     args = {
         "chunks": chunks,
         "key_filters": {},
-        "index_path": config["brn"]["grib_index1"],
+        "index_path": config["brn"]["grib_index_dir"] + grib_file + ".idx",
         "cache": False,
         "key_filters": {"typeOfLevel": "generalVerticalLayer"},
         "load_coords": False
@@ -44,8 +44,8 @@ def load_input_grib(chunk_size=None, horizontal_chunk_size=None):
     out1 = data.load_grib(grib_file, short_names, **args)
 
     # load data from second grib file
-    grib_file = "/lfff00000000c"
-    args["index_path"] = config["brn"]["grib_index2"]
+    grib_file = "lfff00000000c"
+    args["index_path"] = config["brn"]["grib_index_dir"] + grib_file + ".idx"
     if chunk_size:
         chunks["generalVertical"] = chunks.pop("generalVerticalLayer")
         args["chunks"] = chunks
