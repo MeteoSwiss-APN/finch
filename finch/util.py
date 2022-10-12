@@ -4,7 +4,7 @@ import functools
 import pathlib
 import socket
 import types
-from typing import Dict, List
+from typing import Dict, List, TypeVar
 from collections.abc import Callable
 import typing
 import dask.array as da
@@ -16,6 +16,7 @@ from dask_jobqueue.slurm import SLURMJob
 from . import environment as env
 import tqdm
 from wonderwords import RandomWord
+import copy
 
 def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     """
@@ -213,3 +214,36 @@ def random_entity_name(excludes: list[str] = []) -> str:
         noun = r.word(include_parts_of_speech=["nouns"])
         out = adj + "_" + noun
     return out
+
+T = TypeVar("T")
+def fill_none_properties(x: T, y: T) -> T:
+    """
+    Returns `x` as a copy, where every attribute which is `None` is set to the attribute of `y`.
+    """
+    out = copy.copy(x)
+    to_update = {k: y.__dict__[k] for k in x.__dict__ if k is None}
+    out.__dict__.update(to_update)
+    return out
+
+def equals_not_none(x, y) -> bool:
+    """
+    Returns true if the two given objects are equal on all properties except for those for which one of them is `None` or not defined.
+    """
+    xd = x.__dict__
+    yd = y.__dict__
+    vs = set(xd.keys()).intersection(yd.keys())
+    return all(
+        xd[v] is not None and yd[v] is not None and xd[v] != yd[v]
+        for v in vs
+    )
+
+def has_attributes(x, y) -> bool:
+    """
+    Returns true if y has the same not-None attributes as x.
+    """
+    xd = x.__dict__
+    yd = y.__dict__
+    return all(
+        xd[v] is not None and (v not in yd or xd[v] != yd[v])
+        for v in xd
+    )
