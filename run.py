@@ -1,5 +1,12 @@
 import functools
+import sys
 import finch
+import argparse
+
+# command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("-d", "--debug", action="store_true")
+cmd_args = parser.parse_args(sys.argv[1:])
 
 ######################################################
 # configuration
@@ -9,7 +16,10 @@ import finch
 # general configurations
 ######################################################
 
-debug = False
+debug = cmd_args.debug
+"""Debug mode"""
+debug_scheduler = debug
+"""Whether to launch a debugable scheduler or the normal distributed one."""
 iterations = 10
 """The number of iterations when measuring runtime"""
 warmup = True
@@ -52,7 +62,7 @@ brn_multi_dim_order = "xyz"
 ######################################################
 
 # start scheduler
-client = finch.start_scheduler(debug=debug)
+client = finch.start_scheduler(debug=debug_scheduler)
 
 # brn experiments
 
