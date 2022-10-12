@@ -1,9 +1,14 @@
 import enum
-from typing import List, Dict, Any
+from glob import glob
+import pathlib
+from typing import List, Dict, Any, Tuple
 import xarray as xr
 import dask.array as da
 import numpy as np
 from . import config
+from . import util
+from collections.abc import Callable
+import yaml
 
 data_config = config["data"]
 grib_dir = data_config["grib_dir"]
@@ -84,11 +89,11 @@ def load_array_grib(
         "cache": cache
     }
 
-    if isinstance(path, list) or '*' in path:
-        dataset = xr.open_mfdataset([grib_dir + p for p in path], parallel=parallel, **args)
+    if isinstance(path, list):
+        dataset = xr.open_mfdataset([util.get_absolute(p, grib_dir) for p in path], parallel=parallel, **args)
     else:
         args["indexpath"] = index_path
-        dataset = xr.open_dataset(grib_dir + path, **args)
+        dataset = xr.open_dataset(util.get_absolute(path, grib_dir), **args)
     out: xr.DataArray = dataset[shortName]
     if not load_coords:
         for c in list(out.coords.keys()):
@@ -105,15 +110,17 @@ def load_netcdf(filename, chunks: Dict) -> List[xr.DataArray]:
     """
     Loads the content of a netCDF file into `DataArray`s.
     """
-    ds: xr.Dataset = xr.open_dataset(netcdf_dir + filename, chunks=chunks)
+    filename = util.get_absolute(filename, netcdf_dir)
+    ds: xr.Dataset = xr.open_dataset(filename, chunks=chunks)
     return list(ds.data_vars.values())
 
 def load_zarr(filename, dim_names: List[str], chunks: List[int] = "auto", names: List[str] = None, inline_array = True) -> List[xr.DataArray]:
     """
     Loads the content of a zarr directory into `DataArray`(s).
     """
+    filename = util.get_absolute(filename, zarr_dir)
     def single_load(component):
-        array = da.from_zarr(url=zarr_dir+filename, chunks=chunks, inline_array=inline_array, component=component)
+        array = da.from_zarr(url=filename, chunks=chunks, inline_array=inline_array, component=component)
         return xr.DataArray(array, dims=dim_names, name=component)
     if names:
         return [single_load(c) for c in names]
@@ -123,7 +130,7 @@ def load_zarr(filename, dim_names: List[str], chunks: List[int] = "auto", names:
 def store_netcdf(
     filename: str, 
     data: List[xr.DataArray],
-    names: List[str]):
+    names: List[str] | None = None):
     """
     Stores a list of `DataArray`s into a netCDF file.
 
@@ -133,8 +140,11 @@ def store_netcdf(
     - data: List[DataArray]. The `DataArray`s to be stored.
     - names: List[str]. A list of names for the arrays to be stored.
     """
+    if names is None:
+        names = [x.name for x in data]
+    filename = util.get_absolute(filename, netcdf_dir)
     out = xr.Dataset(dict(zip(names, data)))
-    out.to_netcdf(netcdf_dir+filename)
+    out.to_netcdf(filename)
 
 def store_zarr(dirname: str, arrays: List[xr.DataArray]):
     """
@@ -145,10 +155,11 @@ def store_zarr(dirname: str, arrays: List[xr.DataArray]):
     - filename: str. The name of the zarr directory.
     - data: List[DataArray]. The `DataArray`s to be stored.
     """
+    dirname = util.get_absolute(dirname, zarr_dir)
     if type(arrays) is not list:
         arrays = [arrays]
     for a in arrays:
-        da.to_zarr(a.data, zarr_dir+dirname, a.name, overwrite=True)
+        da.to_zarr(a.data, dirname, a.name, overwrite=True)
 
 def reorder_dims(data: List[xr.DataArray], dim_order: List[str]) -> List[xr.DataArray]:
     """
@@ -177,3 +188,167 @@ def split_cube(data: xr.DataArray, split_dim: str, splits: List[int], names: Lis
     if names:
         out = [x.rename(n) for x, n in zip(out, names)]
     return out
+
+class Input():
+    """
+    Class for managing experiment inputs on disk.
+    """
+    name: str
+    """The name of this input"""
+    _path: pathlib.Path
+    """The path where this input is stored"""
+    source: Callable[[], list[xr.DataArray]]
+    """A function from which to get the input data"""
+    dim_index: dict[str, str]
+    """An index mapping dimension short names to dimension names"""
+    array_names: list[str]
+    """The names of the data arrays"""
+
+    class Version():
+        """A version of the input"""
+        format: Format
+        dim_order: str
+        chunks: dict[str, int]
+        name: str
+
+        def impose(self, arrays: list[xr.DataArray], dim_index: dict[str, str]) -> list[xr.DataArray]:
+            """
+            Returns a new version of the given input arrays according to the attributes of this object.
+            """
+            out = []
+            for a in arrays:
+                b = a.transpose(*translate_order(self.dim_order, dim_index))
+
+    source_version: Version
+    """The version of the source data"""
+    versions: list[Version]
+    """The different versions of this input"""
+
+    def __init__(self, 
+        store_path: pathlib.Path, 
+        name: str, 
+        source: Callable[[], list[xr.DataArray]],
+        source_version: Version,
+        dim_index: dict[str, str],
+        array_names: list[str]
+    ) -> None:
+        self.name = name
+        self._path = store_path.joinpath(name).absolute()
+        self.source = source
+        self.source_version = source_version
+        self.source_version.name = "source"
+        self.versions = [source_version]
+        self.dim_index = dim_index
+        self.array_names = array_names
+
+        # create if not exists
+        self._path.mkdir(parents=True, exist_ok=True)
+
+        # load existing versions
+        for v in glob("*.yml", root_dir=str(self._path)):
+            with open(v) as f:
+                self.versions.append(yaml.load(f))
+
+    def add_version(self, version: Version, arrays: list[xr.DataArray] | None = None) -> Version:
+        """
+        Adds a new version of this input.
+        If a version with the same properties already exists, nothing happens.
+        If a version with the same name already exists, a value error will be raised.
+
+        Arguments:
+        ---
+        - version: The version properties of the new version
+        - arrays: optional. The data of the new version. If `None`, the data will be generated from the source version.
+
+        Returns:
+        ---
+        The properties of the newly created version
+        """
+        # check whether version already exists
+        vname = version.name
+        version.name = None
+        if self.has_version(version):
+            print("This verion already exists and won't be added")
+            return
+        version.name = vname
+
+        # handle name
+        names = [v.name for v in self.versions]
+        if vname is None:
+            version.name = util.random_entity_name(excludes=names)
+        if vname in names:
+            raise ValueError("A version with the given name exists already")
+
+        if arrays is None:
+            # create new version to be added
+            arrays, version = self.get_version(version, create_if_not_exists=True, add_if_not_exists=False)
+
+        # store yaml
+        with open(self._path.joinpath(version.name + ".yml"), mode="w") as f:
+            yaml.dump(version, f)
+
+        # store data
+        filename = str(self._path.joinpath(version.name))
+        if version.format == Format.NETCDF:
+            store_netcdf(filename + ".nc", arrays)
+        elif version.format == Format.ZARR:
+            store_zarr(filename, arrays)
+        else:
+            raise NotImplementedError
+
+        # register
+        self.versions.append(version)
+        return version
+
+    def has_version(self, version: Version) -> bool:
+        """
+        Returns whether a version with the given properties already exists
+        """
+        return any(util.has_attributes(version, v) for v in self.versions)
+
+    def get_version(self, version: Version, create_if_not_exists: bool = True, add_if_not_exists: bool = False) -> Tuple[list[xr.DataArray], Version]:
+        """
+        Returns a version with the given properties.
+
+        Arguments:
+        ---
+        - version: The version properties
+        - create_if_not_exists: Indicates whether to create and return a new version if no such version already exists.
+        - add_if_not_exists: Indicates whether to directly add a newly created version to this input
+        """
+        # find matching preexisting version
+        target = None
+        for v in self.versions[1:]: # avoid loading the source version when possible
+            if util.has_attributes(version, v):
+                target = v
+                break
+
+        if target is None:
+            if create_if_not_exists or util.has_attributes(version, self.source_version):
+                # load source
+                arrays = self.source()
+            
+                # impose version properties
+                target = util.fill_none_properties(version, self.source_version)
+                arrays = [
+                    a.transpose(translate_order(target.dim_order, self.dim_index)).
+                        chunk(target.chunks)
+                    for a in arrays
+                ]
+
+                # add version (if not grib)
+                if add_if_not_exists and target.format != Format.GRIB:
+                    self.add_version(target, arrays)
+            else:
+                return None
+        else:
+            filename = str(self._path.joinpath(target.name))
+            if target.format == Format.NETCDF:
+                arrays = load_netcdf(filename+".nc", target.chunks)
+            elif target.format == Format.ZARR:
+                arrays = load_zarr(filename, translate_order(target.dim_order, self.dim_index), names=self.array_names)
+            elif target.format == Format.GRIB:
+                arrays = load_grib(filename, self.array_names)
+
+        return arrays, target
+        
