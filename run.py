@@ -1,3 +1,4 @@
+import functools
 import finch
 
 ######################################################
@@ -9,12 +10,21 @@ import finch
 ######################################################
 
 debug = False
+iterations = 10
+"""The number of iterations when measuring runtime"""
+warmup = True
+"""Whether to perform a warmup before measuring the runtimes"""
 
 # BRN experiment settings
 ######################################################
 
 run_brn = True
 """Whether to run brn experiments"""
+
+# input loading
+
+brn_load_experiment = True
+"""Whether to measure the different input loading times"""
 
 # single run
 
@@ -27,6 +37,15 @@ brn_single_format = finch.data.Format.GRIB
 brn_single_reps = 1
 """The number of repetitions to do the brn single run experiment"""
 
+# multi run
+
+brn_multi_run = True
+"""Wether to perform a run experiment with every available implementation"""
+brn_multi_format = finch.data.Format.ZARR
+"""The input format for the brn multi run experiment"""
+brn_multi_dim_order = "xyz"
+"""The input dimension order for the brn multi run experiment"""
+
 
 ######################################################
 # script
@@ -36,11 +55,33 @@ brn_single_reps = 1
 client = finch.start_scheduler(debug=debug)
 
 # brn experiments
+
+config = {
+    "iterations": iterations,
+    "warmup": warmup
+}
+
 if run_brn:
+    if brn_load_experiment:
+        print("Measuring brn input load times")
+        load_funcs = finch.util.funcs_from_args(finch.brn.load_input, [{"format" : f} for f in finch.data.Format])
+        runtimes = finch.measure_runtimes(load_funcs, **config)
+        for f, r in zip(finch.data.Format, runtimes):
+            print(f"{f.value}: {r}")
     if brn_single_run:
+        print(f"Measuring runtime of function {brn_imp_to_inspect.__name__}")
         arrays = finch.brn.load_input(format=brn_single_format)
-        runtime = finch.measure_runtimes(
-            [lambda *x: brn_imp_to_inspect(*x).compute()], 
-            [lambda : arrays], iterations=brn_single_reps
-            )[0]
+        runtime = finch.measure_runtime(
+            lambda *x: brn_imp_to_inspect(*x).compute(),
+            arrays,
+            **config
+        )
         print(runtime)
+    
+    if brn_multi_run:
+        print(f"Measuring runtimes of brn implementations")
+        imps = finch.brn.list_brn_implementations()
+        input = functools.partial(finch.brn.load_input, format=brn_multi_format, dim_order=brn_multi_dim_order)
+        runtimes = finch.measure_runtimes(imps, input, **config)
+        for f, r, in zip(imps, runtimes):
+            print(f"{f.__name__}: {r}")

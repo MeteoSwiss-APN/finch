@@ -1,12 +1,8 @@
 import os
 from .. import data
+from .. import config
 from . import impl
 from collections import defaultdict
-
-# set the grib definition path. Must be done before importing xarray
-grib_definitions_path = "/project/g110/spack-install/tsa/cosmo-eccodes-definitions/2.19.0.7/gcc/zcuyy4uduizdpxfzqmxg6bc74p2skdfp/cosmoDefinitions/definitions/:/project/g110/spack-install/tsa/eccodes/2.19.0/gcc/viigacbsqxbbcid22hjvijrrcihebyeh/share/eccodes/definitions/"
-"""Path to the grib definitions to use."""
-os.environ["GRIB_DEFINITION_PATH"] = grib_definitions_path
 
 input_array_names = ["P", "T", "QV", "U", "V", "HHL", "HSURF"]
 """The names of the brn input arrays"""
@@ -40,7 +36,7 @@ def load_input_grib(chunk_size=None, horizontal_chunk_size=None):
     args = {
         "chunks": chunks,
         "key_filters": {},
-        "index_path": "notebook/tmp/grib1.idx",
+        "index_path": config["brn"]["grib_index1"],
         "cache": False,
         "key_filters": {"typeOfLevel": "generalVerticalLayer"},
         "load_coords": False
@@ -49,7 +45,7 @@ def load_input_grib(chunk_size=None, horizontal_chunk_size=None):
 
     # load data from second grib file
     grib_file = "/lfff00000000c"
-    args["index_path"] = "notebook/tmp/grib2.idx"
+    args["index_path"] = config["brn"]["grib_index2"]
     if chunk_size:
         chunks["generalVertical"] = chunks.pop("generalVerticalLayer")
         args["chunks"] = chunks

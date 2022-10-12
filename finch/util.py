@@ -1,5 +1,6 @@
-from ast import arg
+from ast import Call, arg
 from contextlib import closing
+import functools
 import pathlib
 import socket
 import types
@@ -13,6 +14,7 @@ import inspect
 import re
 from dask_jobqueue.slurm import SLURMJob
 from . import environment as env
+import tqdm
 
 def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     """
@@ -163,6 +165,11 @@ class SLURMRunner(SLURMJob):
         await super().start()
 
 def get_absolute(path: pathlib.Path | str, prefix: pathlib.Path | str = env.proj_root) -> pathlib.Path | str:
+    """
+    Returns the abolute path with the given prefix if a relative path was given.
+    If an absolute path is given, it is directly returned.
+    Both `pathlib.Path` and `str` repesentations are accepted. The return type depends on which type `path` has.
+    """
     ispathlib = isinstance(path, pathlib.Path)
     path = pathlib.Path(path)
     prefix = pathlib.Path(prefix).absolute()
@@ -172,3 +179,23 @@ def get_absolute(path: pathlib.Path | str, prefix: pathlib.Path | str = env.proj
         return path
     else:
         return str(path)
+
+def funcs_from_args(f: Callable, args: list[dict]) -> list[Callable]:
+    """
+    Takes a function `f` and a list of arguments `args` and 
+    returns a list of functions which are the partial applications of `f` onto `args`.
+    """
+    return [functools.partial(f, **a) for a in args]
+
+def get_pbar(pbar: bool | tqdm.tqdm, iterations: int) -> tqdm.tqdm:
+    """
+    Convenience function for pbar input arguments.
+    This makes sure that a `tqdm` progress bar is returned if one is requested, or `None`.
+    """
+    if isinstance(pbar, bool):
+        if pbar:
+            return tqdm.trange(iterations)
+        else:
+            return None
+    else:
+        return pbar
