@@ -6,6 +6,7 @@ import xarray as xr
 from . import Input
 from .util import PbarArg
 from . import util
+from . import config
 import tqdm
 
 def measure_runtimes(
@@ -88,7 +89,7 @@ def measure_runtimes(
     return out
 
 def measure_operator_runtimes(
-    funcs: list[Callable[[xr.Dataset], Any]] | Callable[[xr.Dataset], Any], 
+    funcs: list[Callable[[xr.Dataset], xr.DataArray]] | Callable[[xr.Dataset], xr.DataArray], 
     input: Input,
     versions: list[Input.Version] | Input.Version,
     **kwargs
@@ -110,11 +111,12 @@ def measure_operator_runtimes(
         ]
     else:
         preps = lambda : input.get_version(versions)
-    # make sure to run compute
+    # make sure to run compute by storing to zarr
+    compute = lambda a : a.to_dataset().to_zarr(store=config["data"]["zarr_dir"], mode="w")
     if isinstance(funcs, Callable):
-        funcs = lambda x, funcs=funcs : funcs(x).compute()
+        funcs = lambda x, funcs=funcs : compute(funcs(x))
     else:
-        funcs = [lambda x, f=f : f(x).compute() for f in funcs]
+        funcs = [lambda x, f=f : compute(f(x)) for f in funcs]
     return measure_runtimes(funcs, preps, **kwargs)
 
 def measure_loading_times(

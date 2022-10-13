@@ -23,6 +23,8 @@ iterations = 10
 """The number of iterations when measuring runtime"""
 warmup = True
 """Whether to perform a warmup before measuring the runtimes"""
+cache_input = False
+"""Whether to cache the input between multiple iterations"""
 pbar = True
 """Whether to print a progress bar"""
 
@@ -34,10 +36,10 @@ run_brn = True
 
 # input management
 
-brn_modify_input_versions = True
+brn_modify_input_versions = False
 """Whether to alter the brn input versions"""
 brn_add_input_version = finch.Input.Version(
-    format=finch.data.Format.NETCDF,
+    format=finch.data.Format.ZARR,
     dim_order="xyz",
     chunks={"x": 30},
     coords=False
@@ -46,7 +48,7 @@ brn_add_input_version = finch.Input.Version(
 
 # input loading
 
-brn_load_experiment = True
+brn_load_experiment = False
 """Whether to measure the different input loading times"""
 
 # single run
@@ -80,6 +82,7 @@ client = finch.start_scheduler(debug=debug_scheduler)
 config = {
     "iterations": iterations,
     "warmup": warmup,
+    "cache_inputs": cache_input,
     "pbar": pbar
 }
 
