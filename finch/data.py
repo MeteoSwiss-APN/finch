@@ -23,9 +23,9 @@ tmp_dir = config["global"]["tmp_dir"]
 
 class Format(enum.Enum):
     """Supported file formats"""
-    GRIB = enum.auto()
-    NETCDF = enum.auto()
-    ZARR = enum.auto()
+    GRIB = "grib"
+    NETCDF = "netcdf"
+    ZARR = "zarr"
 
 def translate_order(order: List[str] | str, index: Dict[str, str]) -> str | List[str]:
     """
@@ -106,8 +106,7 @@ def load_grib(grib_file, short_names: List[str], **kwargs) -> xr.Dataset:
     Convenience function for loading multiple `DataArray`s from a grib file with `load_array_grib` and returning them as a dataset.
     """
     arrays = [load_array_grib(grib_file, shortName=sn, **kwargs) for sn in short_names]
-    dataset = xr.Dataset({n:a for n, a in zip(short_names, arrays)})
-    return dataset
+    return xr.merge(arrays)
 
 def load_netcdf(filename, chunks: Dict) -> List[xr.DataArray]:
     """
@@ -204,16 +203,16 @@ class Input():
     """A function from which to get the input data"""
     dim_index: dict[str, str]
     """An index mapping dimension short names to dimension names"""
-    array_names: list[str]
-    """The names of the data arrays"""
 
     @dataclass
-    class Version():
+    class Version(yaml.YAMLObject):
         """A version of the input"""
+        yaml_tag = "!Version"
         format: Format = None
         dim_order: str = None
         chunks: dict[str, int] = None
         name: str = None
+        coords: bool = None
 
     source_version: Version
     """The version of the source data"""
@@ -221,29 +220,29 @@ class Input():
     """The different versions of this input"""
 
     def __init__(self, 
-        store_path: pathlib.Path, 
+        store_path: pathlib.Path | str, 
         name: str, 
         source: Callable[[], xr.Dataset],
         source_version: Version,
         dim_index: dict[str, str],
-        array_names: list[str]
     ) -> None:
         self.name = name
-        self._path = store_path.joinpath(name).absolute()
+        self._path = pathlib.Path(store_path).joinpath(name).absolute()
         self.source = source
         self.source_version = source_version
         self.source_version.name = "source"
         self.versions = [source_version]
         self.dim_index = dim_index
-        self.array_names = array_names
 
         # create if not exists
         self._path.mkdir(parents=True, exist_ok=True)
 
         # load existing versions
         for v in glob("*.yml", root_dir=str(self._path)):
-            with open(v) as f:
-                self.versions.append(yaml.load(f))
+            with open(self._path.joinpath(v)) as f:
+                version = yaml.load(f, yaml.Loader)
+                version = util.add_missing_properties(version, self.source_version) # backwards compatibility
+                self.versions.append(version)
 
     def add_version(self, version: Version, dataset: xr.Dataset | None = None) -> Version:
         """
@@ -283,10 +282,6 @@ class Input():
             # create new version to be added
             dataset, version = self.get_version(version, create_if_not_exists=True, add_if_not_exists=False)
 
-        # store yaml
-        with open(self._path.joinpath(version.name + ".yml"), mode="w") as f:
-            yaml.dump(version, f)
-
         # store data
         filename = str(self._path.joinpath(version.name))
         if version.format == Format.NETCDF:
@@ -295,6 +290,10 @@ class Input():
             dataset.to_zarr(filename, mode="w")
         else:
             raise ValueError # grib case was already caught, so we can raise a ValueError here
+
+        # store yaml
+        with open(self._path.joinpath(version.name + ".yml"), mode="w") as f:
+            yaml.dump(version, f)
 
         # register
         self.versions.append(version)
@@ -330,7 +329,7 @@ class Input():
             
                 # impose version properties
                 target = util.fill_none_properties(version, self.source_version)
-                dataset = dataset.transpose(translate_order(target.dim_order, self.dim_index))
+                dataset = dataset.transpose(*translate_order(target.dim_order, self.dim_index))
                 dataset = dataset.chunk(target.chunks)
 
                 # add version (if not grib)
@@ -345,7 +344,7 @@ class Input():
             elif target.format == Format.ZARR:
                 dataset = xr.open_dataset(filename, chunks=target.chunks, engine="zarr")
             elif target.format == Format.GRIB:
-                dataset = load_grib(filename, self.array_names)
+                dataset = xr.open_dataset(filename, chunks=target.chunks, engine="cfgrib")
 
         return dataset, target
         

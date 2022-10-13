@@ -60,7 +60,7 @@ def measure_runtimes(
     if warmup:
         iterations += 1
 
-    pbar = util.get_pbar(pbar, len(funcs) * len(inputs))
+    pbar = util.get_pbar(pbar, len(funcs) * len(inputs) * iterations)
 
     out = []
     for f in funcs:
@@ -76,10 +76,11 @@ def measure_runtimes(
                 f(*args)
                 end = time()
                 cur_times.append(end - start)
+                pbar.update()
             if warmup:
                 cur_times = cur_times[1:]
             f_out.append(reduction(cur_times))
-            pbar.update()
+        out.append(f_out)
     if singleton_input:
         out = [o[0] for o in out]
     if singleton_funcs:
@@ -104,7 +105,7 @@ def measure_operator_runtimes(
     """
     if isinstance(versions, list):
         preps = [
-            lambda : input.get_version(v)
+            lambda v=v : [input.get_version(v)[0]]
             for v in versions
         ]
     else:
@@ -125,5 +126,5 @@ def measure_loading_times(
     - versions: The different versions to be measured
     - kwargs: Arguments for `measure_runtimes`
     """
-    funcs = [lambda : input.get_version(v) for v in versions]
+    funcs = [lambda v=v : input.get_version(v) for v in versions]
     return measure_runtimes(funcs, None, **kwargs)

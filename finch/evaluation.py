@@ -8,7 +8,7 @@ def print_version_results(results: list[Any], versions: list[Input.Version]):
     Prints the results of an experiment for different input versions.
     """
     for r, v in zip(results, versions):
-        print(f"{r}\n    {v}")
+        print(f"{v}\n    {r}")
 
 def print_imp_results(results: list[list[Any]], imps: list[Callable], versions: list[Input.Version]):
     """

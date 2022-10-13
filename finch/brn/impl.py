@@ -4,17 +4,14 @@ import dask.array as da
 import dask
 import numpy as np
 
-from finch import data
 # import zebra
 from .. import constants as const
 from .. import util
 from . import input
+from .. import data
 
-def thetav_xr(
-    p: xr.DataArray,
-    t: xr.DataArray,
-    qv: xr.DataArray
-    ) -> xr.DataArray:
+def thetav_xr(dataset: xr.Dataset) -> xr.DataArray:
+    p, t, qv = [dataset[n] for n in input.thetav_array_names]
 
     pc_rvd = const.PC_R_V / const.PC_R_D
     pc_rdocp = const.PC_R_D/const.PC_CP_D
@@ -87,7 +84,7 @@ def brn_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
     """
     brn implementation using `custom_map_blocks` and numpy arrays
     """
-    dataset = dataset.transpose(data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
+    dataset = dataset.transpose(*data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
     return util.custom_map_blocks(block_brn_np, dataset, name="brn")
 
 def _thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:

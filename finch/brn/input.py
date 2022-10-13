@@ -1,8 +1,6 @@
 import os
 from .. import data
 from .. import config
-from . import impl
-from typing import List
 import xarray as xr
 
 brn_array_names = ["P", "T", "QV", "U", "V", "HHL", "HSURF"]
@@ -37,7 +35,7 @@ def load_input_grib(chunk_size=None, horizontal_chunk_size=None) -> xr.Dataset:
     args = {
         "chunks": chunks,
         "key_filters": {},
-        "index_path": config["brn"]["grib_index_dir"] + grib_file + ".idx",
+        "index_path": os.path.join(config["brn"]["grib_index_dir"], grib_file + ".idx"),
         "cache": False,
         "key_filters": {"typeOfLevel": "generalVerticalLayer"},
         "load_coords": False
@@ -46,7 +44,7 @@ def load_input_grib(chunk_size=None, horizontal_chunk_size=None) -> xr.Dataset:
 
     # load data from second grib file
     grib_file = "lfff00000000c"
-    args["index_path"] = config["brn"]["grib_index_dir"] + grib_file + ".idx"
+    args["index_path"] = os.path.join(config["brn"]["grib_index_dir"], grib_file + ".idx")
     if chunk_size:
         chunks["generalVertical"] = chunks.pop("generalVerticalLayer")
         args["chunks"] = chunks
@@ -57,8 +55,7 @@ def load_input_grib(chunk_size=None, horizontal_chunk_size=None) -> xr.Dataset:
     hhl = hhl.rename({"generalVertical": "generalVerticalLayer"})
     hhl = hhl[:-1, :, :] # TODO shouldn't be necessary
 
-    arrays = out1 + [hhl, hsurf]
-    return xr.Dataset({n:a for n, a in zip(brn_array_names, arrays)})
+    return xr.merge([out1, hhl, hsurf])
 
 brn_input = data.Input(
     config["global"]["data_store"],
@@ -68,10 +65,9 @@ brn_input = data.Input(
         format=data.Format.GRIB,
         dim_order="zyx",
         chunks={dim_index["z"] : 1},
-        name=None
+        coords=True
     ),
-    dim_index=dim_index,
-    array_names=brn_array_names
+    dim_index=dim_index
 )
 """
 Defines the input for brn functions

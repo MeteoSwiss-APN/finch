@@ -60,7 +60,7 @@ def custom_map_blocks(f: Callable, *args: xr.DataArray | xr.Dataset,
     if isinstance(args[0], xr.Dataset):
         assert len(args) == 1, "Only one dataset can be passed."
         dataset = args[0]
-        args = dataset.data_vars.values()
+        args = list(dataset.data_vars.values())
 
     # handle optional arguments
     if template is None:
@@ -240,6 +240,16 @@ def fill_none_properties(x: T, y: T) -> T:
     out.__dict__.update(to_update)
     return out
 
+T = TypeVar("T")
+def add_missing_properties(x: T, y) -> T:
+    """
+    Returns `x` as a copy, with attributes from `y` added to `x` which were not already present.
+    """
+    out = copy.copy(x)
+    to_update = {k: y.__dict[k] for k in y.__dict__ if k not in x.__dict__}
+    out.__dict__.update(to_update)
+    return out
+
 def equals_not_none(x, y) -> bool:
     """
     Returns true if the two given objects are equal on all properties except for those for which one of them is `None` or not defined.
@@ -259,6 +269,6 @@ def has_attributes(x, y) -> bool:
     xd = x.__dict__
     yd = y.__dict__
     return all(
-        xd[v] is not None and (v not in yd or xd[v] != yd[v])
+        xd[v] is None or (v in yd and xd[v] == yd[v])
         for v in xd
     )

@@ -21,7 +21,7 @@ debug_scheduler = debug
 """Whether to launch a debugable scheduler or the normal distributed one."""
 iterations = 1
 """The number of iterations when measuring runtime"""
-warmup = True
+warmup = False
 """Whether to perform a warmup before measuring the runtimes"""
 pbar = True
 """Whether to print a progress bar"""
@@ -39,7 +39,8 @@ brn_modify_input_versions = True
 brn_add_input_version = finch.Input.Version(
     format=finch.data.Format.NETCDF,
     dim_order="xyz",
-    chunks={"x": 30}
+    chunks={"x": 30},
+    coords=False
 )
 """New brn input version to add"""
 
@@ -89,21 +90,29 @@ brn_input = finch.brn.brn_input
 if run_brn:
 
     if brn_modify_input_versions:
+        print("Adjusting input versions")
         if brn_add_input_version:
             brn_input.add_version(brn_add_input_version)
+        print()
 
     if brn_load_experiment:
         print("Measuring brn input load times")
         times = finch.measure_loading_times(brn_input, brn_input.versions, **config)
+        print()
         finch.print_version_results(times, brn_input.versions)
+        print()
 
     if brn_single_run:
         print(f"Measuring runtime of function {brn_imp_to_inspect.__name__}")
         times = finch.measure_operator_runtimes(brn_imp_to_inspect, brn_input, brn_single_versions, **config)
+        print()
         finch.print_version_results(times, brn_single_versions)
+        print()
     
     if brn_multi_run:
         print(f"Measuring runtimes of brn implementations")
         imps = finch.brn.list_brn_implementations()
         times = finch.measure_operator_runtimes(imps, brn_input, brn_multi_versions, **config)
+        print()
         finch.print_imp_results(times, imps, brn_multi_versions)
+        print()
