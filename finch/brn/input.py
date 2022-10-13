@@ -2,20 +2,21 @@ import os
 from .. import data
 from .. import config
 from . import impl
-from collections import defaultdict
+from typing import List
+import xarray as xr
 
-input_array_names = ["P", "T", "QV", "U", "V", "HHL", "HSURF"]
+brn_array_names = ["P", "T", "QV", "U", "V", "HHL", "HSURF"]
 """The names of the brn input arrays"""
+thetav_array_names = brn_array_names[:3]
+"""The names of the thetav input arrays"""
+brn_only_array_names = brn_array_names[3:]
+"""The names of the brn input arrays which are not used for the thetav computation"""
 dim_index = {
     "x": "x",
     "y": "y",
     "z": "generalVerticalLayer"
 }
 """Dictionary for translating dimension names"""
-
-from io import UnsupportedOperation
-from typing import List
-import xarray as xr
 
 def translate_order(order):
     return data.translate_order(order, dim_index)
@@ -25,7 +26,7 @@ def reorder_dims(input, dims):
         dims = translate_order(dims)
     return data.reorder_dims(input, dims)
 
-def load_input_grib(chunk_size=None, horizontal_chunk_size=None):
+def load_input_grib(chunk_size=None, horizontal_chunk_size=None) -> xr.Dataset:
     chunks = {"generalVerticalLayer": chunk_size} if chunk_size else chunk_size
     if horizontal_chunk_size:
         chunks.update({"x": horizontal_chunk_size})
@@ -56,32 +57,22 @@ def load_input_grib(chunk_size=None, horizontal_chunk_size=None):
     hhl = hhl.rename({"generalVertical": "generalVerticalLayer"})
     hhl = hhl[:-1, :, :] # TODO shouldn't be necessary
 
-    return out1 + [hhl, hsurf]
+    arrays = out1 + [hhl, hsurf]
+    return xr.Dataset({n:a for n, a in zip(brn_array_names, arrays)})
 
-def load_input(format: data.Format = data.Format.GRIB, dim_order: str = "xyz", data_cube: bool = False, chunk_size: int = 30) -> List[xr.DataArray]:
-    """
-    Loads the input for the brn computation
-    """
-    dim_names = list(dim_order)
-    dim_names[dim_names.index("z")] = "generalVerticalLayer"
-    
-    if data_cube:
-        if format == data.Format.ZARR:
-            cube = data.load_zarr(f"brn_data_{dim_order}_cube", dim_names=dim_names, chunks=[chunk_size, -1, -1], names=["data"], inline_array=True)[0]
-        elif format == data.Format.NETCDF:
-            cube = data.load_netcdf(f"brn_data_{dim_order}_cube.nc", chunks={"x": 30})[0]
-        else:
-            raise UnsupportedOperation()
-        arrays = data.split_cube(cube, split_dim = "generalVerticalLayer", splits = [80]*6 + [1])
-    else:
-        if format == data.Format.ZARR:
-            arrays = data.load_zarr(f"brn_data_{dim_order}_da", dim_names=dim_names, names=input_array_names[:-1], chunks=[chunk_size, -1, -1])
-            arrays += data.load_zarr(f"brn_data_{dim_order}_da", dim_names=["x", "y"], names=input_array_names[-1:], chunks=[chunk_size, -1])
-        elif format == data.Format.NETCDF:
-            arrays = data.load_netcdf(f"brn_data_{dim_order}.nc", chunks={"x": 30})
-        elif format == data.Format.GRIB:
-            dim_order = "zxy"
-            arrays = load_input_grib(chunk_size=1)
-        else:
-            raise UnsupportedOperation()
-    return arrays
+brn_input = data.Input(
+    config["global"]["data_store"],
+    name="brn",
+    source=lambda : load_input_grib(chunk_size=1),
+    source_version=data.Input.Version(
+        format=data.Format.GRIB,
+        dim_order="zyx",
+        chunks={dim_index["z"] : 1},
+        name=None
+    ),
+    dim_index=dim_index,
+    array_names=brn_array_names
+)
+"""
+Defines the input for brn functions
+"""

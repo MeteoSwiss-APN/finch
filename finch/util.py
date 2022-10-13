@@ -30,7 +30,7 @@ def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     to_add = set(dims).difference(array.dims)
     return array.squeeze(to_remove).expand_dims(list(to_add)).transpose(*dims)
 
-def custom_map_blocks(f: Callable, *args: xr.DataArray, 
+def custom_map_blocks(f: Callable, *args: xr.DataArray | xr.Dataset, 
     name: str = None, dtype = None, template: xr.DataArray = None, f_in_out_type = np.ndarray, 
     **kwargs) -> xr.DataArray:
     """
@@ -40,7 +40,8 @@ def custom_map_blocks(f: Callable, *args: xr.DataArray,
     ---
     - f: Callable. The function to be executed on the chunks of `args`.
     The input / output of the chunks can be controlled with the `f_in_out_type` argument.
-    - args: xarray.DataArray. The data array arguments to `f`.
+    - args: xarray.DataArray | xarray.Dataset. The data array arguments to `f`.
+        If a dataset is passed, its non-coordinate variables will be extracted and used as inputs to `f`.
     The first element will be used as a template for the output where 
     - name: str, optional. The name of the output array. Defaults to the name of `f`.
     - dtype: type, optional. The type of the elements of the output array. Defaults to the dtype of `template`.
@@ -55,7 +56,13 @@ def custom_map_blocks(f: Callable, *args: xr.DataArray,
     The data chunks must still fully fit into memory.
     Defaults to `numpy.ndarray`.
     """
+    # extract dataset
+    if isinstance(args[0], xr.Dataset):
+        assert len(args) == 1, "Only one dataset can be passed."
+        dataset = args[0]
+        args = dataset.data_vars.values()
 
+    # handle optional arguments
     if template is None:
         template = args[0]
     if dtype is None:

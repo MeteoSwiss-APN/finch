@@ -3,10 +3,11 @@ import xarray as xr
 import dask.array as da
 import dask
 import numpy as np
+
+from finch import data
 # import zebra
 from .. import constants as const
 from .. import util
-from .. import data
 from . import input
 
 def thetav_xr(
@@ -21,21 +22,14 @@ def thetav_xr(
 
     return (const.P0 / p) ** pc_rdocp * t * (1.+(pc_rvd_o*qv / (1.-qv)))
 
-def brn_xr(p: xr.DataArray, 
-    t: xr.DataArray,
-    qv: xr.DataArray,
-    u: xr.DataArray,
-    v: xr.DataArray,
-    hhl: xr.DataArray,
-    hsurf: xr.DataArray
-    ) -> xr.DataArray:
-    
-    nlevels = len(p.coords["generalVerticalLayer"])
+def brn_xr(dataset: xr.Dataset) -> xr.DataArray:
+    nlevels = dataset.sizes["generalVerticalLayer"]
 
-    thetav = thetav_xr(p,t,qv)
+    thetav = thetav_xr(dataset.drop_vars(input.brn_only_array_names))
     thetav_sum = thetav.isel(generalVerticalLayer=slice(None, None, -1)).cumsum(dim='generalVerticalLayer')
-
     nlevels_xr =xr.DataArray(data=np.arange(nlevels,0,-1), dims=["generalVerticalLayer"])
+
+    u, v, hhl, hsurf = [dataset[n] for n in input.brn_only_array_names]
 
     brn_1 = const.PC_G * (hhl-hsurf)*(thetav - thetav.isel(generalVerticalLayer=-1)) * nlevels_xr
     brn_2 = (thetav_sum)*(u*u + v*v)
@@ -43,7 +37,11 @@ def brn_xr(p: xr.DataArray,
     brn = brn_1 / brn_2
     return brn
 
-def block_thetav_np(p: np.ndarray, t: np.ndarray, qv: np.ndarray) -> np.ndarray:
+def block_thetav_np(
+    p: np.ndarray,
+    t: np.ndarray,
+    qv: np.ndarray
+) -> np.ndarray:
     """
     thetav implementation on numpy chunks
     """
@@ -53,7 +51,15 @@ def block_thetav_np(p: np.ndarray, t: np.ndarray, qv: np.ndarray) -> np.ndarray:
 
     return (const.P0 / p) ** pc_rdocp * t * (1.+(pc_rvd_o*qv / (1.-qv)))
 
-def block_brn_np(p: np.ndarray, t, qv, u, v, hhl, hsurf) -> np.ndarray:
+def block_brn_np(
+    p: np.ndarray, 
+    t: np.ndarray, 
+    qv: np.ndarray, 
+    u: np.ndarray, 
+    v: np.ndarray, 
+    hhl: np.ndarray, 
+    hsurf: np.ndarray
+) -> np.ndarray:
     """
     BRN implementation on numpy chunks.
     Required dimension order: xyz
@@ -71,35 +77,20 @@ def block_brn_np(p: np.ndarray, t, qv, u, v, hhl, hsurf) -> np.ndarray:
     brn = brn_1 / brn_2
     return brn
 
-def thetav_blocked_np(
-    p: xr.DataArray,
-    t: xr.DataArray,
-    qv: xr.DataArray
-    ) -> xr.DataArray:
+def thetav_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
     """
     thetav implementation using `custom_map_blocks` and numpy arrays
     """
-    return util.custom_map_blocks(block_thetav_np, p, t, qv, name="thetav")
+    return util.custom_map_blocks(block_thetav_np, dataset, name="thetav")
 
-def brn_blocked_np(p: xr.DataArray, 
-    t: xr.DataArray,
-    qv: xr.DataArray,
-    u: xr.DataArray,
-    v: xr.DataArray,
-    hhl: xr.DataArray,
-    hsurf: xr.DataArray, 
-    ) -> xr.DataArray:
+def brn_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
     """
     brn implementation using `custom_map_blocks` and numpy arrays
     """
-    arrays = input.reorder_dims([p, t, qv, u, v, hhl, hsurf], "xyz") # ensure correct dimension order
-    return util.custom_map_blocks(block_brn_np, *arrays, name="brn")
+    dataset = dataset.transpose(data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
+    return util.custom_map_blocks(block_brn_np, dataset, name="brn")
 
-def _thetav_blocked_cpp(
-    p: xr.DataArray,
-    t: xr.DataArray,
-    qv: xr.DataArray
-    ) -> xr.DataArray:
+def _thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     """
     thetav implementation using `custom_map_blocks` and numpy arrays with the zebra backend
     """
@@ -107,21 +98,15 @@ def _thetav_blocked_cpp(
         out = np.zeros_like(p)
         zebra.thetav(p, t, qv, out)
         return out
-    return util.custom_map_blocks(wrapper, p, t, qv, name="thetav")
+    return util.custom_map_blocks(wrapper, dataset, name="thetav")
 
-def _brn_blocked_cpp(p: xr.DataArray, 
-    t: xr.DataArray,
-    qv: xr.DataArray,
-    u: xr.DataArray,
-    v: xr.DataArray,
-    hhl: xr.DataArray,
-    hsurf: xr.DataArray
-    ) -> xr.DataArray:
+def _brn_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     """
     brn implementation using `custom_map_blocks` and numpy arrays with the zebra backend
     """
+    dataset = dataset.transpose(data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
     def wrapper(*arrays):
         out = np.zeros_like(arrays[0])
         zebra.brn(*arrays, out)
         return out
-    return util.custom_map_blocks(wrapper, p, t, qv, u, v, hhl, hsurf, name="brn")
+    return util.custom_map_blocks(wrapper, dataset, name="brn")

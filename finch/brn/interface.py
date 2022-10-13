@@ -9,16 +9,10 @@ brn = impl.brn_blocked_np
 thetav = impl.thetav_blocked_np
 """The default thetav implementation"""
 
-THETAV_SIG = Callable[
-    [xr.DataArray, xr.DataArray, xr.DataArray],
-    xr.DataArray
-]
+THETAV_SIG = Callable[[xr.Dataset],xr.DataArray]
 """Function signature for implementations of thetav."""
 
-BRN_SIG = Callable[
-    [xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray],
-    xr.DataArray
-]
+BRN_SIG = Callable[[xr.Dataset],xr.DataArray]
 """Function signature for implementations of brn."""
 
 THETAV_REGEX = "thetav*"
