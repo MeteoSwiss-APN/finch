@@ -196,9 +196,17 @@ def funcs_from_args(f: Callable, args: list[dict]) -> list[Callable]:
     """
     return [functools.partial(f, **a) for a in args]
 
-def get_pbar(pbar: bool | tqdm.tqdm, iterations: int) -> tqdm.tqdm:
+PbarArg = bool | tqdm.tqdm
+"""
+Argument type for handling progress bars.
+Functions accepting the progress bar argument support outputting their progress via a tqdm progress bar.
+The argument can then either be a boolean, indicating that a new progress bar should be created, or no progress bar should be used at all,
+or it can be a preexisting progress bar which will be updated.
+"""
+
+def get_pbar(pbar: PbarArg, iterations: int) -> tqdm.tqdm:
     """
-    Convenience function for pbar input arguments.
+    Convenience function for progress bar arguments.
     This makes sure that a `tqdm` progress bar is returned if one is requested, or `None`.
     """
     if isinstance(pbar, bool):

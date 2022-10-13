@@ -4,6 +4,9 @@ from typing import Any, TypeVar
 import numpy as np
 import xarray as xr
 from . import Input
+from .util import PbarArg
+from . import util
+import tqdm
 
 def measure_runtimes(
     funcs: list[Callable[..., Any]] | Callable[..., Any], 
@@ -12,6 +15,7 @@ def measure_runtimes(
     cache_inputs: bool = True,
     reduction: Callable[[list[float]], float] = np.mean,
     warmup: bool = False,
+    pbar: PbarArg = True,
     **kwargs
 ) -> list[list[float]] | list[float] | float:
     """
@@ -30,6 +34,7 @@ def measure_runtimes(
     - cache_inputs: bool, default: `True`. Whether to reuse the input for a function for its iterations.
     - reduction: Callable[[list[float]], float], default: `np.mean`. The function to be used to combine the results of the iterations.
     - warmup: bool, default: `False`. If `True`, runs the function once before measuring.
+    - pbar: PbarArg, default: `True`. Progressbar argument
 
     Returns
     ---
@@ -55,6 +60,8 @@ def measure_runtimes(
     if warmup:
         iterations += 1
 
+    pbar = util.get_pbar(pbar, len(funcs) * len(inputs))
+
     out = []
     for f in funcs:
         f_out = []
@@ -72,6 +79,7 @@ def measure_runtimes(
             if warmup:
                 cur_times = cur_times[1:]
             f_out.append(reduction(cur_times))
+            pbar.update()
     if singleton_input:
         out = [o[0] for o in out]
     if singleton_funcs:

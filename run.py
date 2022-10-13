@@ -23,6 +23,8 @@ iterations = 1
 """The number of iterations when measuring runtime"""
 warmup = True
 """Whether to perform a warmup before measuring the runtimes"""
+pbar = True
+"""Whether to print a progress bar"""
 
 # BRN experiment settings
 ######################################################
@@ -78,7 +80,8 @@ client = finch.start_scheduler(debug=debug_scheduler)
 
 config = {
     "iterations": iterations,
-    "warmup": warmup
+    "warmup": warmup,
+    "pbar": pbar
 }
 
 brn_input = finch.brn.brn_input
