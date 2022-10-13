@@ -19,9 +19,9 @@ debug = cmd_args.debug
 """Debug mode"""
 debug_scheduler = debug
 """Whether to launch a debugable scheduler or the normal distributed one."""
-iterations = 1
+iterations = 10
 """The number of iterations when measuring runtime"""
-warmup = False
+warmup = True
 """Whether to perform a warmup before measuring the runtimes"""
 pbar = True
 """Whether to print a progress bar"""
@@ -57,8 +57,6 @@ brn_imp_to_inspect = finch.brn.impl.brn_blocked_np
 """The brn implementation to inspect during the single run experiment"""
 brn_single_versions = finch.brn.brn_input.versions
 """The file type for the input data for the brn single run experiment"""
-brn_single_reps = 1
-"""The number of repetitions to do the brn single run experiment"""
 
 # multi run
 

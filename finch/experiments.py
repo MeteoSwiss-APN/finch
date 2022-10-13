@@ -110,6 +110,11 @@ def measure_operator_runtimes(
         ]
     else:
         preps = lambda : input.get_version(versions)
+    # make sure to run compute
+    if isinstance(funcs, Callable):
+        funcs = lambda x, funcs=funcs : funcs(x).compute()
+    else:
+        funcs = [lambda x, f=f : f(x).compute() for f in funcs]
     return measure_runtimes(funcs, preps, **kwargs)
 
 def measure_loading_times(
