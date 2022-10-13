@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import enum
 from glob import glob
 import pathlib
@@ -100,11 +101,13 @@ def load_array_grib(
             del out[c]
     return out
 
-def load_grib(grib_file, short_names: List[str], **kwargs) -> List[xr.DataArray]:
+def load_grib(grib_file, short_names: List[str], **kwargs) -> xr.Dataset:
     """
-    Convenience function for loading multiple `DataArray`s from a grib file with `load_array_grib`.
+    Convenience function for loading multiple `DataArray`s from a grib file with `load_array_grib` and returning them as a dataset.
     """
-    return [load_array_grib(grib_file, shortName=sn, **kwargs) for sn in short_names]
+    arrays = [load_array_grib(grib_file, shortName=sn, **kwargs) for sn in short_names]
+    dataset = xr.Dataset({n:a for n, a in zip(short_names, arrays)})
+    return dataset
 
 def load_netcdf(filename, chunks: Dict) -> List[xr.DataArray]:
     """
@@ -197,27 +200,20 @@ class Input():
     """The name of this input"""
     _path: pathlib.Path
     """The path where this input is stored"""
-    source: Callable[[], list[xr.DataArray]]
+    source: Callable[[], xr.Dataset]
     """A function from which to get the input data"""
     dim_index: dict[str, str]
     """An index mapping dimension short names to dimension names"""
     array_names: list[str]
     """The names of the data arrays"""
 
+    @dataclass
     class Version():
         """A version of the input"""
         format: Format
         dim_order: str
         chunks: dict[str, int]
         name: str
-
-        def impose(self, arrays: list[xr.DataArray], dim_index: dict[str, str]) -> list[xr.DataArray]:
-            """
-            Returns a new version of the given input arrays according to the attributes of this object.
-            """
-            out = []
-            for a in arrays:
-                b = a.transpose(*translate_order(self.dim_order, dim_index))
 
     source_version: Version
     """The version of the source data"""
@@ -227,7 +223,7 @@ class Input():
     def __init__(self, 
         store_path: pathlib.Path, 
         name: str, 
-        source: Callable[[], list[xr.DataArray]],
+        source: Callable[[], xr.Dataset],
         source_version: Version,
         dim_index: dict[str, str],
         array_names: list[str]
@@ -249,7 +245,7 @@ class Input():
             with open(v) as f:
                 self.versions.append(yaml.load(f))
 
-    def add_version(self, version: Version, arrays: list[xr.DataArray] | None = None) -> Version:
+    def add_version(self, version: Version, dataset: xr.Dataset | None = None) -> Version:
         """
         Adds a new version of this input.
         If a version with the same properties already exists, nothing happens.
@@ -258,7 +254,7 @@ class Input():
         Arguments:
         ---
         - version: The version properties of the new version
-        - arrays: optional. The data of the new version. If `None`, the data will be generated from the source version.
+        - dataset: optional. The data of the new version. If `None`, the data will be generated from the source version.
 
         Returns:
         ---
@@ -272,6 +268,10 @@ class Input():
             return
         version.name = vname
 
+        # cannot store grib
+        if version.format == Format.GRIB:
+            raise NotImplementedError
+
         # handle name
         names = [v.name for v in self.versions]
         if vname is None:
@@ -279,9 +279,9 @@ class Input():
         if vname in names:
             raise ValueError("A version with the given name exists already")
 
-        if arrays is None:
+        if dataset is None:
             # create new version to be added
-            arrays, version = self.get_version(version, create_if_not_exists=True, add_if_not_exists=False)
+            dataset, version = self.get_version(version, create_if_not_exists=True, add_if_not_exists=False)
 
         # store yaml
         with open(self._path.joinpath(version.name + ".yml"), mode="w") as f:
@@ -290,11 +290,11 @@ class Input():
         # store data
         filename = str(self._path.joinpath(version.name))
         if version.format == Format.NETCDF:
-            store_netcdf(filename + ".nc", arrays)
+            dataset.to_netcdf(filename + ".nc", mode="w")
         elif version.format == Format.ZARR:
-            store_zarr(filename, arrays)
+            dataset.to_zarr(filename, mode="w")
         else:
-            raise NotImplementedError
+            raise ValueError # grib case was already caught, so we can raise a ValueError here
 
         # register
         self.versions.append(version)
@@ -306,7 +306,7 @@ class Input():
         """
         return any(util.has_attributes(version, v) for v in self.versions)
 
-    def get_version(self, version: Version, create_if_not_exists: bool = True, add_if_not_exists: bool = False) -> Tuple[list[xr.DataArray], Version]:
+    def get_version(self, version: Version, create_if_not_exists: bool = True, add_if_not_exists: bool = False) -> Tuple[xr.Dataset, Version]:
         """
         Returns a version with the given properties.
 
@@ -326,29 +326,26 @@ class Input():
         if target is None:
             if create_if_not_exists or util.has_attributes(version, self.source_version):
                 # load source
-                arrays = self.source()
+                dataset = self.source()
             
                 # impose version properties
                 target = util.fill_none_properties(version, self.source_version)
-                arrays = [
-                    a.transpose(translate_order(target.dim_order, self.dim_index)).
-                        chunk(target.chunks)
-                    for a in arrays
-                ]
+                dataset = dataset.transpose(translate_order(target.dim_order, self.dim_index))
+                dataset = dataset.chunk(target.chunks)
 
                 # add version (if not grib)
-                if add_if_not_exists and target.format != Format.GRIB:
-                    self.add_version(target, arrays)
+                if add_if_not_exists:
+                    self.add_version(target, dataset)
             else:
                 return None
         else:
             filename = str(self._path.joinpath(target.name))
             if target.format == Format.NETCDF:
-                arrays = load_netcdf(filename+".nc", target.chunks)
+                dataset = xr.open_dataset(filename+".nc", chunks=target.chunks)
             elif target.format == Format.ZARR:
-                arrays = load_zarr(filename, translate_order(target.dim_order, self.dim_index), names=self.array_names)
+                dataset = xr.open_dataset(filename, chunks=target.chunks, engine="zarr")
             elif target.format == Format.GRIB:
-                arrays = load_grib(filename, self.array_names)
+                dataset = load_grib(filename, self.array_names)
 
-        return arrays, target
+        return dataset, target
         
