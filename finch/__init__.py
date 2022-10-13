@@ -9,5 +9,6 @@ from . import evaluation as eval
 from . import data
 from . import constants as const
 from . import util
+from .data import Input
 
 from . import brn

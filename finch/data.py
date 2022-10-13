@@ -210,10 +210,10 @@ class Input():
     @dataclass
     class Version():
         """A version of the input"""
-        format: Format
-        dim_order: str
-        chunks: dict[str, int]
-        name: str
+        format: Format = None
+        dim_order: str = None
+        chunks: dict[str, int] = None
+        name: str = None
 
     source_version: Version
     """The version of the source data"""

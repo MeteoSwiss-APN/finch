@@ -1,6 +1,8 @@
 from time import time
 from typing import Any, Callable, TypeVar
 import numpy as np
+import xarray as xr
+from . import Input
 
 def measure_runtimes(
     funcs: list[Callable[..., Any]], 
@@ -10,11 +12,10 @@ def measure_runtimes(
     reduction: Callable[[list[float]], float] = np.mean,
     warmup: bool = False,
     **kwargs
-) -> list[float]:
+) -> list[list[float]] | list[float]:
     """
-    Measures the runtimes of multiple functions.
-
-    Arguments:
+    Measures the runtimes of multiple functions, each accepting the same inputs.
+    Parameters
     ---
     - funcs: The functions to be benchmarked
     - inputs: The inputs to the functions to be benchmarked. These can be passed in different forms:
@@ -28,15 +29,19 @@ def measure_runtimes(
     - cache_inputs: bool, default: `True`. Whether to reuse the input for a function for its iterations.
     - reduction: Callable[[list[float]], float], default: `np.mean`. The function to be used to combine the results of the iterations.
     - warmup: bool, default: `False`. If `True`, runs the function once before measuring.
+
+    Returns
+    ---
+    The runtimes as a list of lists, or a flat list, if a singleton input was passed (`None` or `Callable`)
     """
-    # special case
-    if len(funcs) == 0:
-        return []
     # prepare inputs to all have the same form
+    singleton_input = False
     if inputs is None:
-        inputs = [[]] * len(funcs)
+        inputs = [[]]
+        singleton_input = True
     if isinstance(inputs, Callable):
-        inputs = [inputs] * len(funcs)
+        inputs = [inputs]
+        singleton_input = True
     if isinstance(inputs[0], list):
         inputs = [lambda : i for i in inputs]
 
@@ -44,26 +49,62 @@ def measure_runtimes(
         iterations += 1
 
     out = []
-    for f, prep in zip(funcs, inputs):
-        cur_times = []
-        if cache_inputs:
-            args = prep()
-            prep = lambda : args
-        for _ in range(iterations):
-            args = prep()
-            start = time()
-            f(*args)
-            end = time()
-            cur_times.append(end - start)
-        if warmup:
-            cur_times = cur_times[1:]
-        out.append(reduction(cur_times))
-    return out
+    for f in funcs:
+        f_out = []
+        for prep in inputs:
+            cur_times = []
+            if cache_inputs:
+                args = prep()
+                prep = lambda : args
+            for _ in range(iterations):
+                args = prep()
+                start = time()
+                f(*args)
+                end = time()
+                cur_times.append(end - start)
+            if warmup:
+                cur_times = cur_times[1:]
+            f_out.append(reduction(cur_times))
+    if singleton_input:
+        return [o[0] for o in out]
+    else:
+        return out
 
-def measure_runtime(f: Callable[..., Any], input_prep: Callable[[], list] | list | None = None, **kwargs) -> float:
+def measure_operator_runtimes(
+    funcs: list[Callable[[xr.Dataset], Any]], 
+    input: Input,
+    versions: list[Input.Version],
+    **kwargs
+) -> list[list[float]]:
     """
-    Convenience function to run `measure_runtimes` on just a single input
+    Measures the runtimes of different implementations of an operator against different input versions.
+
+    Parameters
+    ---
+    - funcs: The operator implementations
+    - input: The input object for the operator
+    - versions: The different input versions to be benchmarked
+    - kwargs: Arguments for `measure_runtimes`
     """
-    if input_prep is None:
-        input_prep = []
-    return measure_runtimes([f], [input_prep], **kwargs)[0]
+    preps = [
+        lambda : input.get_version(v)
+        for v in versions
+    ]
+    return measure_runtimes(funcs, preps, **kwargs)
+
+def measure_loading_times(
+    input: Input,
+    versions: list[Input.Version],
+    **kwargs
+) -> list[float]:
+    """
+    Measures the loading times of different versions of an input
+
+    Parameters
+    ---
+    - input: The input to be loaded
+    - versions: The different versions to be measured
+    - kwargs: Arguments for `measure_runtimes`
+    """
+    funcs = [lambda : input.get_version(v) for v in versions]
+    return measure_runtimes(funcs, None, **kwargs)
