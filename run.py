@@ -1,4 +1,3 @@
-import functools
 import sys
 import finch
 import argparse
@@ -20,7 +19,7 @@ debug = cmd_args.debug
 """Debug mode"""
 debug_scheduler = debug
 """Whether to launch a debugable scheduler or the normal distributed one."""
-iterations = 10
+iterations = 1
 """The number of iterations when measuring runtime"""
 warmup = True
 """Whether to perform a warmup before measuring the runtimes"""
@@ -30,6 +29,17 @@ warmup = True
 
 run_brn = True
 """Whether to run brn experiments"""
+
+# input management
+
+brn_modify_input_versions = True
+"""Whether to alter the brn input versions"""
+brn_add_input_version = finch.Input.Version(
+    format=finch.data.Format.NETCDF,
+    dim_order="xyz",
+    chunks={"x": 30}
+)
+"""New brn input version to add"""
 
 # input loading
 
@@ -42,7 +52,7 @@ brn_single_run = True
 """Whether to perform a single run experiment with brn"""
 brn_imp_to_inspect = finch.brn.impl.brn_blocked_np
 """The brn implementation to inspect during the single run experiment"""
-brn_single_format = finch.data.Format.GRIB
+brn_single_versions = finch.brn.brn_input.versions
 """The file type for the input data for the brn single run experiment"""
 brn_single_reps = 1
 """The number of repetitions to do the brn single run experiment"""
@@ -51,7 +61,7 @@ brn_single_reps = 1
 
 brn_multi_run = True
 """Wether to perform a run experiment with every available implementation"""
-brn_multi_format = finch.data.Format.ZARR
+brn_multi_versions = finch.brn.brn_input.versions
 """The input format for the brn multi run experiment"""
 brn_multi_dim_order = "xyz"
 """The input dimension order for the brn multi run experiment"""
@@ -71,27 +81,26 @@ config = {
     "warmup": warmup
 }
 
+brn_input = finch.brn.brn_input
+
 if run_brn:
+
+    if brn_modify_input_versions:
+        if brn_add_input_version:
+            brn_input.add_version(brn_add_input_version)
+
     if brn_load_experiment:
         print("Measuring brn input load times")
-        load_funcs = finch.util.funcs_from_args(finch.brn.load_input, [{"format" : f} for f in finch.data.Format])
-        runtimes = finch.measure_runtimes(load_funcs, **config)
-        for f, r in zip(finch.data.Format, runtimes):
-            print(f"{f.value}: {r}")
+        times = finch.measure_loading_times(brn_input, brn_input.versions, **config)
+        finch.print_version_results(times, brn_input.versions)
+
     if brn_single_run:
         print(f"Measuring runtime of function {brn_imp_to_inspect.__name__}")
-        arrays = finch.brn.load_input(format=brn_single_format)
-        runtime = finch.measure_runtime(
-            lambda *x: brn_imp_to_inspect(*x).compute(),
-            arrays,
-            **config
-        )
-        print(runtime)
+        times = finch.measure_operator_runtimes(brn_imp_to_inspect, brn_input, brn_single_versions, **config)
+        finch.print_version_results(times, brn_single_versions)
     
     if brn_multi_run:
         print(f"Measuring runtimes of brn implementations")
         imps = finch.brn.list_brn_implementations()
-        input = functools.partial(finch.brn.load_input, format=brn_multi_format, dim_order=brn_multi_dim_order)
-        runtimes = finch.measure_runtimes(imps, input, **config)
-        for f, r, in zip(imps, runtimes):
-            print(f"{f.__name__}: {r}")
+        times = finch.measure_operator_runtimes(imps, brn_input, brn_multi_versions, **config)
+        finch.print_imp_results(times, imps, brn_multi_versions)
