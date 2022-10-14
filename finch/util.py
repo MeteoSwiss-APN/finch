@@ -272,3 +272,11 @@ def has_attributes(x, y) -> bool:
         xd[v] is None or (v in yd and xd[v] == yd[v])
         for v in xd
     )
+
+def get_class_attributes(cls: type) -> list[str]:
+    """
+    Returns the attributes of a class.
+    """
+    dummy = dir(type("dummy", (object,), {})) # create a new dummy class and extract its attributes
+    attr = inspect.getmembers(cls, lambda x: not inspect.isroutine(x))
+    return [a for a in attr if a not in dummy]
