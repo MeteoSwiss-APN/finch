@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from time import time
 from collections.abc import Callable
 from typing import Any, TypeVar
@@ -7,10 +8,36 @@ from . import Input
 from .util import PbarArg
 from . import util
 from . import config
+from . import env
 import tqdm
 
+@dataclass
+class RunConfig():
+    impl: Callable = None
+    jobs: int = 1
+
+    def setup(self):
+        env.cluster.scale(jobs=self.jobs)
+
+def list_run_configs(**kwargs) -> list[RunConfig]:
+    """
+    Returns a list of run configurations, which is the euclidean product between the given lists of individual configurations.
+    """
+    configs: list[dict[str, Any]] = []
+    for arg in kwargs:
+        vals = kwargs[arg]
+        if not isinstance(vals, list):
+            vals = [vals]
+        updates = [{arg : v} for v in vals]
+        if len(config) == 0:
+            config = updates
+        else:
+            config = [c | u for c in configs for u in updates]
+    return [RunConfig(*c) for c in configs]
+
+
 def measure_runtimes(
-    funcs: list[Callable[..., Any]] | Callable[..., Any], 
+    run_config: list[RunConfig] | RunConfig, 
     inputs: list[Callable[[], list]] | Callable[[], list] | list[list] | None = None, 
     iterations: int = 1,
     cache_inputs: bool = True,
@@ -42,10 +69,10 @@ def measure_runtimes(
     The runtimes as a list of lists, or a flat list, or a float, 
     depending on whether a single function or a single version (None or Callable) were passed.
     """
-    # prepare funcs
-    singleton_funcs = isinstance(funcs, Callable)
-    if singleton_funcs:
-        funcs = [funcs]
+    # prepare run config
+    singleton_rc = isinstance(run_config, Callable)
+    if singleton_rc:
+        run_config = [run_config]
 
     # prepare inputs to all have the same form
     singleton_input = False
@@ -61,10 +88,11 @@ def measure_runtimes(
     if warmup:
         iterations += 1
 
-    pbar = util.get_pbar(pbar, len(funcs) * len(inputs) * iterations)
+    pbar = util.get_pbar(pbar, len(run_config) * len(inputs) * iterations)
 
     out = []
-    for f in funcs:
+    for c in run_config:
+        c.setup()
         f_out = []
         for prep in inputs:
             cur_times = []
@@ -74,7 +102,7 @@ def measure_runtimes(
             for _ in range(iterations):
                 args = prep()
                 start = time()
-                f(*args)
+                c.impl(*args)
                 end = time()
                 cur_times.append(end - start)
                 pbar.update()
@@ -84,12 +112,12 @@ def measure_runtimes(
         out.append(f_out)
     if singleton_input:
         out = [o[0] for o in out]
-    if singleton_funcs:
+    if singleton_rc:
         out = out[0]
     return out
 
 def measure_operator_runtimes(
-    funcs: list[Callable[[xr.Dataset], xr.DataArray]] | Callable[[xr.Dataset], xr.DataArray], 
+    run_config: list[RunConfig] | RunConfig, 
     input: Input,
     versions: list[Input.Version] | Input.Version,
     **kwargs
@@ -99,7 +127,7 @@ def measure_operator_runtimes(
 
     Parameters
     ---
-    - funcs: The operator implementations
+    - run_config: The runtime configurations
     - input: The input object for the operator
     - versions: The different input versions to be benchmarked
     - kwargs: Arguments for `measure_runtimes`
@@ -113,11 +141,12 @@ def measure_operator_runtimes(
         preps = lambda : input.get_version(versions)
     # make sure to run compute by storing to zarr
     compute = lambda a : a.to_dataset().to_zarr(store=config["data"]["zarr_dir"], mode="w")
-    if isinstance(funcs, Callable):
-        funcs = lambda x, funcs=funcs : compute(funcs(x))
+    if isinstance(run_config, RunConfig):
+        run_config.impl = lambda x, funcs=run_config.impl : compute(funcs(x))
     else:
-        funcs = [lambda x, f=f : compute(f(x)) for f in funcs]
-    return measure_runtimes(funcs, preps, **kwargs)
+        for rc in run_config:
+            rc.impl = lambda x, funcs=rc.impl : compute(funcs(x))
+    return measure_runtimes(run_config, preps, **kwargs)
 
 def measure_loading_times(
     input: Input,
@@ -134,4 +163,5 @@ def measure_loading_times(
     - kwargs: Arguments for `measure_runtimes`
     """
     funcs = [lambda v=v : input.get_version(v) for v in versions]
-    return measure_runtimes(funcs, None, **kwargs)
+    run_config = list_run_configs(impl=funcs)
+    return measure_runtimes(run_config, None, **kwargs)
