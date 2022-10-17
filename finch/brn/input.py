@@ -24,10 +24,8 @@ def reorder_dims(input, dims):
         dims = translate_order(dims)
     return data.reorder_dims(input, dims)
 
-def load_input_grib(chunk_size=None, horizontal_chunk_size=None) -> xr.Dataset:
-    chunks = {"generalVerticalLayer": chunk_size} if chunk_size else chunk_size
-    if horizontal_chunk_size:
-        chunks.update({"x": horizontal_chunk_size})
+def load_input_grib(version: data.Input.Version) -> xr.Dataset:
+    chunks = dict(version.chunks)
 
     # load data from first grib file
     grib_file = "lfff00000000"
@@ -45,9 +43,8 @@ def load_input_grib(chunk_size=None, horizontal_chunk_size=None) -> xr.Dataset:
     # load data from second grib file
     grib_file = "lfff00000000c"
     args["index_path"] = os.path.join(config["brn"]["grib_index_dir"], grib_file + ".idx")
-    if chunk_size:
-        chunks["generalVertical"] = chunks.pop("generalVerticalLayer")
-        args["chunks"] = chunks
+    chunks["generalVertical"] = chunks.pop("generalVerticalLayer")
+    args["chunks"] = chunks
     args["key_filters"]["typeOfLevel"] = "generalVertical"
     hhl = data.load_array_grib(grib_file, "HHL", **args)
     del args["key_filters"]["typeOfLevel"]
@@ -55,7 +52,9 @@ def load_input_grib(chunk_size=None, horizontal_chunk_size=None) -> xr.Dataset:
     hhl = hhl.rename({"generalVertical": "generalVerticalLayer"})
     hhl = hhl[:-1, :, :] # TODO shouldn't be necessary
 
-    return xr.merge([out1, hhl, hsurf])
+    out = xr.merge([out1, hhl, hsurf])
+    out = out.transpose(translate_order(version.dim_order))
+    return out
 
 brn_input = data.Input(
     config["global"]["data_store"],

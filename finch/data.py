@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import enum
 from glob import glob
 import pathlib
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Optional, Tuple
 import xarray as xr
 import dask.array as da
 import numpy as np
@@ -199,8 +199,6 @@ class Input():
     """The name of this input"""
     _path: pathlib.Path
     """The path where this input is stored"""
-    source: Callable[[], xr.Dataset]
-    """A function from which to get the input data"""
     dim_index: dict[str, str]
     """An index mapping dimension short names to dimension names"""
 
@@ -231,6 +229,8 @@ class Input():
             # compare chunks
             return all(self.chunks[d] <= other.chunks[d] for d in self.chunks)
 
+    source: Callable[[Optional[Version]], xr.Dataset]
+    """A function from which to get the input data"""
     source_version: Version
     """The version of the source data"""
     versions: list[Version]
@@ -344,12 +344,15 @@ class Input():
                 target = v
 
         if target is None:
-            if create_if_not_exists or util.has_attributes(version, self.source_version):
+            if create_if_not_exists or \
+                (not weak_compare and util.has_attributes(version, self.source_version)) or \
+                (weak_compare and self.source_version < version):
+                # fill none properties of version
+                target = util.fill_none_properties(version, self.source_version)
                 # load source
-                dataset = self.source()
+                dataset = self.source(target)
             
                 # impose version properties
-                target = util.fill_none_properties(version, self.source_version)
                 dataset = dataset.transpose(*translate_order(target.dim_order, self.dim_index))
                 dataset = dataset.chunk(target.chunks)
 
