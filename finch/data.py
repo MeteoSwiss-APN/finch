@@ -229,6 +229,10 @@ class Input():
             # compare chunks
             return self.format != Format.ZARR or all(self.chunks[d] <= other.chunks[d] for d in self.chunks)
 
+        @classmethod
+        def get_class_attr(cls) -> list[str]:
+            return ["format", "dim_order", "chunks", "coords"]
+
     source: Callable[[Optional[Version]], xr.Dataset]
     """A function from which to get the input data"""
     source_version: Version
@@ -346,7 +350,7 @@ class Input():
         if target is None:
             if create_if_not_exists or \
                 (not weak_compare and util.has_attributes(version, self.source_version)) or \
-                (weak_compare and self.source_version < version):
+                (weak_compare and self.source_version <= version):
                 # fill none properties of version
                 target = util.fill_none_properties(version, self.source_version)
                 # load source (for targeted version)

@@ -5,6 +5,7 @@ from collections.abc import Callable
 from . import Input
 from . import util
 from . import config
+from .experiments import RunConfig
 import xarray as xr
 import numpy as np
 import numbers
@@ -18,43 +19,66 @@ def print_version_results(results: list[Any], versions: list[Input.Version]):
     for r, v in zip(results, versions):
         print(f"{v}\n    {r}")
 
-def print_imp_results(results: list[list[Any]], imps: list[Callable], versions: list[Input.Version]):
+def print_results(results: list[list[Any]], run_configs: list[RunConfig], versions: list[Input.Version]):
     """
-    Prints the results of an experiment for different implementations and input versions.
+    Prints the results of an experiment for different run configurations and input versions.
     """
-    for imp, r in zip(imps, results):
-        print(imp.__name__)
+    for rc, r in zip(run_configs, results):
+        print(rc)
         print()
         print_version_results(r, versions)
         print()
 
-def create_result_array(results: list[list[float]], imps: list[Callable], versions: list[Input.Version], experiment_name: str = None) -> xr.DataArray:
+def create_result_array(results: list[list[float]], run_configs: list[RunConfig], versions: list[Input.Version], experiment_name: str = None) -> xr.DataArray:
     """
     Constructs a data array from the results of an experiment.
-    The dimensions or given by the attributes of the Version class plus one dimension for the different implementations.
-    The coordinates are labels for the version attributes / implementations.
-    This result array is can then be used as an input for different evaluation functions.
-    The result array will contain NaN for every combination of version attributes, which is not listed in `versions`.
+    The dimensions are given by the attributes of the Version and RunConfig classes.
+    The coordinates are labels for the version and run config attributes.
+    This result array can then be used as an input for different evaluation functions.
+    The result array will contain NaN for every combination of version and run config attributes, which is not listed in `versions`.
     """
     if experiment_name is None:
         experiment_name = util.random_entity_name()
-    version_attr = util.get_class_attributes(Input.Version)
-    # versions to coordinates
+    def get_attrs(entities, cls) -> list[dict]:
+        # construct flattened attribute dictionary
+        attrs: list[dict] = [
+            util.flatten_dict({
+                a: e.__dict__[a] 
+                for a in cls.get_class_attr()
+            }) 
+            for e in entities
+        ]
+        # transform non-numeric attributes to strings
+        out = []
+        for attr_d in attrs:
+            out_d = dict()
+            for k, v in attr_d.items():
+                if isinstance(v, Callable): # special case: for better readability we use the function name
+                    v = v.__name__
+                elif not isinstance(v, numbers.Number):
+                    v = str(v)
+                out_d[k] = v
+            out.append(out_d)
+        return out
+    # get attributes from run configs and versions
+
+    version_attrs = get_attrs(versions, Input.Version)
+    va_keys = list(version_attrs[0].keys())
+    rc_attrs = get_attrs(run_configs, RunConfig)
+    rca_keys = list(rc_attrs[0].keys())
+    # construct coordinates
     coords = {
-        a : list(set(
-            v.__dict__[a]
-            for v in versions
-        ))
-        for a in version_attr
+        a : list(set(va[a] for va in version_attrs))
+        for a in va_keys
     }
-    # transform non-numeric version attributes to strings and sort numeric attributes
-    for a in version_attr:
-        if not isinstance(coords[a][0], numbers.Number):
-            coords[a] = [str(c) for c in coords[a]]
-        else:
+    coords.update({
+        a : list(set(ra[a] for ra in rc_attrs))
+        for a in rca_keys
+    })
+    # sort numeric coordinates
+    for a in va_keys + rca_keys:
+        if isinstance(coords[a][0], numbers.Number):
             coords[a] = sorted(coords[a])
-    # add implementations to coordinates
-    coords["imp"] = [i.__name__ for i in imps]
 
     # initialize data
     dim_sizes = [len(coords[a]) for a in coords]
@@ -62,9 +86,9 @@ def create_result_array(results: list[list[float]], imps: list[Callable], versio
 
     # create array
     array = xr.DataArray(data, coords, name=experiment_name)
-    for result, i in zip(results, imps):
-        for r, v in zip(result, versions):
-            array.loc[{a : v.__dict__[a] for a in version_attr} | {"imp":i}] = r
+    for result, rca in zip(results, rc_attrs):
+        for r, va in zip(result, version_attrs):
+            array.loc[va | rca] = r
     return array
 
 def create_plots(results: xr.DataArray, reduction: Callable = np.nanmean):

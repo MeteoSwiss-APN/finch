@@ -17,13 +17,13 @@ cmd_args = parser.parse_args(sys.argv[1:])
 
 debug = cmd_args.debug
 """Debug mode"""
-debug_scheduler = False
+debug_scheduler = debug
 """Whether to launch a debugable scheduler or the normal distributed one."""
-iterations = 2
+iterations = 1 if debug else 10
 """The number of iterations when measuring runtime"""
-warmup = True
+warmup = not debug
 """Whether to perform a warmup before measuring the runtimes"""
-cache_input = False
+cache_input = True
 """Whether to cache the input between multiple iterations"""
 pbar = True
 """Whether to print a progress bar"""
@@ -53,7 +53,7 @@ brn_load_experiment = False
 
 # single run
 
-brn_single_run = True
+brn_single_run = False
 """Whether to perform a single run experiment with brn"""
 brn_imp_to_inspect = finch.brn.impl.brn_blocked_np
 """The brn implementation to inspect during the single run experiment"""
@@ -66,13 +66,16 @@ brn_single_jobs = 1
 
 brn_multi_run = True
 """Wether to perform a run experiment with every available implementation"""
-brn_multi_versions = finch.brn.brn_input.versions
+brn_multi_versions = finch.brn.brn_input.versions if not debug else [
+    finch.Input.Version(format=finch.data.Format.ZARR, chunks={"x":20}, dim_order="xyz", coords=False),
+    #finch.Input.Version(format=finch.data.Format.ZARR, chunks={"x":30}, dim_order="xyz", coords=False)
+]
 """The input format for the brn multi run experiment"""
 brn_multi_dim_order = "xyz"
 """The input dimension order for the brn multi run experiment"""
 brn_multi_name = "multi"
 """The name of the brn multi run experiment"""
-brn_multi_jobs = [1,2,3]
+brn_multi_jobs = 1 if debug else [1,2,3]
 """A list of the number of jobs to spawn for the brn multi run"""
 
 
@@ -120,13 +123,12 @@ if run_brn:
     if brn_multi_run:
         print(f"Measuring runtimes of brn implementations")
         run_configs = finch.experiments.list_run_configs(
-            imp=finch.brn.list_brn_implementations,
+            impl=finch.brn.list_brn_implementations(),
             jobs=brn_multi_jobs
         )
-        imps = finch.brn.list_brn_implementations()
-        times = finch.measure_operator_runtimes(imps, brn_input, brn_multi_versions, **config)
+        times = finch.measure_operator_runtimes(run_configs, brn_input, brn_multi_versions, **config)
         print()
-        finch.print_imp_results(times, imps, brn_multi_versions)
+        finch.print_results(times, run_configs, brn_multi_versions)
         print()
-        results = finch.eval.create_result_array(times, imps, brn_multi_versions, "brn_"+brn_multi_name)
+        results = finch.eval.create_result_array(times, run_configs, brn_multi_versions, "brn_"+brn_multi_name)
         finch.eval.create_plots(results)

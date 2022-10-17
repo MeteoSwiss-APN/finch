@@ -78,14 +78,16 @@ def thetav_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
     """
     thetav implementation using `custom_map_blocks` and numpy arrays
     """
-    return util.custom_map_blocks(block_thetav_np, dataset, name="thetav")
+    arrays = [dataset[n] for n in input.brn_array_names[:3]]
+    return util.custom_map_blocks(block_thetav_np, *arrays, name="thetav")
 
 def brn_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
     """
     brn implementation using `custom_map_blocks` and numpy arrays
     """
     dataset = dataset.transpose(*data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
-    return util.custom_map_blocks(block_brn_np, dataset, name="brn")
+    arrays = [dataset[n] for n in input.brn_array_names]
+    return util.custom_map_blocks(block_brn_np, *arrays, name="brn")
 
 def _thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     """
@@ -95,7 +97,8 @@ def _thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
         out = np.zeros_like(p)
         zebra.thetav(p, t, qv, out)
         return out
-    return util.custom_map_blocks(wrapper, dataset, name="thetav")
+    arrays = [dataset[n] for n in input.brn_array_names[:3]]
+    return util.custom_map_blocks(wrapper, *arrays, name="thetav")
 
 def _brn_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     """
@@ -106,4 +109,5 @@ def _brn_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
         out = np.zeros_like(arrays[0])
         zebra.brn(*arrays, out)
         return out
-    return util.custom_map_blocks(wrapper, dataset, name="brn")
+    arrays = [dataset[n] for n in input.brn_array_names]
+    return util.custom_map_blocks(wrapper, *arrays, name="brn")

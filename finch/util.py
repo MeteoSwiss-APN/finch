@@ -236,7 +236,7 @@ def fill_none_properties(x: T, y: T) -> T:
     Returns `x` as a copy, where every attribute which is `None` is set to the attribute of `y`.
     """
     out = copy.copy(x)
-    to_update = {k: y.__dict__[k] for k in x.__dict__ if k is None}
+    to_update = {k: y.__dict__[k] for k in x.__dict__ if x.__dict__[k] is None}
     out.__dict__.update(to_update)
     return out
 
@@ -273,10 +273,35 @@ def has_attributes(x, y) -> bool:
         for v in xd
     )
 
-def get_class_attributes(cls: type) -> list[str]:
+def get_class_attributes(cls: type, excludes: list[str] = []) -> list[str]:
     """
     Returns the attributes of a class.
     """
     dummy = dir(type("dummy", (object,), {})) # create a new dummy class and extract its attributes
     attr = inspect.getmembers(cls, lambda x: not inspect.isroutine(x))
-    return [a for a in attr if a not in dummy]
+    attr = [a[0] for a in attr]
+    return [
+        a for a in attr if 
+        a not in dummy 
+        and not (a.startswith("__") and a.endswith("__"))
+        and not a in excludes
+    ]
+
+def flatten_dict(d: dict, separator: str = "_") -> dict:
+    """
+    Flattens a dictionary. The keys of the inner dictionary are appended to the outer key with the given separator.
+    """
+    out = dict()
+    flat = True
+    for k, v in d.items():
+        if isinstance(v, dict):
+            for kk, vv in v.items():
+                out[k + separator + kk] = vv
+                if isinstance(vv, dict):
+                    flat = False
+        else:
+            out[k] = v
+    if not flat:
+        return flatten_dict(out, separator)
+    else:
+        return out

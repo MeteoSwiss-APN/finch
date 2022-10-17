@@ -1,3 +1,4 @@
+from copy import copy
 from dataclasses import dataclass
 from time import time
 from collections.abc import Callable
@@ -17,7 +18,12 @@ class RunConfig():
     jobs: int = 1
 
     def setup(self):
-        env.cluster.scale(jobs=self.jobs)
+        if env.cluster is not None:
+            env.cluster.scale(jobs=self.jobs)
+
+    @classmethod
+    def get_class_attr(cls) -> list[str]:
+        return util.get_class_attributes(cls)
 
 def list_run_configs(**kwargs) -> list[RunConfig]:
     """
@@ -29,11 +35,11 @@ def list_run_configs(**kwargs) -> list[RunConfig]:
         if not isinstance(vals, list):
             vals = [vals]
         updates = [{arg : v} for v in vals]
-        if len(config) == 0:
-            config = updates
+        if len(configs) == 0:
+            configs = updates
         else:
-            config = [c | u for c in configs for u in updates]
-    return [RunConfig(*c) for c in configs]
+            configs = [c | u for c in configs for u in updates]
+    return [RunConfig(**c) for c in configs]
 
 
 def measure_runtimes(
@@ -140,10 +146,12 @@ def measure_operator_runtimes(
     else:
         preps = lambda : input.get_version(versions)
     # make sure to run compute by storing to zarr
-    compute = lambda a : a.to_dataset().to_zarr(store=config["data"]["zarr_dir"], mode="w")
+    compute = lambda a : a.rename("output").to_dataset().to_zarr(store=config["data"]["zarr_dir"], mode="w")
     if isinstance(run_config, RunConfig):
+        run_config = copy(run_config)
         run_config.impl = lambda x, funcs=run_config.impl : compute(funcs(x))
     else:
+        run_config = [copy(rc) for rc in run_config]
         for rc in run_config:
             rc.impl = lambda x, funcs=rc.impl : compute(funcs(x))
     return measure_runtimes(run_config, preps, **kwargs)
