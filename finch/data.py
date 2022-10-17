@@ -227,7 +227,7 @@ class Input():
                 self.coords != other.coords:
                 return False
             # compare chunks
-            return all(self.chunks[d] <= other.chunks[d] for d in self.chunks)
+            return self.format != Format.ZARR or all(self.chunks[d] <= other.chunks[d] for d in self.chunks)
 
     source: Callable[[Optional[Version]], xr.Dataset]
     """A function from which to get the input data"""
