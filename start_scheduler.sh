@@ -8,7 +8,7 @@ PREFIX=
 while [[ $# -gt 0 ]]; do
     case $1 in
         -s|--slurm)
-            PREFIX=srun --nodes=1 --partition=postproc --pty
+            PREFIX="srun --nodes=1 --partition=postproc --pty"
             shift
             shift
             ;;
