@@ -108,21 +108,28 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmean):
     path.mkdir(parents=True, exist_ok=True)
 
     for d in results.dims:
-        if d != "imp" and results.sizes[d] > 1:
-            to_reduce = [dd for dd in results.dims if dd != "imp" and dd != d]
+        if d != "impl" and results.sizes[d] > 1:
+            to_reduce = [dd for dd in results.dims if dd != "impl" and dd != d]
             to_plot = results.reduce(reduction, to_reduce)
+            ticks = to_plot.coords[d].data
             df = pd.DataFrame({
-                i: to_plot[i] for i in results.coords["imp"]
-            })
-            if isinstance(to_plot.coords[d][0], str):
+                i: to_plot.sel(impl=i).data for i in results.coords["impl"].data
+            } | {"ticks": ticks})
+            plotargs = dict(
+                x="ticks",
+                xticks=ticks,
+                xlabel=d,
+                ylabel="Runtime"
+            )
+            if isinstance(ticks[0], str):
                 plot = df.plot(
                     kind="bar", 
                     stacked=True,
-                    xticks=to_plot.coords[d]
+                    **plotargs
                 )
             else:
                 plot = df.plot(
                     kind = "line",
-                    xticks = to_plot.coords[d]
+                    **plotargs
                 )
             plot.get_figure().savefig(path.joinpath(d + ".svg"), format="svg")

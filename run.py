@@ -68,7 +68,7 @@ brn_multi_run = True
 """Wether to perform a run experiment with every available implementation"""
 brn_multi_versions = finch.brn.brn_input.versions if not debug else [
     finch.Input.Version(format=finch.data.Format.ZARR, chunks={"x":20}, dim_order="xyz", coords=False),
-    #finch.Input.Version(format=finch.data.Format.ZARR, chunks={"x":30}, dim_order="xyz", coords=False)
+    finch.Input.Version(format=finch.data.Format.ZARR, chunks={"x":30}, dim_order="xyz", coords=False)
 ]
 """The input format for the brn multi run experiment"""
 brn_multi_dim_order = "xyz"
