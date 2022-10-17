@@ -41,7 +41,7 @@ brn_modify_input_versions = False
 brn_add_input_version = finch.Input.Version(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
-    chunks={"x": 30},
+    chunks={"x": 10},
     coords=False
 )
 """New brn input version to add"""

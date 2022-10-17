@@ -70,7 +70,7 @@ def measure_runtimes(
     depending on whether a single function or a single version (None or Callable) were passed.
     """
     # prepare run config
-    singleton_rc = isinstance(run_config, Callable)
+    singleton_rc = isinstance(run_config, RunConfig)
     if singleton_rc:
         run_config = [run_config]
 

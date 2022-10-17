@@ -1,3 +1,4 @@
+import chunk
 import os
 from .. import data
 from .. import config
@@ -24,8 +25,20 @@ def reorder_dims(input, dims):
         dims = translate_order(dims)
     return data.reorder_dims(input, dims)
 
-def load_input_grib(version: data.Input.Version) -> xr.Dataset:
+grib_input_version = data.Input.Version(
+        format=data.Format.GRIB,
+        dim_order="zyx",
+        chunks={"z" : 1},
+        coords=True
+    )
+
+def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
+    if version is None:
+        version = grib_input_version
     chunks = dict(version.chunks)
+    for s in dim_index:
+        if s in chunks:
+            chunks[dim_index[s]] = chunks.pop(s)
 
     # load data from first grib file
     grib_file = "lfff00000000"
@@ -43,7 +56,8 @@ def load_input_grib(version: data.Input.Version) -> xr.Dataset:
     # load data from second grib file
     grib_file = "lfff00000000c"
     args["index_path"] = os.path.join(config["brn"]["grib_index_dir"], grib_file + ".idx")
-    chunks["generalVertical"] = chunks.pop("generalVerticalLayer")
+    if "generalVerticalLayer" in chunks:
+        chunks["generalVertical"] = chunks.pop("generalVerticalLayer")
     args["chunks"] = chunks
     args["key_filters"]["typeOfLevel"] = "generalVertical"
     hhl = data.load_array_grib(grib_file, "HHL", **args)
@@ -53,19 +67,14 @@ def load_input_grib(version: data.Input.Version) -> xr.Dataset:
     hhl = hhl[:-1, :, :] # TODO shouldn't be necessary
 
     out = xr.merge([out1, hhl, hsurf])
-    out = out.transpose(translate_order(version.dim_order))
+    out = out.transpose(*translate_order(version.dim_order))
     return out
 
 brn_input = data.Input(
     config["global"]["data_store"],
     name="brn",
-    source=lambda : load_input_grib(chunk_size=1),
-    source_version=data.Input.Version(
-        format=data.Format.GRIB,
-        dim_order="zyx",
-        chunks={dim_index["z"] : 1},
-        coords=True
-    ),
+    source=load_input_grib,
+    source_version=grib_input_version,
     dim_index=dim_index
 )
 """
