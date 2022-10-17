@@ -4,9 +4,9 @@ import dask
 from dask.distributed import Client
 from . import util
 from . import environment as env
-from .config import config
+from . import config
 
-def start_slurm(scheduler_port: int = 8785, dashboard_port: int = 8877, cores_per_node: int = 20, memory_per_node: str = "24GiB", verbose=False) -> Client:
+def start_slurm(scheduler_port: int = 8785, dashboard_port: int = 8877, cores_per_node: int = 4, memory_per_node: str = "24GiB", verbose=False) -> Client:
     """
     Tries to start a new SLURM cluster scheduler at port `scheduler_port` and exposes a dashboard at port `dashboard_port`.
     A client for the scheduler is registered and returned.

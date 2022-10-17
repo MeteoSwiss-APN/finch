@@ -66,16 +66,18 @@ brn_single_jobs = 1
 
 brn_multi_run = True
 """Wether to perform a run experiment with every available implementation"""
-brn_multi_versions = finch.brn.brn_input.versions if not debug else [
-    finch.Input.Version(format=finch.data.Format.ZARR, chunks={"x":20}, dim_order="xyz", coords=False),
-    finch.Input.Version(format=finch.data.Format.ZARR, chunks={"x":30}, dim_order="xyz", coords=False)
-]
+brn_multi_versions = finch.Input.Version.list_configs(
+    format=finch.data.Format.ZARR,
+    dim_order="xyz",
+    coords=False,
+    chunks=[{"x" : x} for x in [10, 20, 30, 50, 100]]
+)
 """The input format for the brn multi run experiment"""
 brn_multi_dim_order = "xyz"
 """The input dimension order for the brn multi run experiment"""
-brn_multi_name = "multi"
+brn_multi_name = "zarr_scaling"
 """The name of the brn multi run experiment"""
-brn_multi_jobs = 1 if debug else [1,2,3]
+brn_multi_jobs = 1 if debug else [1,2,3,5,10]
 """A list of the number of jobs to spawn for the brn multi run"""
 
 
@@ -122,7 +124,7 @@ if run_brn:
     
     if brn_multi_run:
         print(f"Measuring runtimes of brn implementations")
-        run_configs = finch.experiments.list_run_configs(
+        run_configs = finch.experiments.RunConfig.list_configs(
             impl=finch.brn.list_brn_implementations(),
             jobs=brn_multi_jobs
         )

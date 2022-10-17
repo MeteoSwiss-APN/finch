@@ -1,6 +1,6 @@
 from copy import copy
 from dataclasses import dataclass
-from time import time
+from time import perf_counter
 from collections.abc import Callable
 from typing import Any, TypeVar
 import numpy as np
@@ -13,7 +13,7 @@ from . import env
 import tqdm
 
 @dataclass
-class RunConfig():
+class RunConfig(util.Config):
     impl: Callable = None
     jobs: int = 1
 
@@ -107,9 +107,9 @@ def measure_runtimes(
                 prep = lambda : args
             for _ in range(iterations):
                 args = prep()
-                start = time()
+                start = perf_counter()
                 c.impl(*args)
-                end = time()
+                end = perf_counter()
                 cur_times.append(end - start)
                 pbar.update()
             if warmup:

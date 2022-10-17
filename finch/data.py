@@ -203,7 +203,7 @@ class Input():
     """An index mapping dimension short names to dimension names"""
 
     @dataclass
-    class Version(yaml.YAMLObject):
+    class Version(yaml.YAMLObject, util.Config):
         """A version of the input"""
         yaml_tag = "!Version"
         format: Format = None

@@ -1,10 +1,11 @@
 from ast import Call, arg
 from contextlib import closing
+from dataclasses import dataclass
 import functools
 import pathlib
 import socket
 import types
-from typing import Dict, List, TypeVar
+from typing import Dict, List, TypeVar, Any
 from collections.abc import Callable
 import typing
 import dask.array as da
@@ -305,3 +306,22 @@ def flatten_dict(d: dict, separator: str = "_") -> dict:
         return flatten_dict(out, separator)
     else:
         return out
+
+class Config():
+    """Simple base class for configuration types"""
+    @classmethod
+    def list_configs(cls, **kwargs) -> list:
+        """
+        Returns a list of run configurations, which is the euclidean product between the given lists of individual configurations.
+        """
+        configs: list[dict[str, Any]] = []
+        for arg in kwargs:
+            vals = kwargs[arg]
+            if not isinstance(vals, list):
+                vals = [vals]
+            updates = [{arg : v} for v in vals]
+            if len(configs) == 0:
+                configs = updates
+            else:
+                configs = [c | u for c in configs for u in updates]
+        return [cls(**c) for c in configs]

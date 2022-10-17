@@ -91,7 +91,7 @@ def create_result_array(results: list[list[float]], run_configs: list[RunConfig]
             array.loc[va | rca] = r
     return array
 
-def create_plots(results: xr.DataArray, reduction: Callable = np.nanmean):
+def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin):
     """
     Creates a series of plots for the results array.
     The plot creation works as follows.
@@ -119,7 +119,7 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmean):
                 x="ticks",
                 xticks=ticks,
                 xlabel=d,
-                ylabel="Runtime"
+                ylabel="Runtime [s]"
             )
             if isinstance(ticks[0], str):
                 plot = df.plot(
