@@ -209,10 +209,27 @@ class Input():
         """A version of the input"""
         yaml_tag = "!Version"
         format: Format = None
+        """The file format of this version"""
         dim_order: str = None
+        """The dimension order in compact notation"""
         chunks: dict[str, int] = None
+        """The chunking as a dict, mapping dimension names to chunk sizes"""
         name: str = None
+        """The name of this version"""
         coords: bool = None
+        """Whether this version holds coordinates"""
+
+        def __le__(self, other):
+            """Self is less or equal to other, if other can be constructed from self 
+            without any relevant future differences in performance when accessing the data 
+            and without any changes in content."""
+            # Most attributes must be equal in order for self and other to be comparable
+            if self.format != other.format or \
+                self.dim_order != other.dim_order or \
+                self.coords != other.coords:
+                return False
+            # compare chunks
+            return all(self.chunks[d] <= other.chunks[d] for d in self.chunks)
 
     source_version: Version
     """The version of the source data"""
@@ -305,7 +322,7 @@ class Input():
         """
         return any(util.has_attributes(version, v) for v in self.versions)
 
-    def get_version(self, version: Version, create_if_not_exists: bool = True, add_if_not_exists: bool = False) -> Tuple[xr.Dataset, Version]:
+    def get_version(self, version: Version, create_if_not_exists: bool = True, add_if_not_exists: bool = False, weak_compare: bool = True) -> Tuple[xr.Dataset, Version]:
         """
         Returns a version with the given properties.
 
@@ -314,13 +331,17 @@ class Input():
         - version: The version properties
         - create_if_not_exists: Indicates whether to create and return a new version if no such version already exists.
         - add_if_not_exists: Indicates whether to directly add a newly created version to this input
+        - weak_compare: If true, a smaller version can also be returned.
+        The partial order between versions is defined in the Version class.
         """
         # find matching preexisting version
         target = None
         for v in self.versions[1:]: # avoid loading the source version when possible
-            if util.has_attributes(version, v):
+            if not weak_compare and util.has_attributes(version, v):
                 target = v
                 break
+            elif weak_compare and v <= version and (target is None or target <= v):
+                target = v
 
         if target is None:
             if create_if_not_exists or util.has_attributes(version, self.source_version):
