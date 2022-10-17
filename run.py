@@ -1,3 +1,6 @@
+from fileinput import filename
+from dask.distributed import performance_report
+import pathlib
 import sys
 import finch
 import argparse
@@ -53,18 +56,25 @@ brn_load_experiment = False
 
 # single run
 
-brn_single_run = False
+brn_single_run = True
 """Whether to perform a single run experiment with brn"""
 brn_imp_to_inspect = finch.brn.impl.brn_blocked_np
 """The brn implementation to inspect during the single run experiment"""
-brn_single_versions = finch.brn.brn_input.versions
-"""The file type for the input data for the brn single run experiment"""
-brn_single_jobs = 1
+brn_single_versions = finch.Input.Version(
+    format=finch.data.Format.ZARR,
+    dim_order="xyz",
+    chunks={"x": 30},
+    coords=False
+)
+"""The input version for the brn single run experiment"""
+brn_single_jobs = 3
 """The number of jobs to spawn for the brn single run"""
+brn_single_perf_report = True
+"""Whether to record a performance report for the brn single run"""
 
 # multi run
 
-brn_multi_run = True
+brn_multi_run = False
 """Wether to perform a run experiment with every available implementation"""
 brn_multi_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.ZARR,
@@ -117,7 +127,11 @@ if run_brn:
     if brn_single_run:
         print(f"Measuring runtime of function {brn_imp_to_inspect.__name__}")
         run_config = finch.experiments.RunConfig(brn_imp_to_inspect, brn_single_jobs)
-        times = finch.measure_operator_runtimes(run_config, brn_input, brn_single_versions, **config)
+        if brn_single_perf_report:
+            with performance_report(filename=pathlib.Path(finch.config["evaluation"]["perf_report_dir"] + "dask-report.html")):
+                times = finch.measure_operator_runtimes(run_config, brn_input, brn_single_versions, **config)
+        else:
+            times = finch.measure_operator_runtimes(run_config, brn_input, brn_single_versions, **config)
         print()
         finch.print_version_results(times, brn_single_versions)
         print()

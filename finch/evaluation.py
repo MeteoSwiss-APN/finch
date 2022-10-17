@@ -104,7 +104,7 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin):
     The plots will be stored in config's `plot_dir` in a directory according to the experiment name.
     """
 
-    path = pathlib.Path(config["global"]["plot_dir"], results.name)
+    path = pathlib.Path(config["evaluation"]["plot_dir"], results.name)
     path.mkdir(parents=True, exist_ok=True)
 
     for d in results.dims:

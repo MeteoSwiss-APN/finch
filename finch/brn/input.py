@@ -71,7 +71,7 @@ def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
     return out
 
 brn_input = data.Input(
-    config["global"]["data_store"],
+    config["data"]["input_store"],
     name="brn",
     source=load_input_grib,
     source_version=grib_input_version,
