@@ -17,9 +17,9 @@ cmd_args = parser.parse_args(sys.argv[1:])
 
 debug = cmd_args.debug
 """Debug mode"""
-debug_scheduler = debug
+debug_scheduler = False
 """Whether to launch a debugable scheduler or the normal distributed one."""
-iterations = 10
+iterations = 2
 """The number of iterations when measuring runtime"""
 warmup = True
 """Whether to perform a warmup before measuring the runtimes"""

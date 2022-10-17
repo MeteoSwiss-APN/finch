@@ -349,12 +349,8 @@ class Input():
                 (weak_compare and self.source_version < version):
                 # fill none properties of version
                 target = util.fill_none_properties(version, self.source_version)
-                # load source
+                # load source (for targeted version)
                 dataset = self.source(target)
-            
-                # impose version properties
-                dataset = dataset.transpose(*translate_order(target.dim_order, self.dim_index))
-                dataset = dataset.chunk(target.chunks)
 
                 # add version (if not grib)
                 if add_if_not_exists:
