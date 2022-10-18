@@ -6,7 +6,16 @@ from . import util
 from . import environment as env
 from . import config
 
-def start_slurm(scheduler_port: int = 8785, dashboard_port: int = 8877, cores_per_node: int = 4, memory_per_node: str = "24GiB", verbose=False) -> Client:
+scheduler_config = config["scheduler"]
+
+def start_slurm(
+    scheduler_port: int = 8785, 
+    dashboard_port: int = 8877, 
+    cores_per_node: int = scheduler_config["cores_per_job"], 
+    memory_per_node: str = scheduler_config["memory_per_job"],
+    exclusive_jobs: bool = scheduler_config["exclusive_jobs"],
+    verbose=False
+) -> Client:
     """
     Tries to start a new SLURM cluster scheduler at port `scheduler_port` and exposes a dashboard at port `dashboard_port`.
     A client for the scheduler is registered and returned.
@@ -26,7 +35,7 @@ def start_slurm(scheduler_port: int = 8785, dashboard_port: int = 8877, cores_pe
                 queue="postproc",
                 cores=cores_per_node,
                 memory=memory_per_node,
-                job_extra_directives=["--exclusive"],
+                job_extra_directives=["--exclusive"] if exclusive_jobs else [],
                 n_workers=cores_per_node,
                 processes=cores_per_node,
                 log_directory=scratch_dir + "/out",
