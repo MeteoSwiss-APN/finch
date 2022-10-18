@@ -230,7 +230,7 @@ class Input():
             return self.format != Format.ZARR \
                 or self.chunks is None \
                 or other.chunks is None \
-                or all(self.chunks[d] <= other.chunks[d] for d in self.chunks)
+                or all(c > 0 and c <= other.chunks[d] for d,c in self.chunks.items())
 
         @classmethod
         def get_class_attr(cls) -> list[str]:
