@@ -223,7 +223,7 @@ class Input():
             and without any changes in content."""
             # Most attributes must be equal in order for self and other to be comparable
             if self.format is not None and other.format is not None and self.format != other.format or \
-                self.dim_order is not None and other.formate is not None and self.dim_order != other.dim_order or \
+                self.dim_order is not None and other.dim_order is not None and self.dim_order != other.dim_order or \
                 self.coords is not None and other.coords is not None and self.coords != other.coords:
                 return False
             # compare chunks
@@ -348,7 +348,7 @@ class Input():
                 target = v
                 break
             elif weak_compare and v <= version and (target is None or target <= v):
-                target = v
+                target = util.fill_none_properties(version, v)
 
         if target is None:
             if create_if_not_exists or \
