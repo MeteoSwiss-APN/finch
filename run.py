@@ -157,4 +157,7 @@ if run_brn:
         finch.print_results(times, run_configs, brn_multi_versions)
         print()
         results = finch.eval.create_result_array(times, run_configs, brn_multi_versions, "brn_"+brn_multi_name)
+        results.to_dataset(name=results.name).to_netcdf(
+            pathlib.Path(config["global"]["tmp_dir"], brn_multi_name + ".nc")
+        ) # safety net
         finch.eval.create_plots(results)

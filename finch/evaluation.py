@@ -117,7 +117,6 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin):
             } | {"ticks": ticks})
             plotargs = dict(
                 x="ticks",
-                xticks=ticks,
                 xlabel=d,
                 ylabel="Runtime [s]"
             )
@@ -130,6 +129,7 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin):
             else:
                 plot = df.plot(
                     kind = "line",
+                    xticks=ticks,
                     **plotargs
                 )
             plot.get_figure().savefig(path.joinpath(d + ".svg"), format="svg")
