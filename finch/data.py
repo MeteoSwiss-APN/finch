@@ -222,12 +222,15 @@ class Input():
             without any relevant future differences in performance when accessing the data 
             and without any changes in content."""
             # Most attributes must be equal in order for self and other to be comparable
-            if self.format != other.format or \
-                self.dim_order != other.dim_order or \
-                self.coords != other.coords:
+            if self.format is not None and other.format is not None and self.format != other.format or \
+                self.dim_order is not None and other.formate is not None and self.dim_order != other.dim_order or \
+                self.coords is not None and other.coords is not None and self.coords != other.coords:
                 return False
             # compare chunks
-            return self.format != Format.ZARR or all(self.chunks[d] <= other.chunks[d] for d in self.chunks)
+            return self.format != Format.ZARR \
+                or self.chunks is None \
+                or other.chunks is None \
+                or all(self.chunks[d] <= other.chunks[d] for d in self.chunks)
 
         @classmethod
         def get_class_attr(cls) -> list[str]:
