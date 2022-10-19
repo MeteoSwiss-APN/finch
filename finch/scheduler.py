@@ -11,9 +11,9 @@ scheduler_config = config["scheduler"]
 def start_slurm(
     scheduler_port: int = 8785, 
     dashboard_port: int = 8877, 
-    cores_per_node: int = scheduler_config["cores_per_job"], 
+    cores_per_node: int = scheduler_config.getint("cores_per_job"), 
     memory_per_node: str = scheduler_config["memory_per_job"],
-    exclusive_jobs: bool = scheduler_config["exclusive_jobs"],
+    exclusive_jobs: bool = scheduler_config.getboolean("exclusive_jobs"),
     verbose=False
 ) -> Client:
     """

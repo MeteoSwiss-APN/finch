@@ -4,6 +4,7 @@ import pathlib
 import sys
 import finch
 import argparse
+import xarray as xr
 
 # command line arguments
 parser = argparse.ArgumentParser()
@@ -22,7 +23,7 @@ debug = cmd_args.debug
 """Debug mode"""
 debug_scheduler = False
 """Whether to launch a debugable scheduler or the normal distributed one."""
-iterations = 1 if debug else 10
+iterations = 1 if debug else 5
 """The number of iterations when measuring runtime"""
 warmup = not debug
 """Whether to perform a warmup before measuring the runtimes"""
@@ -36,6 +37,7 @@ pbar = True
 
 run_brn = True
 """Whether to run brn experiments"""
+brn_results_file = pathlib.Path(finch.config["global"]["tmp_dir"], "brn_results.nc")
 
 # input management
 
@@ -100,6 +102,11 @@ brn_multi_name = "scaling"
 brn_multi_jobs = 1 if debug else [1,5,10]
 """A list of the number of jobs to spawn for the brn multi run"""
 
+# evaluation
+
+brn_evaluation = True
+"""Whether or not to run evaluation"""
+
 
 ######################################################
 # script
@@ -157,7 +164,10 @@ if run_brn:
         finch.print_results(times, run_configs, brn_multi_versions)
         print()
         results = finch.eval.create_result_array(times, run_configs, brn_multi_versions, "brn_"+brn_multi_name)
-        results.to_dataset(name=results.name).to_netcdf(
-            pathlib.Path(config["global"]["tmp_dir"], brn_multi_name + ".nc")
-        ) # safety net
+        results.to_netcdf(brn_results_file)
+        finch.eval.create_plots(results)
+
+    if brn_evaluation:
+        print(f"Evaluating experiment results")
+        results = xr.open_dataarray(brn_results_file)
         finch.eval.create_plots(results)
