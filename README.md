@@ -19,6 +19,15 @@ conda env create -f environment.yml
 conda activate finch
 ```
 
+The zebra package (C++ implementations) needs to be installed separately with pip:
+```
+cd zebra
+mkdir build && cd build
+cmake ..
+cd ..
+pip install .
+```
+
 ## Run experiments
 ```
 python run.py

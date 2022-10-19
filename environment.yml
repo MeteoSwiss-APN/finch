@@ -181,4 +181,3 @@ dependencies:
   - pip:
     - pyyaml==6.0
     - wonderwords==2.2.0
-    - zebra==0.0.1
