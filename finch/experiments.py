@@ -79,6 +79,7 @@ def measure_runtimes(
     singleton_rc = isinstance(run_config, RunConfig)
     if singleton_rc:
         run_config = [run_config]
+    run_config = sorted(run_config, key=lambda x: x.jobs) # ensure increasing job sizes
 
     # prepare inputs to all have the same form
     singleton_input = False

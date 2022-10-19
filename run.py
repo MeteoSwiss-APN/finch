@@ -82,25 +82,15 @@ brn_single_iterations = iterations
 brn_multi_run = True
 """Wether to perform a run experiment with every available implementation"""
 brn_multi_versions = finch.Input.Version.list_configs(
-    format=finch.data.Format.ZARR,
-    dim_order="xyz",
-    coords=False,
-    chunks=[{"x" : x, "y" : -1, "z" : -1} for x in [10, 20, 30, 50, 100]]
-) + finch.Input.Version.list_configs(
     format=finch.data.Format.NETCDF,
     dim_order="xyz",
     coords=False,
     chunks=[{"x" : x, "y" : -1, "z" : -1} for x in [10, 20, 30, 50, 100]]
-) + finch.Input.Version.list_configs(
-    format=finch.data.Format.GRIB,
-    dim_order="zyx",
-    coords=False,
-    chunks=[{"x" : -1, "y" : -1, "z" : z} for z in [1, 2, 10]]
 )
 """The input versions for the brn multi run experiment"""
-brn_multi_name = "scaling"
+brn_multi_name = "netcdf_scaling"
 """The name of the brn multi run experiment"""
-brn_multi_jobs = 1 if debug else [1,5,10]
+brn_multi_jobs = 1 if debug else [1,2,3,5,10,20]
 """A list of the number of jobs to spawn for the brn multi run"""
 
 # evaluation
@@ -114,7 +104,7 @@ brn_evaluation = True
 ######################################################
 
 # adjust logging
-logging.basicConfig(format='[%(levelname)s]: %(message)s')
+logging.basicConfig(format='[%(levelname)s]: %(message)s', level=logging.INFO)
 if debug:
     logging.basicConfig(level=logging.DEBUG)
 
@@ -163,8 +153,6 @@ if run_brn:
             impl=finch.brn.list_brn_implementations()
         )
         times = finch.measure_operator_runtimes(run_configs, brn_input, brn_multi_versions, **config)
-        finch.print_results(times, run_configs, brn_multi_versions)
-        print()
         results = finch.eval.create_result_array(times, run_configs, brn_multi_versions, "brn_"+brn_multi_name)
         results.to_netcdf(brn_results_file)
         finch.eval.create_plots(results)
