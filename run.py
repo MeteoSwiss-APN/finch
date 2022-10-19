@@ -1,3 +1,4 @@
+import logging
 from fileinput import filename
 from dask.distributed import performance_report
 import pathlib
@@ -112,6 +113,11 @@ brn_evaluation = True
 # script
 ######################################################
 
+# adjust logging
+logging.basicConfig(format='[%(levelname)s]: %(message)s')
+if debug:
+    logging.basicConfig(level=logging.DEBUG)
+
 # start scheduler
 client = finch.start_scheduler(debug=debug_scheduler)
 
@@ -129,38 +135,34 @@ brn_input = finch.brn.brn_input
 if run_brn:
 
     if brn_modify_input_versions:
-        print("Adjusting input versions")
+        logging.info("Adjusting input versions")
         if brn_add_input_version:
             brn_input.add_version(brn_add_input_version)
-        print()
 
     if brn_load_experiment:
-        print("Measuring brn input load times")
+        logging.info("Measuring brn input load times")
         times = finch.measure_loading_times(brn_input, brn_input.versions, **config)
-        print()
         finch.print_version_results(times, brn_input.versions)
         print()
 
     if brn_single_run:
-        print(f"Measuring runtime of function {brn_imp_to_inspect.__name__}")
+        logging.log(f"Measuring runtime of function {brn_imp_to_inspect.__name__}")
         run_config = finch.experiments.RunConfig(brn_imp_to_inspect, brn_single_jobs)
         if brn_single_perf_report:
             with performance_report(filename=pathlib.Path(finch.config["evaluation"]["perf_report_dir"], "dask-report.html")):
                 times = finch.measure_operator_runtimes(run_config, brn_input, brn_single_versions, **config)
         else:
             times = finch.measure_operator_runtimes(run_config, brn_input, brn_single_versions, **config)
-        print()
         finch.print_version_results(times, brn_single_versions)
         print()
     
     if brn_multi_run:
-        print(f"Measuring runtimes of brn implementations")
+        logging.info(f"Measuring runtimes of brn implementations")
         run_configs = finch.experiments.RunConfig.list_configs(
-            impl=finch.brn.list_brn_implementations(),
-            jobs=brn_multi_jobs
+            jobs=brn_multi_jobs,
+            impl=finch.brn.list_brn_implementations()
         )
         times = finch.measure_operator_runtimes(run_configs, brn_input, brn_multi_versions, **config)
-        print()
         finch.print_results(times, run_configs, brn_multi_versions)
         print()
         results = finch.eval.create_result_array(times, run_configs, brn_multi_versions, "brn_"+brn_multi_name)
@@ -168,6 +170,6 @@ if run_brn:
         finch.eval.create_plots(results)
 
     if brn_evaluation:
-        print(f"Evaluating experiment results")
+        logging.info(f"Evaluating experiment results")
         results = xr.open_dataarray(brn_results_file)
         finch.eval.create_plots(results)
