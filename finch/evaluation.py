@@ -132,4 +132,4 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin):
                     xticks=ticks,
                     **plotargs
                 )
-            plot.get_figure().savefig(path.joinpath(d + ".svg"), format="svg")
+            plot.get_figure().savefig(path.joinpath(d + ".png"), format="png")

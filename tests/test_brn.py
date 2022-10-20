@@ -8,7 +8,7 @@ from finch import brn
 finch.start_scheduler(debug=True)
 
 class TestBRN:
-    shape = [2, 2, 3]
+    shape = [2, 2, 8]
     chunks = {"x" : 1}
     dims = finch.brn.input.translate_order("xyz")
 
