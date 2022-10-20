@@ -104,7 +104,7 @@ def brn_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     """
     brn implementation using `custom_map_blocks` and numpy arrays with the zebra backend
     """
-    dataset = dataset.transpose(data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
+    dataset = dataset.transpose(*data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
     def wrapper(*arrays):
         out = np.zeros_like(arrays[0])
         zebra.brn(*arrays, out)
