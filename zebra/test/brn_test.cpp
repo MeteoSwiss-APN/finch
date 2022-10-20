@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <brn.h>
-#include "test_utils.h"
-#include "util.h"
+#include <test_utils.h>
+#include <util.h>
 
 void fill_thetav_test_inout(double *p, double *t, double *qv, double *out, int m, int n, int o) {
     double pc = 1023.4, tc = 127.3, qvc = 0.3;

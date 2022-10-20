@@ -3,6 +3,7 @@
 #include <immintrin.h>
 #include <vectorclass.h>
 #include <vectormath_exp.h>
+#include "util.h"
 
 #define PC_G 9.80665
 #define PC_R_D 287.05
@@ -34,7 +35,7 @@ void brn_naive(
     
     thetav(p, t, qv, out, m, n, o);
 
-    double *tv_sum = (double *) malloc(sizeof(double) * o);
+    double *tv_sum = malloc_d(o);
 
     // iterate over x,y locations
     for(int i = 0, hi = 0; i < m*n*o; i += o, hi++) {
@@ -85,7 +86,7 @@ void brn_vec(
     
     thetav(p, t, qv, out, m, n, o);
 
-    double *tv_sum = (double *) malloc(sizeof(double) * o);
+    double *tv_sum = malloc_d(o);
 
     // iterate over x,y locations
     for(int i = 0, hi = 0; i < m*n*o; i += o, hi++) {
