@@ -1,9 +1,9 @@
-#include "brn.h"
+#include <brn.h>
 #include <cmath>
 #include <immintrin.h>
 #include <vectorclass.h>
 #include <vectormath_exp.h>
-#include "util.h"
+#include <util.h>
 
 #define PC_G 9.80665
 #define PC_R_D 287.05

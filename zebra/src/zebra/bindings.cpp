@@ -1,4 +1,4 @@
-#include "wrapper.h"
+#include <wrapper.h>
 
 PYBIND11_MODULE(zebra, m) {
     m.doc() = "C++ implementation of postprocessing operators on numpy chunks.";
