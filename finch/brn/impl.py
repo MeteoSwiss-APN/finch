@@ -4,7 +4,7 @@ import dask.array as da
 import dask
 import numpy as np
 
-# import zebra
+import zebra
 from .. import constants as const
 from .. import util
 from . import input
@@ -89,7 +89,7 @@ def brn_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
     arrays = [dataset[n] for n in input.brn_array_names]
     return util.custom_map_blocks(block_brn_np, *arrays, name="brn")
 
-def _thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
+def thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     """
     thetav implementation using `custom_map_blocks` and numpy arrays with the zebra backend
     """
@@ -100,7 +100,7 @@ def _thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     arrays = [dataset[n] for n in input.brn_array_names[:3]]
     return util.custom_map_blocks(wrapper, *arrays, name="thetav")
 
-def _brn_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
+def brn_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     """
     brn implementation using `custom_map_blocks` and numpy arrays with the zebra backend
     """
