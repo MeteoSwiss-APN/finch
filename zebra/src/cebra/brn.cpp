@@ -50,9 +50,10 @@ void brn_naive(
         double last_tv = out[i+o-1];
         for(int j = 0; j < o-1; j++) {
             int ij = i+j;
-            out[ij] = PC_G * (hhl[ij] - hsurf[hi]) * (out[ij] - last_tv) * (o-j) / 
-                (tv_sum[j]*(u[ij]*u[ij] - v[ij]*v[ij]));
+            out[ij] = PC_G * (hhl[ij] - hsurf[hi]) * (out[ij] - last_tv) * (o-j-1) / 
+                (tv_sum[j]*(u[ij]*u[ij] + v[ij]*v[ij]));
         }
+        out[i+o-1] = 0;
     }
     free(tv_sum);
 }
