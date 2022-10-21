@@ -18,3 +18,8 @@ target_include_directories(cebra
   PUBLIC include
   ${vectorclass_SOURCE_DIR}
 )
+
+install(
+  TARGETS cebra
+  LIBRARY DESTINATION cebra
+)

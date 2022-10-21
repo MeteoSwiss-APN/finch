@@ -12,3 +12,8 @@ target_include_directories(zebra
 target_link_libraries(zebra
     PRIVATE cebra
 )
+
+install(
+    TARGETS zebra
+    LIBRARY DESTINATION zebra
+)
