@@ -10,7 +10,7 @@ setup(
     description="Optimized C++ implementations of postprocessing operators.",
     author="Tierry Hörmann",
     author_email="Tierry.Hoermann@meteoswiss.ch",
-    # cmake_install_dir="zebra",
+    cmake_args=["-DINSTALL_GTEST=OFF"],
     cmake_process_manifest_hook=exclude_static_libraries,
     cmake_minimum_required_version="3.14"
-    )
+)
