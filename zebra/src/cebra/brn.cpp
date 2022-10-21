@@ -110,7 +110,7 @@ void brn_vec(
             uij.load(&u[ij]);
             vij.load(&v[ij]);
             Vec8d outij = PC_G * (hhlij - hsurfhi) * (oij - last_tv) * (o-j) / 
-                (tvj*(uij*uij - vij*vij));
+                (tvj*(uij*uij + vij*vij));
             outij.store(&out[ij]);
         }
     }
