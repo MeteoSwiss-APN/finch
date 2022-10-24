@@ -3,17 +3,6 @@
 #include <test_utils.h>
 #include <util.h>
 
-TEST(BrnTests, ZeroOutput) {
-    const int m = 1, n = 1, o = 8;
-    double x[8] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.7};
-    double y[8] = {0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2};
-    double out[8];
-    brn(x, x, x, x, y, y, y, out, m, n, o);
-    for(int i = 0; i < m*n*o; i++) {
-        EXPECT_DOUBLE_EQ(out[i], 0) << "Output must be zero at index " << i << " but is " << out[i];
-    }
-}
-
 void fill_thetav_test_inout(double *p, double *t, double *qv, double *out, int m, int n, int o) {
     double pc = 1023.4, tc = 127.3, qvc = 0.3;
     double single_out = 593.9314166503111;
@@ -28,6 +17,33 @@ void fill_thetav_test_inout(double *p, double *t, double *qv, double *out, int m
                 out[ii] = k < o-1 ? single_out : top_out;
             }
         }
+    }
+}
+
+TEST(ThetaVTests, Extensive) {
+    const int m = 2, n = 2, o = 8;
+    double *x = malloc_d(m*n*o*5);
+    double *p = x, 
+        *t = &x[m*n*o], 
+        *qv = &x[m*n*o*2],
+        *out_ref = &x[m*n*o*3],
+        *out = &x[m*n*o*4];
+    fill_thetav_test_inout(p, t, qv, out_ref, m, n, o);
+    thetav(p, t, qv, out, m, n, o);
+    for(int i = 0; i < m*n*o; i++) {
+        EXPECT_DOUBLE_EQ(out[i], out_ref[i]);
+    }
+    free(x);
+}
+
+TEST(BrnTests, ZeroOutput) {
+    const int m = 1, n = 1, o = 8;
+    double x[8] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.7};
+    double y[8] = {0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2};
+    double out[8];
+    brn(x, x, x, x, y, y, y, out, m, n, o);
+    for(int i = 0; i < m*n*o; i++) {
+        EXPECT_DOUBLE_EQ(out[i], 0) << "Output must be zero at index " << i << " but is " << out[i];
     }
 }
 

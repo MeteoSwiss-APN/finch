@@ -89,6 +89,8 @@ void brn_vec(
 
     double *tv_sum = malloc_d(o);
 
+    Vec8d nat(0, 1, 2, 3, 4, 5, 6, 7);
+
     // iterate over x,y locations
     for(int i = 0, hi = 0; i < m*n*o; i += o, hi++) {
         // compute thetav cumsum for current x,y location
@@ -109,7 +111,7 @@ void brn_vec(
             tvj.load(&tv_sum[j]);
             uij.load(&u[ij]);
             vij.load(&v[ij]);
-            Vec8d outij = PC_G * (hhlij - hsurfhi) * (oij - last_tv) * (o-j) / 
+            Vec8d outij = PC_G * (hhlij - hsurfhi) * (oij - last_tv) * (o-j-nat) / 
                 (tvj*(uij*uij + vij*vij));
             outij.store(&out[ij]);
         }
@@ -118,7 +120,7 @@ void brn_vec(
 }
 
 void thetav(const double *p, const double *t, const double *qv, double *out, int m, int n, int o) {
-    thetav_naive(p, t, qv, out, m, n, o);
+    thetav_vec(p, t, qv, out, m, n, o);
 }
 
 void brn(
@@ -131,5 +133,5 @@ void brn(
     const double *hsurf, 
     double *out, 
     int m, int n, int o) {
-    brn_naive(p, t, qv, u, v, hhl, hsurf, out, m, n, o);
+    brn_vec(p, t, qv, u, v, hhl, hsurf, out, m, n, o);
 }
