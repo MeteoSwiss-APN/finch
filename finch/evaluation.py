@@ -29,7 +29,13 @@ def print_results(results: list[list[Any]], run_configs: list[RunConfig], versio
         print_version_results(r, versions)
         print()
 
-def create_result_array(results: list[list[float]], run_configs: list[RunConfig], versions: list[Input.Version], experiment_name: str = None) -> xr.DataArray:
+def create_result_array(
+    results: list[list[float]], 
+    run_configs: list[RunConfig] | RunConfig, 
+    versions: list[Input.Version] | Input.Version, 
+    experiment_name: str = None, 
+    impl_names: list[str] | None = None
+) -> xr.DataArray:
     """
     Constructs a data array from the results of an experiment.
     The dimensions are given by the attributes of the Version and RunConfig classes.
@@ -37,9 +43,16 @@ def create_result_array(results: list[list[float]], run_configs: list[RunConfig]
     This result array can then be used as an input for different evaluation functions.
     The result array will contain NaN for every combination of version and run config attributes, which is not listed in `versions`.
     """
+    # prepare arguments
+    if not isinstance(run_configs, list):
+        run_configs = [run_configs]
+    if not isinstance(versions, list):
+        versions = [versions]
+
     if experiment_name is None:
         experiment_name = util.random_entity_name()
-    def get_attrs(entities, cls) -> list[dict]:
+    def get_attrs(entities: list, cls: type) -> list[dict[str, str]]:
+        """Retrurns a list of dictionaries with string representations of the class attributes of the given entities."""
         # construct flattened attribute dictionary
         attrs: list[dict] = [
             util.flatten_dict({
@@ -60,11 +73,15 @@ def create_result_array(results: list[list[float]], run_configs: list[RunConfig]
                 out_d[k] = v
             out.append(out_d)
         return out
-    # get attributes from run configs and versions
 
+    # get attributes from run configs and versions
     version_attrs = get_attrs(versions, Input.Version)
     va_keys = list(version_attrs[0].keys())
     rc_attrs = get_attrs(run_configs, RunConfig)
+    if impl_names is not None:
+        # set implementation names
+        for a, impl_name in zip(rc_attrs, impl_names):
+            a["impl"] = impl_name
     rca_keys = list(rc_attrs[0].keys())
     # construct coordinates
     coords = {

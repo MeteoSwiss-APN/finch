@@ -1,3 +1,4 @@
+import functools
 import inspect
 from collections.abc import Callable
 import xarray as xr
@@ -25,3 +26,6 @@ def list_thetav_implementations() -> list[THETAV_SIG]:
 
 def list_brn_implementations() -> list[BRN_SIG]:
     return util.list_funcs_matching(impl, BRN_REGEX, BRN_SIG)
+
+def get_repeated_implementation(n: int):
+    return functools.partial(impl.repeated, ntv=n, nbrn=2*n)

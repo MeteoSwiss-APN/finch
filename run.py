@@ -59,7 +59,7 @@ brn_load_experiment = False
 
 # single run
 
-brn_single_run = True
+brn_single_run = False
 """Whether to perform a single run experiment with brn"""
 brn_imp_to_inspect = finch.brn.impl.brn_blocked_cpp
 """The brn implementation to inspect during the single run experiment"""
@@ -93,9 +93,26 @@ brn_multi_name = "netcdf_scaling"
 brn_multi_jobs = 1 if debug else [1,2,3,5,10,20]
 """A list of the number of jobs to spawn for the brn multi run"""
 
+# repeated experiment
+
+brn_repeated_run = True
+"""Whether to performa a run experiment for the brn repeated function(s)"""
+brn_repeated_n = range(1, 10, 2)
+"""A list with the number of times to repeat the computation"""
+brn_repeated_jobs = [1, 2, 3, 5, 10, 20]
+"""A list of the number of jobs to spawn"""
+brn_repeated_input_version = finch.Input.Version(
+    format=finch.data.Format.ZARR,
+    dim_order="xyz",
+    chunks={"x": 30},
+    coords=False
+)
+brn_repeated_name = "repeated"
+"""The name of the repeated experiment"""
+
 # evaluation
 
-brn_evaluation = brn_multi_run
+brn_evaluation = brn_multi_run or brn_repeated_run
 """Whether or not to run evaluation"""
 
 
@@ -155,7 +172,17 @@ if run_brn:
         times = finch.measure_operator_runtimes(run_configs, brn_input, brn_multi_versions, **config)
         results = finch.eval.create_result_array(times, run_configs, brn_multi_versions, "brn_"+brn_multi_name)
         results.to_netcdf(brn_results_file)
-        finch.eval.create_plots(results)
+
+    if brn_repeated_run:
+        logging.info(f"Measuring runtimes of repeated brn and thetav runs")
+        run_configs = finch.experiments.RunConfig.list_configs(
+            jobs=brn_repeated_jobs,
+            impl=[finch.brn.get_repeated_implementation(n) for n in brn_repeated_n]
+        )
+        impl_names = [f"{n} repeats" for n in brn_repeated_n] * len(brn_repeated_jobs)
+        times = finch.measure_operator_runtimes(run_configs, finch.brn.brn_input, brn_repeated_input_version, **config)
+        results = finch.eval.create_result_array(times, run_configs, brn_repeated_input_version, brn_repeated_name, impl_names=impl_names)
+        results.to_netcdf(brn_results_file)
 
     if brn_evaluation:
         logging.info(f"Evaluating experiment results")

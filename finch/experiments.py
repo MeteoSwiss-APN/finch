@@ -145,7 +145,7 @@ def measure_operator_runtimes(
             for v in versions
         ]
     else:
-        preps = lambda : input.get_version(versions)
+        preps = lambda : [input.get_version(versions)]
     # make sure to run compute by storing to zarr
     compute = lambda a : a.rename("output").to_dataset().to_zarr(store=config["data"]["zarr_dir"], mode="w")
     if isinstance(run_config, RunConfig):

@@ -111,3 +111,16 @@ def brn_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
         return out
     arrays = [dataset[n] for n in input.brn_array_names]
     return util.custom_map_blocks(wrapper, *arrays, name="brn")
+
+def repeated(dataset: xr.Dataset, ntv: int = 1, nbrn: int = 1) -> xr.DataArray:
+    """
+    Repeated computation of thetav and brn.
+    """
+    input = dataset
+    for _ in range(ntv):
+        out = thetav_blocked_cpp(input)
+        input = input.assign(P=out)
+    for _ in range(nbrn):
+        out = brn_blocked_cpp(input)
+        input = input.assign(P=out)
+    return out
