@@ -232,10 +232,10 @@ class Input():
                 or other.chunks is None \
                 or all(c > 0 and c <= other.chunks[d] for d,c in self.chunks.items())
 
-        def impose(self, ds: xr.Dataset) -> xr.Dataset:
+        def impose(self, ds: xr.Dataset, dim_index: dict[str, str]) -> xr.Dataset:
             """Transforms the given dataset such that it conforms to this version."""
-            if self.dim_order is not None and translate_order(ds.dims) != self.dim_order:
-                ds = ds.transpose(*translate_order(self.dim_order))
+            if self.dim_order is not None and translate_order(ds.dims, dim_index) != self.dim_order:
+                ds = ds.transpose(*translate_order(self.dim_order, dim_index))
             if self.chunks is not None and ds.chunks != self.chunks:
                 ds = ds.chunk(self.chunks)
             if self.coords is not None and not self.coords:
@@ -369,7 +369,7 @@ class Input():
                 # load source (for targeted version)
                 dataset = self.source(target)
                 # impose version
-                dataset = target.impose(dataset)
+                dataset = target.impose(dataset, self.dim_index)
 
                 # add version (if not grib)
                 if add_if_not_exists:
