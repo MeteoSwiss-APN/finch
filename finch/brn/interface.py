@@ -4,9 +4,9 @@ import xarray as xr
 from . import impl
 from .. import util
 
-brn = impl.brn_blocked_np
+brn = impl.brn_blocked_cpp
 """The default brn implementation"""
-thetav = impl.thetav_blocked_np
+thetav = impl.thetav_blocked_cpp
 """The default thetav implementation"""
 
 THETAV_SIG = Callable[[xr.Dataset],xr.DataArray]
@@ -25,8 +25,3 @@ def list_thetav_implementations() -> list[THETAV_SIG]:
 
 def list_brn_implementations() -> list[BRN_SIG]:
     return util.list_funcs_matching(impl, BRN_REGEX, BRN_SIG)
-
-def list_thetav_input_preps(thetav_imps: list[Callable], filetype: str = "zarr") -> list[Callable]:
-    out = []
-    for imp in thetav_imps:
-        pass # TODO: Define an elegant way for specifying input preparations for functions
