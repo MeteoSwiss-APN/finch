@@ -43,7 +43,8 @@ void fill_brn_test_inout(double *p, double *t, double *qv, double *u, double *v,
                 v[ii] = vc;
                 hhl[ii] = hhlc;
                 double cs = tv_top + k*tv;
-                out[ii] = 9.80665 * (hhlc-hsurfc) * (tv - tv_top) * (o-k-1) / (cs * (uc*uc + vc*vc));
+                double cur_tv = k < o-1 ? tv : tv_top;
+                out[ii] = 9.80665 * (hhlc-hsurfc) * (cur_tv - tv_top) * (o-k) / (cs * (uc*uc + vc*vc));
             }
             hsurf[i*n+j] = hsurfc;
         }
