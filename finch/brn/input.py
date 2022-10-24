@@ -67,7 +67,6 @@ def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
     hhl = hhl[:-1, :, :] # TODO shouldn't be necessary
 
     out = xr.merge([out1, hhl, hsurf])
-    out = out.transpose(*translate_order(version.dim_order))
     return out
 
 brn_input = data.Input(
