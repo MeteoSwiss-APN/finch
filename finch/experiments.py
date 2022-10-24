@@ -139,22 +139,27 @@ def measure_operator_runtimes(
     - versions: The different input versions to be benchmarked
     - kwargs: Arguments for `measure_runtimes`
     """
-    if isinstance(versions, list):
-        preps = [
-            lambda v=v : [input.get_version(v)[0]]
-            for v in versions
-        ]
-    else:
-        preps = lambda : [input.get_version(versions)]
+    single_version = False
+    if isinstance(versions, Input.Version):
+        single_version = True
+        versions = [versions]
+    preps = [
+        lambda v=v : [input.get_version(v)[0]]
+        for v in versions
+    ]
+    if single_version:
+        preps = preps[0]
     # make sure to run compute by storing to zarr
     compute = lambda a : a.rename("output").to_dataset().to_zarr(store=config["data"]["zarr_dir"], mode="w")
+    single_run = False
     if isinstance(run_config, RunConfig):
-        run_config = copy(run_config)
-        run_config.impl = lambda x, funcs=run_config.impl : compute(funcs(x))
-    else:
-        run_config = [copy(rc) for rc in run_config]
-        for rc in run_config:
-            rc.impl = lambda x, funcs=rc.impl : compute(funcs(x))
+        single_run = True
+        run_config = [run_config]
+    run_config = [copy(rc) for rc in run_config]
+    for rc in run_config:
+        rc.impl = lambda x, funcs=rc.impl : compute(funcs(x))
+    if single_run:
+        run_config = run_config[0]
     return measure_runtimes(run_config, preps, **kwargs)
 
 def measure_loading_times(

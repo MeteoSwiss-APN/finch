@@ -30,7 +30,7 @@ def print_results(results: list[list[Any]], run_configs: list[RunConfig], versio
         print()
 
 def create_result_array(
-    results: list[list[float]], 
+    results: list[list[float]] | list[float] | float, 
     run_configs: list[RunConfig] | RunConfig, 
     versions: list[Input.Version] | Input.Version, 
     experiment_name: str = None, 
@@ -46,8 +46,10 @@ def create_result_array(
     # prepare arguments
     if not isinstance(run_configs, list):
         run_configs = [run_configs]
+        results = [results]
     if not isinstance(versions, list):
         versions = [versions]
+        results = [[r] for r in results]
 
     if experiment_name is None:
         experiment_name = util.random_entity_name()
