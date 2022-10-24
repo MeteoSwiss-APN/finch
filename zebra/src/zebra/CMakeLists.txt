@@ -15,5 +15,5 @@ target_link_libraries(zebra
 
 install(
     TARGETS zebra
-    LIBRARY DESTINATION zebra
+    DESTINATION .
 )

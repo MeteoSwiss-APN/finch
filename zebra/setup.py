@@ -1,4 +1,3 @@
-from re import M
 from skbuild import setup
 
 def exclude_static_libraries(cmake_manifest: list[str]):

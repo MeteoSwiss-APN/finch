@@ -1,5 +1,5 @@
-#ifndef WRAPPER
-#define WRAPPER
+#ifndef ZEBRA_WRAPPER_H
+#define ZEBRA_WRAPPER_H
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
