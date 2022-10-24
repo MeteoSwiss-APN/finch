@@ -59,14 +59,14 @@ brn_load_experiment = False
 
 # single run
 
-brn_single_run = False
+brn_single_run = True
 """Whether to perform a single run experiment with brn"""
-brn_imp_to_inspect = finch.brn.impl.brn_xr
+brn_imp_to_inspect = finch.brn.impl.brn_blocked_cpp
 """The brn implementation to inspect during the single run experiment"""
 brn_single_versions = [finch.Input.Version(
-    format=finch.data.Format.GRIB,
-    dim_order="zyx",
-    chunks={"z": 1},
+    format=finch.data.Format.ZARR,
+    dim_order="xyz",
+    chunks={"x": 30},
     coords=False
 )]
 """The input version for the brn single run experiment"""
@@ -79,7 +79,7 @@ brn_single_iterations = iterations
 
 # multi run
 
-brn_multi_run = True
+brn_multi_run = False
 """Wether to perform a run experiment with every available implementation"""
 brn_multi_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.NETCDF,
@@ -95,7 +95,7 @@ brn_multi_jobs = 1 if debug else [1,2,3,5,10,20]
 
 # evaluation
 
-brn_evaluation = True
+brn_evaluation = brn_multi_run
 """Whether or not to run evaluation"""
 
 
@@ -136,7 +136,7 @@ if run_brn:
         print()
 
     if brn_single_run:
-        logging.log(f"Measuring runtime of function {brn_imp_to_inspect.__name__}")
+        logging.info(f"Measuring runtime of function {brn_imp_to_inspect.__name__}")
         run_config = finch.experiments.RunConfig(brn_imp_to_inspect, brn_single_jobs)
         if brn_single_perf_report:
             with performance_report(filename=pathlib.Path(finch.config["evaluation"]["perf_report_dir"], "dask-report.html")):
