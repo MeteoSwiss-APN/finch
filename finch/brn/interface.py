@@ -28,4 +28,4 @@ def list_brn_implementations() -> list[BRN_SIG]:
     return util.list_funcs_matching(impl, BRN_REGEX, BRN_SIG)
 
 def get_repeated_implementation(n: int):
-    return functools.partial(impl.repeated, ntv=n, nbrn=2*n)
+    return functools.partial(impl.brn_blocked_cpp, reps=n)

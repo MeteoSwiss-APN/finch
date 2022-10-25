@@ -1,3 +1,4 @@
+from math import sqrt
 from typing import Callable
 import xarray as xr
 import dask.array as da
@@ -102,26 +103,17 @@ def thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     arrays = [dataset[n] for n in input.brn_array_names[:3]]
     return util.custom_map_blocks(wrapper, *arrays, name="thetav")
 
-def brn_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
+def brn_blocked_cpp(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
     """
     brn implementation using `custom_map_blocks` and numpy arrays with the zebra backend
     """
     dataset = dataset.transpose(*data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
     def wrapper(*arrays):
-        out = np.zeros_like(arrays[0])
-        zebra.brn(*arrays, out)
+        arrays = list(arrays)
+        for _ in range(reps):
+            out = np.zeros_like(arrays[0])
+            zebra.brn(*arrays, out)
+            arrays[0] = out
         return out
     arrays = [dataset[n] for n in input.brn_array_names]
     return util.custom_map_blocks(wrapper, *arrays, name="brn")
-
-def repeated(dataset: xr.Dataset, ntv: int = 1, nbrn: int = 1) -> xr.DataArray:
-    """
-    Repeated computation of thetav and brn.
-    """
-    ds_in = dataset
-    out = 0
-    for _ in range(ntv):
-        out += thetav_blocked_cpp(ds_in)
-    for _ in range(nbrn):
-        out += brn_blocked_cpp(ds_in)
-    return out

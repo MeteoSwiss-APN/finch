@@ -110,6 +110,11 @@ brn_repeated_input_version = finch.Input.Version(
 brn_repeated_name = "repeated"
 """The name of the repeated experiment"""
 
+# multicore experiment
+
+brn_multicore_run = True
+"""Whether to run the brn multicore experiment"""
+
 # evaluation
 
 brn_evaluation = brn_multi_run or brn_repeated_run
