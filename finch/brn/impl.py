@@ -79,7 +79,8 @@ def thetav_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
     thetav implementation using `custom_map_blocks` and numpy arrays
     """
     arrays = [dataset[n] for n in input.brn_array_names[:3]]
-    return util.custom_map_blocks(block_thetav_np, *arrays, name="thetav")
+    template = xr.DataArray(arrays[0].data, coords=arrays[0].coords, dims=arrays[0].dims)
+    return util.custom_map_blocks(block_thetav_np, *arrays, name="thetav", template=template)
 
 def brn_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
     """
@@ -87,7 +88,8 @@ def brn_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
     """
     dataset = dataset.transpose(*data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
     arrays = [dataset[n] for n in input.brn_array_names]
-    return util.custom_map_blocks(block_brn_np, *arrays, name="brn")
+    template = xr.DataArray(arrays[0].data, coords=arrays[0].coords, dims=arrays[0].dims)
+    return util.custom_map_blocks(block_brn_np, *arrays, name="brn", template=template)
 
 def thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     """
@@ -116,11 +118,10 @@ def repeated(dataset: xr.Dataset, ntv: int = 1, nbrn: int = 1) -> xr.DataArray:
     """
     Repeated computation of thetav and brn.
     """
-    input = dataset
+    ds_in = dataset
+    out = 0
     for _ in range(ntv):
-        out = thetav_blocked_cpp(input)
-        input = input.assign(P=out)
+        out += thetav_blocked_cpp(ds_in)
     for _ in range(nbrn):
-        out = brn_blocked_cpp(input)
-        input = input.assign(P=out)
+        out += brn_blocked_cpp(ds_in)
     return out

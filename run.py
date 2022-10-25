@@ -45,7 +45,7 @@ brn_results_file = pathlib.Path(finch.config["global"]["tmp_dir"], "brn_results.
 brn_modify_input_versions = False
 """Whether to alter the brn input versions"""
 brn_add_input_version = finch.Input.Version(
-    format=finch.data.Format.ZARR,
+    format=finch.data.Format.NETCDF,
     dim_order="xyz",
     chunks={"x": 10},
     coords=False
@@ -97,14 +97,14 @@ brn_multi_jobs = 1 if debug else [1,2,3,5,10,20]
 
 brn_repeated_run = True
 """Whether to performa a run experiment for the brn repeated function(s)"""
-brn_repeated_n = range(1, 10, 2)
+brn_repeated_n = range(10, 100, 10)
 """A list with the number of times to repeat the computation"""
 brn_repeated_jobs = [1, 2, 3, 5, 10, 20]
 """A list of the number of jobs to spawn"""
 brn_repeated_input_version = finch.Input.Version(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
-    chunks={"x": 30},
+    chunks={"x": 10},
     coords=False
 )
 brn_repeated_name = "repeated"
@@ -181,7 +181,13 @@ if run_brn:
         )
         impl_names = [f"{n} repeats" for n in brn_repeated_n] * len(brn_repeated_jobs)
         times = finch.measure_operator_runtimes(run_configs, finch.brn.brn_input, brn_repeated_input_version, **config)
-        results = finch.eval.create_result_array(times, run_configs, brn_repeated_input_version, brn_repeated_name, impl_names=impl_names)
+        results = finch.eval.create_result_array(
+            times, 
+            run_configs, 
+            brn_repeated_input_version, 
+            brn_repeated_name, 
+            impl_names=impl_names
+        )
         results.to_netcdf(brn_results_file)
 
     if brn_evaluation:

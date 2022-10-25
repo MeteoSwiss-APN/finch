@@ -65,7 +65,7 @@ def custom_map_blocks(f: Callable, *args: xr.DataArray | xr.Dataset,
 
     # handle optional arguments
     if template is None:
-        template = args[0]
+        template: xr.DataArray = args[0].copy()
     if dtype is None:
         dtype = template.dtype
     if name is None:

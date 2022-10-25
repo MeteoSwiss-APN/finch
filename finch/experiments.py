@@ -1,5 +1,6 @@
 from copy import copy
 from dataclasses import dataclass
+import pathlib
 from time import perf_counter
 from collections.abc import Callable
 from typing import Any, TypeVar
@@ -150,7 +151,10 @@ def measure_operator_runtimes(
     if single_version:
         preps = preps[0]
     # make sure to run compute by storing to zarr
-    compute = lambda a : a.rename("output").to_dataset().to_zarr(store=config["data"]["zarr_dir"], mode="w")
+    compute = lambda a : a.rename("finch_exp_output").to_dataset().to_zarr(
+        pathlib.Path(config["data"]["zarr_dir"], "finch_exp_output"),
+        mode="w"
+    )
     single_run = False
     if isinstance(run_config, RunConfig):
         single_run = True

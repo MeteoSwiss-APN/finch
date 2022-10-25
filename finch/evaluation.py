@@ -1,4 +1,5 @@
 from ensurepip import version
+import functools
 import pathlib
 from typing import Any
 from collections.abc import Callable
@@ -69,7 +70,13 @@ def create_result_array(
             out_d = dict()
             for k, v in attr_d.items():
                 if isinstance(v, Callable): # special case: for better readability we use the function name
-                    v = v.__name__
+                    if isinstance(v, functools.partial):
+                        v_str = v.func.__name__
+                        v_str += "_" + "_".join(str(a) for a in v.args)
+                        v_str += "_" + "_".join(k + "=" + str(v) for k, v in v.keywords.items())
+                        v = v_str
+                    else:
+                        v = v.__name__
                 elif not isinstance(v, numbers.Number):
                     v = str(v)
                 out_d[k] = v
