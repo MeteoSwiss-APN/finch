@@ -1,3 +1,4 @@
+from locale import normalize
 import logging
 from fileinput import filename
 from dask.distributed import performance_report
@@ -97,7 +98,7 @@ brn_multi_jobs = 1 if debug else [1,2,3,5,10,20]
 
 brn_repeated_run = True
 """Whether to performa a run experiment for the brn repeated function(s)"""
-brn_repeated_n = range(10, 100, 10)
+brn_repeated_n = range(1, 10, 1)
 """A list with the number of times to repeat the computation"""
 brn_repeated_jobs = [1, 2, 3, 5, 10, 20]
 """A list of the number of jobs to spawn"""
@@ -119,6 +120,8 @@ brn_multicore_run = True
 
 brn_evaluation = brn_multi_run or brn_repeated_run
 """Whether or not to run evaluation"""
+brn_eval_normalize = brn_repeated_run
+"""Whether to normalize line plots"""
 
 
 ######################################################
@@ -198,4 +201,4 @@ if run_brn:
     if brn_evaluation:
         logging.info(f"Evaluating experiment results")
         results = xr.open_dataarray(brn_results_file)
-        finch.eval.create_plots(results)
+        finch.eval.create_plots(results, normalize_lines=brn_eval_normalize)

@@ -117,7 +117,7 @@ def create_result_array(
             array.loc[va | rca] = r
     return array
 
-def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin):
+def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin, normalize_lines: bool = False):
     """
     Creates a series of plots for the results array.
     The plot creation works as follows.
@@ -128,6 +128,14 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin):
 
     If the coordinates of a dimension have type `str`, a bar plot will be generated. Otherwise a standard line plot will be saved.
     The plots will be stored in config's `plot_dir` in a directory according to the experiment name.
+
+    Arguments
+    ---
+    - results: xr.DataArray. The result array
+    - reduction: Callable. The reduction function. (See `xarray.DataArray.reduce`)
+    - normalize_lines: bool. If true, the runtimes for an implementation in a line plot will be 
+    divided by the longest runtime of said implementation.
+    This should be enabled if the progression of the runtime should be compared instead of the absolute runtime.
     """
 
     path = pathlib.Path(config["evaluation"]["plot_dir"], results.name)
@@ -137,6 +145,9 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin):
         if d != "impl" and results.sizes[d] > 1:
             to_reduce = [dd for dd in results.dims if dd != "impl" and dd != d]
             to_plot = results.reduce(reduction, to_reduce)
+            if normalize_lines:
+                for i in results.coords["impl"].data:
+                    to_plot.loc[dict(impl=i)] /= to_plot.sel(impl=i).max()
             ticks = to_plot.coords[d].data
             df = pd.DataFrame({
                 i: to_plot.sel(impl=i).data for i in results.coords["impl"].data
