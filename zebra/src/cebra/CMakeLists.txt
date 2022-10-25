@@ -10,6 +10,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(vectorclass)
 
+find_package(OpenMP REQUIRED)
+
 add_library(cebra
   brn.cpp
 )
@@ -17,6 +19,10 @@ add_library(cebra
 target_include_directories(cebra
   PUBLIC include
   ${vectorclass_SOURCE_DIR}
+)
+
+target_link_libraries(cebra
+  PUBLIC OpenMP::OpenMP_CXX
 )
 
 install(
