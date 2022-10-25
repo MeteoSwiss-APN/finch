@@ -1,7 +1,7 @@
 from copy import copy
 from dataclasses import dataclass
 import pathlib
-from time import perf_counter
+from time import perf_counter, time
 from collections.abc import Callable
 from typing import Any, TypeVar
 import numpy as np
@@ -80,7 +80,9 @@ def measure_runtimes(
     singleton_rc = isinstance(run_config, RunConfig)
     if singleton_rc:
         run_config = [run_config]
-    run_config = sorted(run_config, key=lambda x: x.jobs) # ensure increasing job sizes
+    # ensure increasing job sizes
+    run_config = sorted(enumerate(run_config), key=lambda x: x[1].jobs)
+    rc_order, run_config = zip(*run_config)
 
     # prepare inputs to all have the same form
     singleton_input = False
@@ -98,10 +100,10 @@ def measure_runtimes(
 
     pbar = util.get_pbar(pbar, len(run_config) * len(inputs) * iterations)
 
-    out = []
+    times = []
     for c in run_config:
         c.setup()
-        f_out = []
+        f_times = []
         for prep in inputs:
             cur_times = []
             if cache_inputs:
@@ -116,8 +118,13 @@ def measure_runtimes(
                 pbar.update()
             if warmup:
                 cur_times = cur_times[1:]
-            f_out.append(reduction(cur_times))
-        out.append(f_out)
+            f_times.append(reduction(cur_times))
+        times.append(f_times)
+    # reorder according to original run config order
+    out = [0]*len(times)
+    for i, t in zip(rc_order, times):
+        out[i] = t
+    # adjust output form
     if singleton_input:
         out = [o[0] for o in out]
     if singleton_rc:
