@@ -71,7 +71,7 @@ brn_single_versions = [finch.Input.Version(
     coords=False
 )]
 """The input version for the brn single run experiment"""
-brn_single_jobs = 3
+brn_single_workers = 3
 """The number of jobs to spawn for the brn single run"""
 brn_single_perf_report = True
 """Whether to record a performance report for the brn single run"""
@@ -100,8 +100,12 @@ brn_repeated_run = True
 """Whether to performa a run experiment for the brn repeated function(s)"""
 brn_repeated_n = range(1, 10, 1)
 """A list with the number of times to repeat the computation"""
-brn_repeated_jobs = [1, 2, 3, 5, 10, 20]
-"""A list of the number of jobs to spawn"""
+brn_repeated_workers = [1, 2, 3, 5, 10, 20]
+"""A list of the number of workers to spawn"""
+brn_repeated_cores_per_worker = 1
+"""The number of cores available per worker"""
+brn_repeated_omp = False
+"""Whether to reserve parallelism to OMP in a worker"""
 brn_repeated_input_version = finch.Input.Version(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
@@ -162,7 +166,7 @@ if run_brn:
 
     if brn_single_run:
         logging.info(f"Measuring runtime of function {brn_imp_to_inspect.__name__}")
-        run_config = finch.experiments.RunConfig(brn_imp_to_inspect, brn_single_jobs)
+        run_config = finch.experiments.RunConfig(impl=brn_imp_to_inspect, workers=brn_single_workers)
         if brn_single_perf_report:
             with performance_report(filename=pathlib.Path(finch.config["evaluation"]["perf_report_dir"], "dask-report.html")):
                 times = finch.measure_operator_runtimes(run_config, brn_input, brn_single_versions, **config)
@@ -183,11 +187,16 @@ if run_brn:
 
     if brn_repeated_run:
         logging.info(f"Measuring runtimes of repeated brn and thetav runs")
+        cluster_configs = finch.scheduler.ClusterConfig.list_configs(
+            cores_per_worker=brn_repeated_cores_per_worker,
+            omp_parallelism=brn_repeated_omp
+        )
         run_configs = finch.experiments.RunConfig.list_configs(
-            jobs=brn_repeated_jobs,
+            workers=brn_repeated_workers,
+            cluster_config=cluster_configs,
             impl=[finch.brn.get_repeated_implementation(n) for n in brn_repeated_n]
         )
-        impl_names = [f"{n} repeats" for n in brn_repeated_n] * len(brn_repeated_jobs)
+        impl_names = [f"{n} repeats" for n in brn_repeated_n] * len(brn_repeated_workers)
         times = finch.measure_operator_runtimes(run_configs, finch.brn.brn_input, brn_repeated_input_version, **config)
         results = finch.eval.create_result_array(
             times, 

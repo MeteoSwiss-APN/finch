@@ -21,7 +21,7 @@ class RunConfig(util.Config):
     workers: int = 1
 
     def setup(self):
-        scheduler.start_scheduler(env.debug, cfg=self.cluster_config)
+        scheduler.start_scheduler(cfg=self.cluster_config)
         scheduler.scale_and_wait(self.workers)
 
     @classmethod
@@ -82,8 +82,8 @@ def measure_runtimes(
     singleton_rc = isinstance(run_config, RunConfig)
     if singleton_rc:
         run_config = [run_config]
-    # ensure increasing job sizes
-    run_config = sorted(enumerate(run_config), key=lambda x: x[1].jobs)
+    # ensure increasing worker sizes
+    run_config = sorted(enumerate(run_config), key=lambda x: x[1].workers)
     rc_order, run_config = zip(*run_config)
 
     # prepare inputs to all have the same form

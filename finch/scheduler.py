@@ -7,7 +7,6 @@ from dask_jobqueue import SLURMCluster
 import dask.utils
 from . import util
 from . import env
-from . import config
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 
@@ -26,7 +25,7 @@ def parse_slurm_time(t: str) -> timedelta:
         elif len(t) == 2:
             t = ["0", *t]
         h, m, s = t
-    return timedelta(days=d, hours=h, minutes=m, seconds=s)
+    return timedelta(days=int(d), hours=int(h), minutes=int(m), seconds=int(s))
 
 @dataclass
 class ClusterConfig(util.Config):
@@ -71,11 +70,11 @@ def start_slurm_cluster(
     job_mem = dask.utils.format_bytes(node_memory_bytes // jobs_per_node)
 
     if cfg.omp_parallelism:
-        os.environ["OMP_NUM_THREADS"] = cfg.cores_per_worker
-        os.environ["OMP_THREAD_LIMIT"] = cfg.cores_per_worker
+        os.environ["OMP_NUM_THREADS"] = str(cfg.cores_per_worker)
+        os.environ["OMP_THREAD_LIMIT"] = str(cfg.cores_per_worker)
     else:
-        os.environ["OMP_NUM_THREADS"] = 1
-        os.environ["OMP_THREAD_LIMIT"] = 1
+        os.environ["OMP_NUM_THREADS"] = "1"
+        os.environ["OMP_THREAD_LIMIT"] = "1"
 
     cores = job_cpu if not cfg.omp_parallelism else cfg.workers_per_job # the number of cores dask believes it has available per job
 
@@ -105,7 +104,7 @@ def start_slurm_cluster(
     logging.info(f"Started new SLURM cluster. Dashboard available at {cluster.dashboard_link}")
     return client
 
-def start_scheduler(debug: bool = False, *cluster_args, **cluster_kwargs) -> Client | None:
+def start_scheduler(debug: bool = env.debug, *cluster_args, **cluster_kwargs) -> Client | None:
     """
     Starts a new scheduler either in debug or run mode.
     If `debug` is `False`, a new SLURM cluster will be started and a client connected to the new cluster is returned.
