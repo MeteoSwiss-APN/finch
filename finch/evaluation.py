@@ -145,7 +145,7 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin, normali
         if d != "impl" and results.sizes[d] > 1:
             to_reduce = [dd for dd in results.dims if dd != "impl" and dd != d]
             to_plot = results.reduce(reduction, to_reduce)
-            if normalize_lines:
+            if normalize_lines and not isinstance(results[d].data[0], str):
                 for i in results.coords["impl"].data:
                     to_plot.loc[dict(impl=i)] /= to_plot.sel(impl=i).max()
             ticks = to_plot.coords[d].data

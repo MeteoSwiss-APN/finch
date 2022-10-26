@@ -11,16 +11,18 @@ from .util import PbarArg
 from . import util
 from . import config
 from . import env
+from . import scheduler
 import tqdm
 
 @dataclass
 class RunConfig(util.Config):
     impl: Callable = None
-    jobs: int = 1
+    cluster_config: scheduler.ClusterConfig = scheduler.ClusterConfig()
+    workers: int = 1
 
     def setup(self):
-        if env.cluster is not None:
-            env.cluster.scale(jobs=self.jobs)
+        scheduler.start_scheduler(env.debug, cfg=self.cluster_config)
+        scheduler.scale_and_wait(self.workers)
 
     @classmethod
     def get_class_attr(cls) -> list[str]:

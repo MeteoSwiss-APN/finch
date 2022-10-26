@@ -1,67 +1,159 @@
-from dask_jobqueue import SLURMCluster
+import logging
 import os
+import asyncio
 import dask
-from dask.distributed import Client
+from dask.distributed import Client, Scheduler, SchedulerPlugin
+from dask_jobqueue import SLURMCluster
+import dask.utils
 from . import util
-from . import environment as env
+from . import env
 from . import config
+from datetime import datetime, timedelta
+from dataclasses import dataclass
 
 scheduler_config = config["scheduler"]
+scheduler_file = scheduler_config["file"]
 
-def start_slurm(
-    scheduler_port: int = 8785, 
-    dashboard_port: int = 8877, 
-    cores_per_node: int = scheduler_config.getint("cores_per_job"), 
-    memory_per_node: str = scheduler_config["memory_per_job"],
-    exclusive_jobs: bool = scheduler_config.getboolean("exclusive_jobs"),
-    verbose=False
+def parse_slurm_time(t: str) -> timedelta:
+    has_days = "-" in t
+    d = 0
+    if has_days:
+        d, t = t.split("-")
+        d = int(d)
+        t = t.split(":")
+        h, m, s = t + ["0"]*(3-len(t))
+    else:
+        t = t.split(":")
+        if len(t) == 1:
+            t = ["0", *t, "0"]
+        elif len(t) == 2:
+            t = ["0", *t]
+        h, m, s = t
+    return timedelta(days=d, hours=h, minutes=m, seconds=s)
+
+@dataclass
+class ClusterConfig(util.Config):
+    workers_per_job: int = 1
+    """The number of workers to spawn per SLURM job"""
+    cores_per_worker: int = dask.config.get("jobqueue.slurm.cores", 1)
+    """The number of cores available per worker"""
+    omp_parallelism: bool = True
+    """
+    Toggle whether the cores of the worker should be reserved to OpenMP.
+    If true, a worker thinks it has only one one thread available and won't run tasks in parallel.
+    Instead the `OMP_NUM_THREADS` and `OMP_THREAD_LIMIT` environment variables are set to allow OpenMP to handle parallelism.
+    """
+    exclusive_jobs = True
+    """Toggle whether to use a full node exclusively for one job."""
+
+client: Client = None
+_active_config: ClusterConfig = None
+
+def start_slurm_cluster(
+    cfg: ClusterConfig = ClusterConfig()
 ) -> Client:
     """
-    Tries to start a new SLURM cluster scheduler at port `scheduler_port` and exposes a dashboard at port `dashboard_port`.
-    A client for the scheduler is registered and returned.
-    If `scheduler_port` is already open, it is assumed that a scheduler is already running there and 
-    a client will be returned for the running scheduler.
-
-    Arguments:
-    ---
-    - cores_per_node: int. The number of available cores per node on the cluster.
-    - memory_per_node: int. The amount of available memory per node on the cluster.
-    - verbose: bool. Whether to print status information or not.
+    Starts a new SLURM cluster with the given config and returns a client for it.
+    If a cluster is already running with a different config, it is shut down.
     """
-    dashboard_address = f":{dashboard_port}"
-    if not util.check_socket_open(port=scheduler_port):
-        scratch_dir = config["global"]["scratch_dir"]
-        cluster = SLURMCluster(
-                queue="postproc",
-                cores=cores_per_node,
-                memory=memory_per_node,
-                job_extra_directives=["--exclusive"] if exclusive_jobs else [],
-                n_workers=cores_per_node,
-                processes=cores_per_node,
-                log_directory=scratch_dir + "/out",
-                scheduler_options={"port": scheduler_port, "dashboard_address": dashboard_address},
-                local_directory=scratch_dir
-            )
-        env.cluster = cluster
-        if verbose:
-            print("SLURM cluster started at address: %s" % cluster.scheduler_address)
-            print(f"Dashboard available at address: http://{env.hostname}{dashboard_address}/status")
+    global client
+
+    if cfg == _active_config:
+        return client
+
+    if client is not None:
+        client.shutdown()
+
+    walltime = dask.config.get("jobqueue.slurm.walltime", "01:00:00")
+    node_cores = dask.config.get("jobqueue.slurm.cores", 1)
+    node_memory: str = dask.config.get("jobqueue.slurm.memory", "1GB")
+    node_memory_bytes = dask.utils.parse_bytes(node_memory)
+
+    job_cpu = cfg.cores_per_worker * cfg.workers_per_job
+    jobs_per_node = node_cores // job_cpu
+    job_mem = dask.utils.format_bytes(node_memory_bytes // jobs_per_node)
+
+    if cfg.omp_parallelism:
+        os.environ["OMP_NUM_THREADS"] = cfg.cores_per_worker
+        os.environ["OMP_THREAD_LIMIT"] = cfg.cores_per_worker
     else:
-        if verbose:
-            print(f"Did not start new cluster. Port {scheduler_port} is already in use.")
-    return Client(f"127.0.0.1:{scheduler_port}")
+        os.environ["OMP_NUM_THREADS"] = 1
+        os.environ["OMP_THREAD_LIMIT"] = 1
 
-def start_scheduler(debug: bool = False, verbose: bool = False) -> Client | None:
+    cores = job_cpu if not cfg.omp_parallelism else cfg.workers_per_job # the number of cores dask believes it has available per job
+
+    walltime_delta = parse_slurm_time(walltime)
+    worker_lifetime = walltime_delta - timedelta(minutes=5)
+
+    dashboard_address = ":8877"
+    
+    cluster = SLURMCluster(
+        walltime=walltime,
+        cores=cores,
+        memory=job_mem,
+        job_cpu=job_cpu,
+        job_mem=job_mem,
+        job_extra_directives=["--exclusive"] if cfg.exclusive_jobs else [],
+        scheduler_options={
+            "dashboard_address": dashboard_address,
+        },
+        worker_extra_args=[
+            "--lifetime", str(worker_lifetime), 
+            "--lifetime-stagger", "4m",
+        ]
+    )
+
+    client = Client(cluster)
+    _active_config = cfg
+    logging.info(f"Started new SLURM cluster. Dashboard available at {cluster.dashboard_link}")
+    return client
+
+def start_scheduler(debug: bool = False, *cluster_args, **cluster_kwargs) -> Client | None:
     """
-    Starts a new default scheduler or connects to an existing one.
-    If `debug` is `False`, a client connected to a SLURM cluster scheduler will be returned.
-    If no scheduler is available at the default port, a new one will be started.
+    Starts a new scheduler either in debug or run mode.
+    If `debug` is `False`, a new SLURM cluster will be started and a client connected to the new cluster is returned.
     If `debug` is `True`, `None` is returned and dask is configured to run a synchronous scheduler.
     """
     if debug:
         dask.config.set(scheduler="synchronous")
         return None
     else:
-        client = start_slurm(verbose=verbose)
-        client.restart()
-        return client
+        return start_slurm_cluster(*cluster_args, **cluster_kwargs)
+
+class WorkerCountPlugin(SchedulerPlugin):
+    def __init__(self, threshold: int):
+        self.threshold = threshold
+        self.above_event = asyncio.Event()
+        self.below_event = asyncio.Event()
+        self.at_event = asyncio.Event()
+        self.change_event = asyncio.Event()
+
+    def add_remove_worker(self, scheduler: Scheduler):
+        self.change_event.set()
+        if self.threshold > len(scheduler.workers):
+            self.above_event.clear()
+            self.at_event.clear()
+            self.below_event.set()
+        elif self.threshold < len(scheduler.workers):
+            self.at_event.clear()
+            self.below_event.clear()
+            self.above_event.set()
+        else:
+            self.above_event.clear()
+            self.below_event.clear()
+            self.at_event.set()
+        self.change_event.clear()
+    
+    def add_worker(self, scheduler: Scheduler, worker: str):
+        self.add_remove_worker(scheduler)
+
+    def remove_worker(self, scheduler: Scheduler, worker: str):
+        self.add_remove_worker(scheduler)
+
+def get_client():
+    return client
+
+def scale_and_wait(n: int):
+    if client:
+        client.cluster.scale(n)
+        client.wait_for_workers(n)

@@ -105,7 +105,7 @@ brn_repeated_jobs = [1, 2, 3, 5, 10, 20]
 brn_repeated_input_version = finch.Input.Version(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
-    chunks={"x": 10},
+    chunks={"x": 30},
     coords=False
 )
 brn_repeated_name = "repeated"
