@@ -1,7 +1,9 @@
 from ast import Call, arg
 from contextlib import closing
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass
+import dataclasses
 import functools
+import numbers
 import pathlib
 import socket
 import types
@@ -308,7 +310,10 @@ def flatten_dict(d: dict, separator: str = "_") -> dict:
         return out
 
 class Config():
-    """Simple base class for configuration types"""
+    """
+    Base class for configuration types. 
+    Classes inheriting from this class must be dataclasses (with the @dataclass decorator).
+    """
     @classmethod
     def list_configs(cls, **kwargs) -> list:
         """
@@ -325,3 +330,29 @@ class Config():
             else:
                 configs = [c | u for c in configs for u in updates]
         return [cls(**c) for c in configs]
+
+
+def get_primitive_attrs_from_dataclass(dc) -> dict[str, str | numbers.Number]:
+    """
+    Returns the flattened fields from a dataclass as primitives.
+    """
+    assert dataclasses.is_dataclass(dc)
+    attrs = flatten_dict(dataclasses.asdict(dc))
+    # transform non-numeric attributes to strings
+    out = dict()
+    for k, v in attrs.items():
+        if isinstance(v, Callable): # extract function name from callable
+            if isinstance(v, functools.partial):
+                v_str = v.func.__name__
+                v_str += "_" + "_".join(str(a) for a in v.args)
+                v_str += "_" + "_".join(k + "=" + str(v) for k, v in v.keywords.items())
+                v = v_str
+            else:
+                v = v.__name__
+        elif dataclasses.is_dataclass(dc):
+            v = get_primitive_attrs_from_dataclass(dc) # recursive
+        elif not isinstance(v, numbers.Number):
+            v = str(v)
+        out[k] = v
+    out = flatten_dict(out) # dataclasses were transformed to dicts. So flatten them.
+    return out

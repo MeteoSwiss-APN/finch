@@ -54,39 +54,11 @@ def create_result_array(
 
     if experiment_name is None:
         experiment_name = util.random_entity_name()
-    def get_attrs(entities: list, cls: type) -> list[dict[str, str]]:
-        """Retrurns a list of dictionaries with string representations of the class attributes of the given entities."""
-        # construct flattened attribute dictionary
-        attrs: list[dict] = [
-            util.flatten_dict({
-                a: e.__dict__[a] 
-                for a in cls.get_class_attr()
-            }) 
-            for e in entities
-        ]
-        # transform non-numeric attributes to strings
-        out = []
-        for attr_d in attrs:
-            out_d = dict()
-            for k, v in attr_d.items():
-                if isinstance(v, Callable): # special case: for better readability we use the function name
-                    if isinstance(v, functools.partial):
-                        v_str = v.func.__name__
-                        v_str += "_" + "_".join(str(a) for a in v.args)
-                        v_str += "_" + "_".join(k + "=" + str(v) for k, v in v.keywords.items())
-                        v = v_str
-                    else:
-                        v = v.__name__
-                elif not isinstance(v, numbers.Number):
-                    v = str(v)
-                out_d[k] = v
-            out.append(out_d)
-        return out
 
     # get attributes from run configs and versions
-    version_attrs = get_attrs(versions, Input.Version)
+    version_attrs = [util.get_primitive_attrs_from_dataclass(v) for v in versions]
     va_keys = list(version_attrs[0].keys())
-    rc_attrs = get_attrs(run_configs, RunConfig)
+    rc_attrs = [util.get_primitive_attrs_from_dataclass(rc) for rc in run_configs]
     if impl_names is not None:
         # set implementation names
         for a, impl_name in zip(rc_attrs, impl_names):
