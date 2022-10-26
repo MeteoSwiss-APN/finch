@@ -11,9 +11,6 @@ from . import config
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 
-scheduler_config = config["scheduler"]
-scheduler_file = scheduler_config["file"]
-
 def parse_slurm_time(t: str) -> timedelta:
     has_days = "-" in t
     d = 0
@@ -56,7 +53,7 @@ def start_slurm_cluster(
     Starts a new SLURM cluster with the given config and returns a client for it.
     If a cluster is already running with a different config, it is shut down.
     """
-    global client
+    global client, _active_config
 
     if cfg == _active_config:
         return client

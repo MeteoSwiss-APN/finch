@@ -128,13 +128,13 @@ brn_eval_normalize = brn_repeated_run
 # script
 ######################################################
 
-# adjust logging
+# configure logging
 logging.basicConfig(format='[%(levelname)s]: %(message)s', level=logging.INFO)
+
+# configure debug setup
 if debug:
     logging.basicConfig(level=logging.DEBUG)
-
-# start scheduler
-client = finch.start_scheduler(debug=debug_scheduler)
+finch.env.debug = debug_scheduler
 
 # brn experiments
 

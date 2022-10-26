@@ -56,3 +56,10 @@ Finch uses the Python's configparser library for configuration with `.ini` files
 Variables can be cross-referenced with `${section:variable}` and environment variables are available via `${VAR}`.
 Finch provides a default config file `config/finch.ini`.
 Custom configuration, which overrides the defaults, can be provided in `config/custom.ini` as well as in a location specified by the  environment variable `CONFIG`.
+
+## Dask configuration
+
+For setting up the dask clusters, Finch uses the dask provided configuration to find out about the reources provided by the HPC infrastracture.
+For jobqueue.slurm configurations, it interprets the configured resources (cores and memory) as resources available per node on the cluster.
+The job specific resources will be overwritten.
+See [here](https://docs.dask.org/en/stable/configuration.html) and [here](https://jobqueue.dask.org/en/latest/configuration-setup.html) for information on how to configure dask.
