@@ -91,6 +91,7 @@ def start_slurm_cluster(
         walltime=walltime,
         cores=cores,
         memory=job_mem,
+        processes=cfg.workers_per_job,
         job_cpu=job_cpu,
         job_extra_directives=["--exclusive"] if cfg.exclusive_jobs else [],
         # scheduler / worker options
