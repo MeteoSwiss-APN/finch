@@ -77,9 +77,6 @@ def create_result_array(
         a : list(set(ra[a] for ra in rc_attrs))
         for a in rca_keys
     })
-    # sort coordinates
-    for a in va_keys + rca_keys:
-        coords[a] = sorted(coords[a])
 
     # initialize data
     dim_sizes = [len(coords[a]) for a in coords]
@@ -159,9 +156,10 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin, normali
             if normalize_lines and not isinstance(results[d].data[0], str):
                 for i in results.coords["impl"].data:
                     to_plot.loc[dict(impl=i)] /= to_plot.sel(impl=i).max()
+            to_plot = to_plot.sortby(list(to_plot.dims))
             ticks = to_plot.coords[d].data
             df = pd.DataFrame({
-                i: to_plot.sel(impl=i).data for i in results.coords["impl"].data
+                i: to_plot.sel(impl=i).data for i in to_plot.coords["impl"].data
             } | {"ticks": ticks})
             plotargs = dict(
                 x="ticks",
