@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 import logging
 from dask.distributed import performance_report
 import pathlib
@@ -82,6 +83,8 @@ brn_single_perf_report = True
 """Whether to record a performance report for the brn single run"""
 brn_single_iterations = iterations
 """The number of iterations for the brn single run experiment"""
+brn_single_name = "single"
+"""The name for the brn single run experiment"""
 
 # multi run
 
@@ -103,11 +106,11 @@ brn_multi_jobs = 1 if debug else [1,2,3,5,10,20]
 
 brn_repeated_run = True
 """Whether to performa a run experiment for the brn repeated function(s)"""
-brn_repeated_n = range(1, 10, 1)
+brn_repeated_n = range(10, 50, 10)
 """A list with the number of times to repeat the computation"""
-brn_repeated_workers = [5, 10, 20, 40, 100]
+brn_repeated_workers = [1, 5, 10, 20, 30]
 """A list of the number of workers to spawn"""
-brn_repeated_cores_per_worker = 1
+brn_repeated_cores_per_worker = 4
 """The number of cores available per worker"""
 brn_repeated_omp = False
 """Whether to reserve parallelism to OMP in a worker"""
@@ -170,14 +173,12 @@ if run_brn:
 
     if brn_single_run:
         logging.info(f"Measuring runtime of function {brn_imp_to_inspect.__name__}")
-        run_config = finch.experiments.RunConfig(impl=brn_imp_to_inspect, workers=brn_single_workers)
-        if brn_single_perf_report:
-            with performance_report(filename=pathlib.Path(finch.config["evaluation"]["perf_report_dir"], "dask-report.html")):
-                times = finch.measure_operator_runtimes(run_config, brn_input, brn_single_versions, **config)
-        else:
-            times = finch.measure_operator_runtimes(run_config, brn_input, brn_single_versions, **config)
-        finch.print_version_results(times, brn_single_versions)
-        print()
+        run_configs = finch.experiments.RunConfig(impl=brn_imp_to_inspect, workers=brn_single_workers)
+        with performance_report(filename=pathlib.Path(finch.config["evaluation"]["perf_report_dir"], "dask-report.html")) \
+            if brn_single_perf_report else nullcontext():
+            times = finch.measure_operator_runtimes(run_configs, brn_input, brn_single_versions, **config)
+        results = finch.eval.create_result_array(times, run_configs, brn_single_versions, "brn_"+brn_single_name)
+        results.to_netcdf(brn_results_file)
     
     if brn_multi_run:
         logging.info(f"Measuring runtimes of brn implementations")
@@ -215,4 +216,5 @@ if run_brn:
     if brn_evaluation:
         logging.info(f"Evaluating experiment results")
         results = xr.open_dataarray(brn_results_file)
+        results = finch.eval.create_cores_dimension(results)
         finch.eval.create_plots(results, normalize_lines=brn_eval_normalize)
