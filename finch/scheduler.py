@@ -12,6 +12,7 @@ from datetime import timedelta
 from dataclasses import dataclass
 
 def parse_slurm_time(t: str) -> timedelta:
+    """Returns a timedelta from the given duration as is being passed to SLURM"""
     has_days = "-" in t
     d = 0
     if has_days:
@@ -98,7 +99,7 @@ def start_slurm_cluster(
         },
         worker_extra_args=[
             "--lifetime", f"{worker_lifetime}s", 
-            "--lifetime-stagger", "4m",
+            "--lifetime-stagger", "4m"
         ],
         # filesystem config
         local_directory=config["global"]["scratch_dir"],
@@ -159,4 +160,4 @@ def get_client():
 def scale_and_wait(n: int):
     if client:
         client.cluster.scale(n)
-        client.wait_for_workers(n)
+        client.wait_for_workers(n, timeout=config["experiments"]["scaling_timeout"])
