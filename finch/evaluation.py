@@ -35,7 +35,7 @@ def create_result_array(
     run_configs: list[RunConfig] | RunConfig, 
     versions: list[Input.Version] | Input.Version, 
     experiment_name: str = None, 
-    impl_names: list[str] | None = None
+    impl_names: list[str] | Callable[[Callable], str] | None = None
 ) -> xr.DataArray:
     """
     Constructs a data array from the results of an experiment.
@@ -59,11 +59,15 @@ def create_result_array(
     version_attrs = [util.get_primitive_attrs_from_dataclass(v) for v in versions]
     va_keys = list(version_attrs[0].keys())
     rc_attrs = [util.get_primitive_attrs_from_dataclass(rc) for rc in run_configs]
+    rca_keys = list(rc_attrs[0].keys())
     if impl_names is not None:
         # set implementation names
-        for a, impl_name in zip(rc_attrs, impl_names):
-            a["impl"] = impl_name
-    rca_keys = list(rc_attrs[0].keys())
+        if isinstance(impl_name, list):
+            for a, impl_name in zip(rc_attrs, impl_names):
+                a["impl"] = impl_name
+        elif isinstance(impl_name, Callable):
+            for a, rc in zip(rc_attrs, run_configs):
+                a["impl"] = impl_name(rc.impl)
     # construct coordinates
     coords = {
         a : list(set(va[a] for va in version_attrs))
@@ -73,10 +77,9 @@ def create_result_array(
         a : list(set(ra[a] for ra in rc_attrs))
         for a in rca_keys
     })
-    # sort numeric coordinates
+    # sort coordinates
     for a in va_keys + rca_keys:
-        if isinstance(coords[a][0], numbers.Number):
-            coords[a] = sorted(coords[a])
+        coords[a] = sorted(coords[a])
 
     # initialize data
     dim_sizes = [len(coords[a]) for a in coords]
@@ -119,7 +122,7 @@ def create_cores_dimension(
     out_cols = [out.loc[{cores_dim : c}] for c in coords]
     out_cols = [c if cores_dim in c.dims else c.expand_dims(cores_dim) for c in out_cols]
     out_cols = [c.reduce(reduction, cores_dim) for c in out_cols]
-    out_cols = xr.concat(out_cols, )
+    out_cols = xr.concat(out_cols, cores_dim)
     out = xr.concat(out_cols, cores_dim)
     out[cores_dim] = coords
     return out

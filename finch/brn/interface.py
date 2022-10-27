@@ -29,3 +29,7 @@ def list_brn_implementations() -> list[BRN_SIG]:
 
 def get_repeated_implementation(n: int):
     return functools.partial(impl.brn_blocked_cpp, reps=n)
+
+def get_repeated_impl_name(impl: functools.partial):
+    reps = str(impl.keywords["reps"])
+    return f"repeated_{reps}"
