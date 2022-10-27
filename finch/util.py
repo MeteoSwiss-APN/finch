@@ -349,8 +349,8 @@ def get_primitive_attrs_from_dataclass(dc) -> dict[str, str | numbers.Number]:
                 v = v_str
             else:
                 v = v.__name__
-        elif dataclasses.is_dataclass(dc):
-            v = get_primitive_attrs_from_dataclass(dc) # recursive
+        elif dataclasses.is_dataclass(v):
+            v = get_primitive_attrs_from_dataclass(v) # recursive
         elif not isinstance(v, numbers.Number):
             v = str(v)
         out[k] = v
