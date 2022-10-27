@@ -23,7 +23,7 @@ debug_finch = debug
 """Whether to use finch in debug mode."""
 
 # apply pre-import configurations
-os.environ["DEBUG"] = debug_finch
+os.environ["DEBUG"] = str(debug_finch)
 import finch
 
 

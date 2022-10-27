@@ -21,5 +21,5 @@ if env.custom_config_env_var in os.environ:
         config.read_file(f)
 
 # apply some configurations
-if "debug" in config["global"] and config["global"]["debug"] != "":
-    env.set_debug_mode(util.parse_bool(config["global"]["debug"]))
+if "debug_mode" in config["global"] and config["global"]["debug_mode"] != "":
+    env.set_debug_mode(util.parse_bool(config["global"]["debug_mode"]))

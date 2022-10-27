@@ -59,7 +59,7 @@ Custom configuration, which overrides the defaults, can be provided in `config/c
 
 ## Debug mode
 
-To run Finch in debug mode, the `debug` option in the `global` section of the configuration can be set to "true" or "false".
+To run Finch in debug mode, the `debug_mode` option in the `global` section of the configuration can be set to "true" or "false".
 By default, the debug option is retrieved from the environment variable `DEBUG`.
 
 In debug mode, Finch will run a synchronous dask scheduler and will put the log level to debug (instead of info).
