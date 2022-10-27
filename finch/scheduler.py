@@ -7,7 +7,8 @@ from dask_jobqueue import SLURMCluster
 import dask.utils
 from . import util
 from . import env
-from datetime import datetime, timedelta
+from . import config
+from datetime import timedelta
 from dataclasses import dataclass
 
 def parse_slurm_time(t: str) -> timedelta:
@@ -80,23 +81,29 @@ def start_slurm_cluster(
 
     walltime_delta = parse_slurm_time(walltime)
     worker_lifetime = walltime_delta - timedelta(minutes=5)
+    worker_lifetime = int(worker_lifetime.total_seconds())
 
     dashboard_address = ":8877"
     
     cluster = SLURMCluster(
+        # resources
         walltime=walltime,
         cores=cores,
         memory=job_mem,
         job_cpu=job_cpu,
-        job_mem=job_mem,
         job_extra_directives=["--exclusive"] if cfg.exclusive_jobs else [],
+        # scheduler / worker options
         scheduler_options={
             "dashboard_address": dashboard_address,
         },
         worker_extra_args=[
-            "--lifetime", str(worker_lifetime), 
+            "--lifetime", f"{worker_lifetime}s", 
             "--lifetime-stagger", "4m",
-        ]
+        ],
+        # filesystem config
+        local_directory=config["global"]["scratch_dir"],
+        shared_temp_directory=config["global"]["tmp_dir"],
+        log_directory=config["global"]["log_dir"]
     )
 
     client = Client(cluster)

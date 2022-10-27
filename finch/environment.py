@@ -1,3 +1,4 @@
+import logging
 import os
 import pathlib
 from dask.distributed import Client
@@ -5,6 +6,17 @@ from dask_jobqueue import SLURMCluster
 
 debug = False
 """Debug mode toggle"""
+
+log_level = logging.INFO
+"""The current log level"""
+
+def set_debug_mode(dbg: bool):
+    global debug, log_level
+    debug = dbg
+    log_level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(level=log_level)
+
+set_debug_mode(debug)
 
 proj_root = str(pathlib.Path(__file__).parent.parent.absolute())
 """The root directory of the project"""

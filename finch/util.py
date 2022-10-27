@@ -356,3 +356,12 @@ def get_primitive_attrs_from_dataclass(dc) -> dict[str, str | numbers.Number]:
         out[k] = v
     out = flatten_dict(out) # dataclasses were transformed to dicts. So flatten them.
     return out
+
+def parse_bool(b: str) -> bool:
+    b = b.lower()
+    if b == "true":
+        return True
+    elif b == "false":
+        return False
+    else:
+        raise ValueError(f"Could not parse {b} to boolean type.")

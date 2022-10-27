@@ -1,12 +1,10 @@
-from locale import normalize
 import logging
-from fileinput import filename
 from dask.distributed import performance_report
 import pathlib
 import sys
-import finch
 import argparse
 import xarray as xr
+import os
 
 # command line arguments
 parser = argparse.ArgumentParser()
@@ -17,14 +15,21 @@ cmd_args = parser.parse_args(sys.argv[1:])
 # configuration
 ######################################################
 
+# pre-import configurations
+
+debug = cmd_args.debug
+"""Debug mode"""
+debug_finch = debug
+"""Whether to use finch in debug mode."""
+
+# apply pre-import configurations
+os.environ["DEBUG"] = debug_finch
+import finch
+
 
 # general configurations
 ######################################################
 
-debug = cmd_args.debug
-"""Debug mode"""
-debug_scheduler = False
-"""Whether to launch a debugable scheduler or the normal distributed one."""
 iterations = 1 if debug else 5
 """The number of iterations when measuring runtime"""
 warmup = not debug
@@ -138,7 +143,6 @@ logging.basicConfig(format='[%(levelname)s]: %(message)s', level=logging.INFO)
 # configure debug setup
 if debug:
     logging.basicConfig(level=logging.DEBUG)
-finch.env.debug = debug_scheduler
 
 # brn experiments
 

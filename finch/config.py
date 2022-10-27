@@ -1,5 +1,6 @@
 from configparser import ConfigParser, ExtendedInterpolation
-from . import environment as env
+from . import env
+from . import util
 import os
 import pathlib
 
@@ -18,3 +19,7 @@ if pathlib.Path(env.default_custom_config).exists():
 if env.custom_config_env_var in os.environ:
     with open(os.environ[env.custom_config_env_var]) as f:
         config.read_file(f)
+
+# apply some configurations
+if "debug" in config["global"] and config["global"]["debug"] != "":
+    env.set_debug_mode(util.parse_bool(config["global"]["debug"]))

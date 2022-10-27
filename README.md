@@ -57,6 +57,13 @@ Variables can be cross-referenced with `${section:variable}` and environment var
 Finch provides a default config file `config/finch.ini`.
 Custom configuration, which overrides the defaults, can be provided in `config/custom.ini` as well as in a location specified by the  environment variable `CONFIG`.
 
+## Debug mode
+
+To run Finch in debug mode, the `debug` option in the `global` section of the configuration can be set to "true" or "false".
+By default, the debug option is retrieved from the environment variable `DEBUG`.
+
+In debug mode, Finch will run a synchronous dask scheduler and will put the log level to debug (instead of info).
+
 ## Dask configuration
 
 For setting up the dask clusters, Finch uses the dask provided configuration to find out about the reources provided by the HPC infrastracture.
