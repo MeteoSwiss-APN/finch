@@ -105,7 +105,7 @@ brn_repeated_run = True
 """Whether to performa a run experiment for the brn repeated function(s)"""
 brn_repeated_n = range(1, 10, 1)
 """A list with the number of times to repeat the computation"""
-brn_repeated_workers = [1, 2, 3, 5, 10, 20]
+brn_repeated_workers = [1, 5, 10, 20, 40, 100]
 """A list of the number of workers to spawn"""
 brn_repeated_cores_per_worker = 1
 """The number of cores available per worker"""
@@ -138,7 +138,7 @@ brn_eval_normalize = brn_repeated_run
 ######################################################
 
 # configure logging
-logging.basicConfig(format='[%(levelname)s]: %(message)s', level=logging.INFO)
+logging.basicConfig(format=finch.env.logging_format, level=logging.INFO)
 
 # configure debug setup
 if debug:
@@ -193,7 +193,8 @@ if run_brn:
         logging.info(f"Measuring runtimes of repeated brn and thetav runs")
         cluster_configs = finch.scheduler.ClusterConfig.list_configs(
             cores_per_worker=brn_repeated_cores_per_worker,
-            omp_parallelism=brn_repeated_omp
+            omp_parallelism=brn_repeated_omp,
+            exclusive_jobs=False
         )
         run_configs = finch.experiments.RunConfig.list_configs(
             workers=brn_repeated_workers,

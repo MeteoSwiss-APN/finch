@@ -10,11 +10,13 @@ debug = False
 log_level = logging.INFO
 """The current log level"""
 
+logging_format = '[%(levelname)s]: %(message)s'
+
 def set_debug_mode(dbg: bool):
     global debug, log_level
     debug = dbg
     log_level = logging.DEBUG if debug else logging.INFO
-    logging.basicConfig(level=log_level)
+    logging.basicConfig(format=logging_format, level=log_level)
 
 set_debug_mode(debug)
 

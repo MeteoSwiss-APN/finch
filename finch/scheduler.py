@@ -40,7 +40,7 @@ class ClusterConfig(util.Config):
     If true, a worker thinks it has only one one thread available and won't run tasks in parallel.
     Instead the `OMP_NUM_THREADS` and `OMP_THREAD_LIMIT` environment variables are set to allow OpenMP to handle parallelism.
     """
-    exclusive_jobs = True
+    exclusive_jobs: bool = True
     """Toggle whether to use a full node exclusively for one job."""
 
 client: Client = None
