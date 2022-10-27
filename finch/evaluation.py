@@ -89,6 +89,42 @@ def create_result_array(
             array.loc[va | rca] = r
     return array
 
+def create_cores_dimension(
+    results: xr.DataArray, 
+    contributors: list[str] = [
+        "workers",
+        "cluster_config_cores_per_worker"
+    ],
+    cores_dim = "cores",
+    reduction: Callable = np.min
+) -> xr.DataArray:
+    """
+    Merges the dimensions in the results array which contribute to the total amount of cores into a single 'cores' dimension.
+    The number of cores are calculated by the product of the coordinates of the individual dimensions.
+    The resulting dimension is sorted in increasing core order.
+
+    Arguments:
+    ---
+    - results: The results array
+    - contributors: List of dimension names which contribute to the total core count
+    - cores_dim: The dimension name of the new 'cores' dimension
+    - reduction: How runtimes should be combined which have the same amount of cores
+    """
+    out = results.stack({cores_dim: contributors})
+    coords = out[cores_dim] # this is now a multiindex
+    coords = [np.prod(x) for x in coords.data] # calculate the number of cores
+    out[cores_dim] = coords
+    # reduce cores_dim to have unique values
+    coords = np.unique(coords) # output is sorted
+    out_cols = [out.loc[{cores_dim : c}] for c in coords]
+    out_cols = [c if cores_dim in c.dims else c.expand_dims(cores_dim) for c in out_cols]
+    out_cols = [c.reduce(reduction, cores_dim) for c in out_cols]
+    out_cols = xr.concat(out_cols, )
+    out = xr.concat(out_cols, cores_dim)
+    out[cores_dim] = coords
+    return out
+
+
 def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin, normalize_lines: bool = False):
     """
     Creates a series of plots for the results array.

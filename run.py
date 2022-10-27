@@ -105,7 +105,7 @@ brn_repeated_run = True
 """Whether to performa a run experiment for the brn repeated function(s)"""
 brn_repeated_n = range(1, 10, 1)
 """A list with the number of times to repeat the computation"""
-brn_repeated_workers = [1, 5, 10, 20, 40, 100]
+brn_repeated_workers = [5, 10, 20, 40, 100]
 """A list of the number of workers to spawn"""
 brn_repeated_cores_per_worker = 1
 """The number of cores available per worker"""
@@ -114,7 +114,7 @@ brn_repeated_omp = False
 brn_repeated_input_version = finch.Input.Version(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
-    chunks={"x": 30},
+    chunks={"x": 10},
     coords=False
 )
 brn_repeated_name = "repeated"
