@@ -20,7 +20,7 @@ cmd_args = parser.parse_args(sys.argv[1:])
 
 debug = cmd_args.debug
 """Debug mode"""
-debug_finch = debug
+debug_finch = debug and False
 """Whether to use finch in debug mode."""
 
 # apply pre-import configurations
@@ -104,20 +104,20 @@ brn_multi_jobs = 1 if debug else [1,2,3,5,10,20]
 
 # repeated experiment
 
-brn_repeated_run = False
+brn_repeated_run = True
 """Whether to performa a run experiment for the brn repeated function(s)"""
 brn_repeated_n = range(10, 50, 10)
 """A list with the number of times to repeat the computation"""
-brn_repeated_workers = [1, 5, 10, 20, 30]
+brn_repeated_workers = [1, 2, 4, 8, 12]
 """A list of the number of workers to spawn"""
-brn_repeated_cores_per_worker = 4
+brn_repeated_cores_per_worker = 10
 """The number of cores available per worker"""
-brn_repeated_omp = False
+brn_repeated_omp = True
 """Whether to reserve parallelism to OMP in a worker"""
 brn_repeated_input_version = finch.Input.Version(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
-    chunks={"x": 10},
+    chunks={"x": 100},
     coords=False
 )
 brn_repeated_name = "repeated"
@@ -146,6 +146,7 @@ logging.basicConfig(format=finch.env.logging_format, level=logging.INFO)
 # configure debug setup
 if debug:
     logging.basicConfig(level=logging.DEBUG)
+    finch.env.set_log_level(logging.DEBUG)
 
 # brn experiments
 
