@@ -1,4 +1,4 @@
-set(CMAKE_CXX_FLAGS "-march=native")
+set(CMAKE_CXX_FLAGS "-march=native -fPIC")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 include(FetchContent)
