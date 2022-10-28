@@ -126,7 +126,7 @@ void thetav_vec_par(const double *p, const double *t, const double *qv, double *
     const double pc_rdocp = PC_R_D / PC_CP_D;
     const double pc_rvd_o = pc_rvd - 1.0;
 
-    #pragma omp parallel for
+    #pragma omp parallel for firstprivate(pc_rvd, pc_rdocp, pc_rvd_o)
     for(int i = 0; i < m*n*o; i+=8) {
         Vec8d ti, pi, qvi;
         ti.load(&t[i]);
@@ -150,13 +150,14 @@ void brn_vec_par(
     
     thetav(p, t, qv, out, m, n, o);
 
-    double *tv_sum = malloc_d(o);
-
     Vec8d nat(0, 1, 2, 3, 4, 5, 6, 7);
 
+    double *tv_sum_full = malloc_d(o*omp_get_max_threads());
+
     // iterate over x,y locations
-    #pragma omp parallel for
+    #pragma omp parallel for firstprivate(tv_sum_full)
     for(int hi = 0; hi < m*n; hi++) {
+        double *tv_sum = &tv_sum_full[o*omp_get_thread_num()];
         int i = hi*8;
         // compute thetav cumsum for current x,y location
         double prev = 0;
@@ -181,7 +182,8 @@ void brn_vec_par(
             outij.store(&out[ij]);
         }
     }
-    free(tv_sum);
+
+    free(tv_sum_full);
 }
 
 void thetav(const double *p, const double *t, const double *qv, double *out, int m, int n, int o) {
