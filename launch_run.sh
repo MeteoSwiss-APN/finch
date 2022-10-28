@@ -6,4 +6,4 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --exclusive
 
-srun --exclusive --job-name="finch" python run.py
+srun --exclusive --job-name="finch" --pty python run.py
