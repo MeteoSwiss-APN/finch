@@ -155,10 +155,10 @@ void brn_vec_par(
     double *tv_sum_full = malloc_d(o*omp_get_max_threads());
 
     // iterate over x,y locations
-    #pragma omp parallel for firstprivate(tv_sum_full)
+    #pragma omp parallel for firstprivate(tv_sum_full, nat)
     for(int hi = 0; hi < m*n; hi++) {
         double *tv_sum = &tv_sum_full[o*omp_get_thread_num()];
-        int i = hi*8;
+        int i = hi*o;
         // compute thetav cumsum for current x,y location
         double prev = 0;
         for(int j = 0; j < o; j++) {
