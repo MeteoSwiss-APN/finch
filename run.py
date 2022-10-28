@@ -20,7 +20,7 @@ cmd_args = parser.parse_args(sys.argv[1:])
 
 debug = cmd_args.debug
 """Debug mode"""
-debug_finch = debug and False
+debug_finch = debug
 """Whether to use finch in debug mode."""
 
 # apply pre-import configurations
@@ -110,7 +110,7 @@ brn_repeated_n = range(10, 50, 10)
 """A list with the number of times to repeat the computation"""
 brn_repeated_workers = [1, 2, 4, 8, 12]
 """A list of the number of workers to spawn"""
-brn_repeated_cores_per_worker = 10
+brn_repeated_cores_per_worker = 4
 """The number of cores available per worker"""
 brn_repeated_omp = True
 """Whether to reserve parallelism to OMP in a worker"""

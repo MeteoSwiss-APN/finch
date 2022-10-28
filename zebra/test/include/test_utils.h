@@ -1,3 +1,6 @@
+#ifndef ZEBRA_TEST_UTILS_H
+#define ZEBRA_TEST_UTILS_H
+
 #include <concepts>
 
 /**
@@ -14,3 +17,5 @@ concept numeric = std::integral<T> or std::floating_point<T>;
  */
 template<typename T> requires numeric<T>
 bool approx_equal(T *a, T* b, int size, T absDelta = 0, T relDelta = 0);
+
+#endif

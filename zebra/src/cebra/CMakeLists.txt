@@ -14,6 +14,7 @@ find_package(OpenMP REQUIRED)
 
 add_library(cebra
   brn.cpp
+  config.cpp
 )
 
 target_include_directories(cebra
