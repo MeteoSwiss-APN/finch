@@ -1,3 +1,4 @@
+from cProfile import label
 from ensurepip import version
 import functools
 import pathlib
@@ -9,8 +10,9 @@ from . import config
 from .experiments import RunConfig
 import xarray as xr
 import numpy as np
-import numbers
 import pandas as pd
+import matplotx
+import matplotlib.pyplot as plt
 
 
 def print_version_results(results: list[Any], versions: list[Input.Version]):
@@ -124,8 +126,23 @@ def create_cores_dimension(
     out[cores_dim] = coords
     return out
 
+def find_scaling_factor(x: np.ndarray, y: np.ndarray, axis: int = None) -> float:
+    """
+    Returns the scaling factor for a series of runtime measurements.
+    """
+    # this is just linear least squares on the log features
+    logx = np.log(x)
+    logy = np.log(y)
+    xd = logx - logx.mean(axis=axis)
+    yd = logy - logy.mean(axis=axis)
+    return - np.sum(xd*yd, axis=axis) / np.sum(xd*xd, axis=axis)
 
-def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin, normalize_lines: bool = False):
+
+def create_plots(
+    results: xr.DataArray, 
+    reduction: Callable = np.nanmin, 
+    scaling_dims: list[str] = ["cores"]
+):
     """
     Creates a series of plots for the results array.
     The plot creation works as follows.
@@ -141,9 +158,9 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin, normali
     ---
     - results: xr.DataArray. The result array
     - reduction: Callable. The reduction function. (See `xarray.DataArray.reduce`)
-    - normalize_lines: bool. If true, the runtimes for an implementation in a line plot will be 
-    divided by the longest runtime of said implementation.
-    This should be enabled if the progression of the runtime should be compared instead of the absolute runtime.
+    - scaling dims: list[str]. Dimensions which are used for scalability plots.
+    For those dimensions, a log-log plot will be created and the scaling factor calculated.
+    Additionally the runtimes will be normalized to be in the interval [0, 1].
     """
 
     path = pathlib.Path(config["evaluation"]["plot_dir"], results.name)
@@ -151,31 +168,54 @@ def create_plots(results: xr.DataArray, reduction: Callable = np.nanmin, normali
 
     for d in results.dims:
         if d != "impl" and results.sizes[d] > 1:
+            # reduce dimensions other than d and impl
             to_reduce = [dd for dd in results.dims if dd != "impl" and dd != d]
             to_plot = results.reduce(reduction, to_reduce)
-            if normalize_lines and not isinstance(results[d].data[0], str):
-                for i in results.coords["impl"].data:
-                    to_plot.loc[dict(impl=i)] /= to_plot.sel(impl=i).max()
-            to_plot = to_plot.sortby(list(to_plot.dims))
+            # convert to numpy array
+            to_plot = to_plot.transpose("impl", d)
+            labels = to_plot.coords["impl"].data
             ticks = to_plot.coords[d].data
-            df = pd.DataFrame({
-                i: to_plot.sel(impl=i).data for i in to_plot.coords["impl"].data
-            } | {"ticks": ticks})
-            plotargs = dict(
-                x="ticks",
-                xlabel=d,
-                ylabel="Runtime [s]"
-            )
+            to_plot = to_plot.data
+            # handle scaling dimension
+            if d in scaling_dims:
+                # normalize
+                to_plot /= np.max(to_plot, axis=1)
+                # calculate scaling factors
+                scaling_factors = find_scaling_factor(np.reshape(ticks, (1, -1)), to_plot)
+                # add perfect scaling line
+                to_plot = np.vstack(1 / ticks)
+
+            # sort dimensions
+            to_plot = to_plot.sortby(list(to_plot.dims))
+            # prepare plotting arguments
+            ylabel = "Runtime [s]"
+            style = matplotx.styles.duftify(matplotx.styles.dracula)
+            if d in scaling_dims:
+                ylabel="log runtime (normalized)"
+            # plot
+            plt.clf()
             if isinstance(ticks[0], str):
-                plot = df.plot(
-                    kind="bar", 
-                    stacked=True,
-                    **plotargs
-                )
+                # bar plot
+                with plt.style.context(style):
+                    # calculate the bar postions
+                    group_size = len(labels) + 1
+                    bar_width = 1 / group_size
+                    xpos = np.arange(0, len(ticks), bar_width) - (1 - 2*bar_width)/2
+                    xpos = xpos.reshape((len(ticks), len(labels))).transpose()
+                    xpos = xpos[:-1, :] # remove empty bar
+                    for l, rt, xp in zip(labels, to_plot, xpos):
+                        plt.bar(xp, rt, label=l)
+                    plt.xticks(range(len(ticks)), ticks)
             else:
-                plot = df.plot(
-                    kind = "line",
-                    xticks=ticks,
-                    **plotargs
-                )
-            plot.get_figure().savefig(path.joinpath(d + ".png"), format="png")
+                # line plot
+                with plt.style.context(style):
+                    if d in scaling_dims:
+                        plt.plot(ticks, 1/ticks, label=r"Perfect scaling, $\alpha=1$", linestyle="--")
+                        labels = [l + r", $\alpha=" + str(sf) + r"$" for l, sf in zip(labels, scaling_factors)]
+                    for l, rt in zip(labels, to_plot):
+                        plt.plot(ticks, rt, label=l)
+                    plt.xlabel(d)
+                    matplotx.ylabel_top(ylabel)
+                    matplotx.line_labels
+            # save plot
+            plt.savefig(path.joinpath(d + ".png"), format="png")
