@@ -7,7 +7,7 @@ import numbers
 import pathlib
 import socket
 import types
-from typing import Dict, List, TypeVar, Any
+from typing import Dict, List, Tuple, TypeVar, Any
 from collections.abc import Callable
 import typing
 import dask.array as da
@@ -365,3 +365,15 @@ def parse_bool(b: str) -> bool:
         return False
     else:
         raise ValueError(f"Could not parse {b} to boolean type.")
+
+def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int = None) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Performs simple linear regression along the given axis.
+    """
+    xm = x.mean(axis=axis)
+    ym = y.mean(axis=axis)
+    xd = x - np.expand_dims(xm, axis)
+    yd = y - np.expand_dims(ym, axis)
+    beta = np.sum(xd*yd, axis=axis) / np.sum(xd*xd, axis=axis)
+    alpha = ym - beta*xm
+    return alpha, beta

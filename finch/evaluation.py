@@ -2,7 +2,7 @@ from cProfile import label
 from ensurepip import version
 import functools
 import pathlib
-from typing import Any
+from typing import Any, Tuple
 from collections.abc import Callable
 from . import Input
 from . import util
@@ -126,16 +126,34 @@ def create_cores_dimension(
     out[cores_dim] = coords
     return out
 
-def find_scaling_factor(x: np.ndarray, y: np.ndarray, axis: int = None) -> float:
+def speedup(runtimes: np.ndarray, axis: int = -1, base: np.ndarray = None) -> np.ndarray:
     """
-    Returns the scaling factor for a series of runtime measurements.
+    Calculates the speedup for an array of runtimes.
+
+    Arguments:
+    ---
+    - runtimes: np.ndarray. The array of runtimes to convert to speedups
+    - axis: int. The axis which defines a series of runtimes.
+    Only relevant if `base` is not given.
+    Defaults to the last dimension.
+    - base: np.ndarray. An array of runtimes indicating a speedup of 1.
+    Should have one dimension less than runtimes.
+    By default, the base will be determined from the first element in the runtime series.
     """
-    # this is just linear least squares on the log features
-    logx = np.log(x)
-    logy = np.log(y)
-    xd = logx - np.expand_dims(logx.mean(axis=axis), axis)
-    yd = logy - np.expand_dims(logy.mean(axis=axis), axis)
-    return - np.sum(xd*yd, axis=axis) / np.sum(xd*xd, axis=axis)
+    if base is None:
+        first_index = [-1]*len(runtimes.shape)
+        first_index[axis] = 0
+        base = runtimes[tuple(first_index)]
+    base = np.expand_dims(base, axis)
+    return base / runtimes
+
+def find_scaling(x: np.ndarray, y: np.ndarray, axis: int = None) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns the scaling factor and scaling rate for a series of runtime measurements.
+    This is done via regression on functions of the type $y = \alpha * x^\beta$.
+    $\alpha$ indicates the scaling factor and $\beta$ the scaling rate.
+    """
+    return util.simple_lin_reg(np.log(x), np.log(y))
 
 
 def create_plots(
@@ -159,8 +177,7 @@ def create_plots(
     - results: xr.DataArray. The result array
     - reduction: Callable. The reduction function. (See `xarray.DataArray.reduce`)
     - scaling dims: list[str]. Dimensions which are used for scalability plots.
-    For those dimensions, a log-log plot will be created and the scaling factor calculated.
-    Additionally the runtimes will be normalized to be in the interval [0, 1].
+    For those dimensions, a log-log plot of the speedup will be created and the scaling factor calculated.
     """
 
     path = pathlib.Path(config["evaluation"]["plot_dir"], results.name)
@@ -180,15 +197,12 @@ def create_plots(
             to_plot = to_plot.data
             # handle scaling dimension
             if d in scaling_dims:
-                # normalize
-                to_plot /= np.max(to_plot, axis=1)[:, np.newaxis]
-                # calculate scaling factors
-                scaling_factors = find_scaling_factor(np.reshape(ticks, (1, -1)), to_plot, axis=1)
+                # compute speedup
+                to_plot = speedup(to_plot)
+                # calculate scaling rate and factor
+                alpha, beta = find_scaling(np.reshape(ticks, (1, -1)), to_plot, axis=1)
             # prepare plotting arguments
-            ylabel = "Runtime [s]"
             style = matplotx.styles.duftify(matplotx.styles.dracula)
-            if d in scaling_dims:
-                ylabel="runtime (normalized)"
             # plot
             plt.clf()
             with plt.style.context(style):
@@ -205,13 +219,18 @@ def create_plots(
                     plt.xticks(range(len(ticks)), ticks)
                 else:
                     # line plot
+                    ylabel = "Runtime [s]"
                     if d in scaling_dims:
                         psrt = 1/ticks
                         psrt /= psrt.max()
-                        plt.plot(ticks, psrt, label=r"Perfect scaling, $\alpha=1$", linestyle="--")
-                        labels = [l + r", $\alpha=" + "%.2f"%sf + r"$" for l, sf in zip(labels, scaling_factors)]
-                        plt.xscale("log", base=2)
-                        plt.yscale("log", base=2)
+                        plt.plot(ticks, psrt, label=r"Perfect linear scaling, $\alpha=1$, $\beta=1$", linestyle="--")
+                        labels = [
+                            l + r", $\alpha=" + "%.2f"%sf + r"$, $\beta=" + "%.2f"%sr + r"$" 
+                            for l, sf, sr in zip(labels, alpha, beta)
+                        ]
+                        # plt.xscale("log", base=2)
+                        # plt.yscale("log", base=2)
+                        ylabel = "Speedup"
                     for l, rt in zip(labels, to_plot):
                         plt.plot(ticks, rt, label=l)
                     plt.xlabel(d)

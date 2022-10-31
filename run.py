@@ -110,10 +110,10 @@ brn_repeated_n = range(10, 50, 10)
 """A list with the number of times to repeat the computation"""
 brn_repeated_workers = [1, 2, 4, 8, 12]
 """A list of the number of workers to spawn"""
-brn_repeated_cores_per_worker = 4
+brn_repeated_cores_per_worker = 10
 """The number of cores available per worker"""
-brn_repeated_omp = True
-"""Whether to reserve parallelism to OMP in a worker"""
+brn_repeated_inner_par = True
+"""Whether to reserve parallelism to the task implementation in a worker"""
 brn_repeated_input_version = finch.Input.Version(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
@@ -193,7 +193,7 @@ if run_brn:
         logging.info(f"Measuring runtimes of repeated brn and thetav runs")
         cluster_configs = finch.scheduler.ClusterConfig.list_configs(
             cores_per_worker=brn_repeated_cores_per_worker,
-            omp_parallelism=brn_repeated_omp,
+            inner_parallelism=brn_repeated_inner_par,
             exclusive_jobs=False
         )
         run_configs = finch.experiments.RunConfig.list_configs(
