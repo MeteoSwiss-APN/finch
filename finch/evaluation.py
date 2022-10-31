@@ -154,7 +154,9 @@ def find_scaling(scale: np.ndarray, speedup: np.ndarray, axis: int = None) -> Tu
     $\alpha$ indicates the scaling factor and $\beta$ the scaling rate.
     This assumes that the speedup for scale = 1 is 1.
     """
-    return util.simple_lin_reg(np.log(scale), np.log(speedup), axis=axis)
+    alpha, beta = util.simple_lin_reg(np.log(scale), np.log(speedup), axis=axis)
+    alpha = np.exp(alpha)
+    return alpha, beta
 
 
 def create_plots(
@@ -222,11 +224,18 @@ def create_plots(
                         # calculate scaling rate and factor
                         scale = ticks / ticks[0]
                         alpha, beta = find_scaling(np.reshape(scale, (1, -1)), to_plot, axis=1)
+                        # plot baseline
                         plt.plot(ticks, scale, label=r"Perfect linear scaling, $\alpha=1$, $\beta=1$", linestyle="--")
                         labels = [
                             l + r", $\alpha=" + "%.2f"%sf + r"$, $\beta=" + "%.2f"%sr + r"$" 
                             for l, sf, sr in zip(labels, alpha, beta)
                         ]
+                        # plot fitted scaling functions
+                        for a, b, c in zip(alpha, beta, style["axes.prop_cycle"][1:]):
+                            x = np.linspace(ticks[0], ticks[-1], 100)
+                            xt = x / ticks[0]
+                            y = a*xt**b
+                            plt.plot(x, y, linestyle=":", color=c["color"])
                         # plt.xscale("log", base=2)
                         # plt.yscale("log", base=2)
                         ylabel = "Speedup"
