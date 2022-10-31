@@ -10,6 +10,7 @@ from . import env
 from . import config
 from datetime import timedelta
 from dataclasses import dataclass
+import zebra
 
 def parse_slurm_time(t: str) -> timedelta:
     """Returns a timedelta from the given duration as is being passed to SLURM"""
@@ -35,11 +36,11 @@ class ClusterConfig(util.Config):
     """The number of workers to spawn per SLURM job"""
     cores_per_worker: int = dask.config.get("jobqueue.slurm.cores", 1)
     """The number of cores available per worker"""
-    omp_parallelism: bool = True
+    inner_parallelism: bool = True
     """
-    Toggle whether the cores of the worker should be reserved to OpenMP.
+    Toggle whether the cores of the worker should be reserved to the implementation of the task.
     If true, a worker thinks it has only one one thread available and won't run tasks in parallel.
-    Instead the `OMP_NUM_THREADS` and `OMP_THREAD_LIMIT` environment variables are set to allow OpenMP to handle parallelism.
+    Instead, zebra is configured with the given number of threads.
     """
     exclusive_jobs: bool = True
     """Toggle whether to use a full node exclusively for one job."""
@@ -71,14 +72,10 @@ def start_slurm_cluster(
     jobs_per_node = node_cores // job_cpu
     job_mem = dask.utils.format_bytes(node_memory_bytes // jobs_per_node)
 
-    if cfg.omp_parallelism:
-        os.environ["OMP_NUM_THREADS"] = str(cfg.cores_per_worker)
-        os.environ["OMP_THREAD_LIMIT"] = str(cfg.cores_per_worker)
-    else:
-        os.environ["OMP_NUM_THREADS"] = "1"
-        os.environ["OMP_THREAD_LIMIT"] = "1"
+    if cfg.inner_parallelism:
+        zebra.set_threads(cfg.cores_per_worker)
 
-    cores = job_cpu if not cfg.omp_parallelism else cfg.workers_per_job # the number of cores dask believes it has available per job
+    cores = job_cpu if not cfg.inner_parallelism else cfg.workers_per_job # the number of cores dask believes it has available per job
 
     walltime_delta = parse_slurm_time(walltime)
     worker_lifetime = walltime_delta - timedelta(minutes=5)

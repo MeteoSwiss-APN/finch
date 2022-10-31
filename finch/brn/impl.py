@@ -10,6 +10,7 @@ from .. import constants as const
 from .. import util
 from . import input
 from .. import data
+from .. import env
 
 def thetav_xr(dataset: xr.Dataset) -> xr.DataArray:
     p, t, qv = [dataset[n] for n in input.thetav_array_names]
