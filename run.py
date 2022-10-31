@@ -104,7 +104,7 @@ brn_multi_jobs = 1 if debug else [1,2,3,5,10,20]
 
 # repeated experiment
 
-brn_repeated_run = True
+brn_repeated_run = False
 """Whether to performa a run experiment for the brn repeated function(s)"""
 brn_repeated_n = range(10, 50, 10)
 """A list with the number of times to repeat the computation"""
@@ -132,8 +132,6 @@ brn_multicore_run = True
 
 brn_evaluation = True
 """Whether or not to run evaluation"""
-brn_eval_normalize = brn_repeated_run
-"""Whether to normalize line plots"""
 
 
 ######################################################
@@ -217,4 +215,4 @@ if run_brn:
         logging.info(f"Evaluating experiment results")
         results = xr.open_dataarray(brn_results_file)
         results = finch.eval.create_cores_dimension(results)
-        finch.eval.create_plots(results, normalize_lines=brn_eval_normalize)
+        finch.eval.create_plots(results)

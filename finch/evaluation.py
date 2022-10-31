@@ -133,8 +133,8 @@ def find_scaling_factor(x: np.ndarray, y: np.ndarray, axis: int = None) -> float
     # this is just linear least squares on the log features
     logx = np.log(x)
     logy = np.log(y)
-    xd = logx - logx.mean(axis=axis)
-    yd = logy - logy.mean(axis=axis)
+    xd = logx - np.expand_dims(logx.mean(axis=axis), axis)
+    yd = logy - np.expand_dims(logy.mean(axis=axis), axis)
     return - np.sum(xd*yd, axis=axis) / np.sum(xd*xd, axis=axis)
 
 
@@ -171,6 +171,8 @@ def create_plots(
             # reduce dimensions other than d and impl
             to_reduce = [dd for dd in results.dims if dd != "impl" and dd != d]
             to_plot = results.reduce(reduction, to_reduce)
+            # sort dimensions
+            to_plot = to_plot.sortby(list(to_plot.dims))
             # convert to numpy array
             to_plot = to_plot.transpose("impl", d)
             labels = to_plot.coords["impl"].data
@@ -179,24 +181,19 @@ def create_plots(
             # handle scaling dimension
             if d in scaling_dims:
                 # normalize
-                to_plot /= np.max(to_plot, axis=1)
+                to_plot /= np.max(to_plot, axis=1)[:, np.newaxis]
                 # calculate scaling factors
-                scaling_factors = find_scaling_factor(np.reshape(ticks, (1, -1)), to_plot)
-                # add perfect scaling line
-                to_plot = np.vstack(1 / ticks)
-
-            # sort dimensions
-            to_plot = to_plot.sortby(list(to_plot.dims))
+                scaling_factors = find_scaling_factor(np.reshape(ticks, (1, -1)), to_plot, axis=1)
             # prepare plotting arguments
             ylabel = "Runtime [s]"
             style = matplotx.styles.duftify(matplotx.styles.dracula)
             if d in scaling_dims:
-                ylabel="log runtime (normalized)"
+                ylabel="runtime (normalized)"
             # plot
             plt.clf()
-            if isinstance(ticks[0], str):
-                # bar plot
-                with plt.style.context(style):
+            with plt.style.context(style):
+                if isinstance(ticks[0], str):
+                    # bar plot
                     # calculate the bar postions
                     group_size = len(labels) + 1
                     bar_width = 1 / group_size
@@ -206,16 +203,23 @@ def create_plots(
                     for l, rt, xp in zip(labels, to_plot, xpos):
                         plt.bar(xp, rt, label=l)
                     plt.xticks(range(len(ticks)), ticks)
-            else:
-                # line plot
-                with plt.style.context(style):
+                else:
+                    # line plot
                     if d in scaling_dims:
-                        plt.plot(ticks, 1/ticks, label=r"Perfect scaling, $\alpha=1$", linestyle="--")
-                        labels = [l + r", $\alpha=" + str(sf) + r"$" for l, sf in zip(labels, scaling_factors)]
+                        psrt = 1/ticks
+                        psrt /= psrt.max()
+                        plt.plot(ticks, psrt, label=r"Perfect scaling, $\alpha=1$", linestyle="--")
+                        labels = [l + r", $\alpha=" + "%.2f"%sf + r"$" for l, sf in zip(labels, scaling_factors)]
+                        plt.xscale("log", base=2)
+                        plt.yscale("log", base=2)
                     for l, rt in zip(labels, to_plot):
                         plt.plot(ticks, rt, label=l)
                     plt.xlabel(d)
+                    plt.xticks(ticks)
                     matplotx.ylabel_top(ylabel)
-                    matplotx.line_labels
-            # save plot
-            plt.savefig(path.joinpath(d + ".png"), format="png")
+                    if d in scaling_dims:
+                        matplotx.line_labels()
+                    else:
+                        plt.legend()
+                # save plot
+                plt.savefig(path.joinpath(d + ".png"), format="png", bbox_inches="tight")
