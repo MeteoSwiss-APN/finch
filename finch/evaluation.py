@@ -150,7 +150,7 @@ def speedup(runtimes: np.ndarray, axis: int = -1, base: np.ndarray = None) -> np
 def find_scaling(scale: np.ndarray, speedup: np.ndarray, axis: int = None) -> Tuple[np.ndarray, np.ndarray]:
     """
     Returns the scaling factor and scaling rate for a series of speedups.
-    This is done via regression on functions of the type $y = \alpha * x^\beta + 1$.
+    This is done via regression on functions of the type $y = \alpha * x^\beta$.
     $\alpha$ indicates the scaling factor and $\beta$ the scaling rate.
     This assumes that the speedup for scale = 1 is 1.
     """
@@ -162,7 +162,10 @@ def find_scaling(scale: np.ndarray, speedup: np.ndarray, axis: int = None) -> Tu
 def create_plots(
     results: xr.DataArray, 
     reduction: Callable = np.nanmin, 
-    scaling_dims: list[str] = ["cores"]
+    scaling_dims: list[str] = ["cores"],
+    find_scaling_props: bool = True,
+    plot_scaling_fits: bool = False,
+    plot_scaling_baseline: bool = True,
 ):
     """
     Creates a series of plots for the results array.
@@ -181,6 +184,11 @@ def create_plots(
     - reduction: Callable. The reduction function. (See `xarray.DataArray.reduce`)
     - scaling dims: list[str]. Dimensions which are used for scalability plots.
     For those dimensions, a log-log plot of the speedup will be created and the scaling factor calculated.
+    - find_scaling_props: bool. Whether to calculate the scaling factor and scaling rate for scaling dimensions
+    - plot_scaling_fits: bool. 
+    Whether to plot the functions which are being fitted for calculating the scaling factor and rate.
+    - plot_scaling_baseline: bool.
+    Whether to plot a baseline for scaling dimensions.
     """
 
     path = pathlib.Path(config["evaluation"]["plot_dir"], results.name)
@@ -222,20 +230,29 @@ def create_plots(
                         # compute speedup
                         to_plot = speedup(to_plot)
                         # calculate scaling rate and factor
-                        scale = ticks / ticks[0]
-                        alpha, beta = find_scaling(np.reshape(scale, (1, -1)), to_plot, axis=1)
+                        if find_scaling_props:
+                            scale = ticks / ticks[0]
+                            alpha, beta = find_scaling(np.reshape(scale, (1, -1)), to_plot, axis=1)
+                            labels = [
+                                l + r", $\alpha=" + "%.2f"%sf + r"$, $\beta=" + "%.2f"%sr + r"$" 
+                                for l, sf, sr in zip(labels, alpha, beta)
+                            ]
                         # plot baseline
-                        plt.plot(ticks, scale, label=r"Perfect linear scaling, $\alpha=1$, $\beta=1$", linestyle="--")
-                        labels = [
-                            l + r", $\alpha=" + "%.2f"%sf + r"$, $\beta=" + "%.2f"%sr + r"$" 
-                            for l, sf, sr in zip(labels, alpha, beta)
-                        ]
+                        if plot_scaling_baseline:
+                            base_label = "Perfect linear scaling"
+                            if find_scaling_props:
+                                base_label += r", $\alpha=1$, $\beta=1$"
+                            plt.plot(ticks, scale, label=base_label, linestyle="--")
                         # plot fitted scaling functions
-                        for a, b, c in zip(alpha, beta, style["axes.prop_cycle"][1:]):
-                            x = np.linspace(ticks[0], ticks[-1], 100)
-                            xt = x / ticks[0]
-                            y = a*xt**b
-                            plt.plot(x, y, linestyle=":", color=c["color"])
+                        if plot_scaling_fits and find_scaling_props:
+                            cycler = style["axes.prop_cycle"]
+                            if plot_scaling_baseline:
+                                cycler = cycler[1:]
+                            for a, b, c in zip(alpha, beta, cycler):
+                                x = np.linspace(ticks[0], ticks[-1], 100)
+                                xt = x / ticks[0]
+                                y = a*xt**b
+                                plt.plot(x, y, linestyle=":", color=c["color"])
                         # plt.xscale("log", base=2)
                         # plt.yscale("log", base=2)
                         ylabel = "Speedup"
