@@ -141,19 +141,20 @@ def speedup(runtimes: np.ndarray, axis: int = -1, base: np.ndarray = None) -> np
     By default, the base will be determined from the first element in the runtime series.
     """
     if base is None:
-        first_index = [-1]*len(runtimes.shape)
+        first_index = [slice(x) for x in runtimes.shape]
         first_index[axis] = 0
         base = runtimes[tuple(first_index)]
     base = np.expand_dims(base, axis)
     return base / runtimes
 
-def find_scaling(x: np.ndarray, y: np.ndarray, axis: int = None) -> Tuple[np.ndarray, np.ndarray]:
+def find_scaling(scale: np.ndarray, speedup: np.ndarray, axis: int = None) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Returns the scaling factor and scaling rate for a series of runtime measurements.
-    This is done via regression on functions of the type $y = \alpha * x^\beta$.
+    Returns the scaling factor and scaling rate for a series of speedups.
+    This is done via regression on functions of the type $y = \alpha * x^\beta + 1$.
     $\alpha$ indicates the scaling factor and $\beta$ the scaling rate.
+    This assumes that the speedup for scale = 1 is 1.
     """
-    return util.simple_lin_reg(np.log(x), np.log(y))
+    return util.simple_lin_reg(np.log(scale), np.log(speedup), axis=axis)
 
 
 def create_plots(
@@ -195,12 +196,6 @@ def create_plots(
             labels = to_plot.coords["impl"].data
             ticks = to_plot.coords[d].data
             to_plot = to_plot.data
-            # handle scaling dimension
-            if d in scaling_dims:
-                # compute speedup
-                to_plot = speedup(to_plot)
-                # calculate scaling rate and factor
-                alpha, beta = find_scaling(np.reshape(ticks, (1, -1)), to_plot, axis=1)
             # prepare plotting arguments
             style = matplotx.styles.duftify(matplotx.styles.dracula)
             # plot
@@ -220,10 +215,14 @@ def create_plots(
                 else:
                     # line plot
                     ylabel = "Runtime [s]"
+                    # handle scaling dimension
                     if d in scaling_dims:
-                        psrt = 1/ticks
-                        psrt /= psrt.max()
-                        plt.plot(ticks, psrt, label=r"Perfect linear scaling, $\alpha=1$, $\beta=1$", linestyle="--")
+                        # compute speedup
+                        to_plot = speedup(to_plot)
+                        # calculate scaling rate and factor
+                        scale = ticks / ticks[0]
+                        alpha, beta = find_scaling(np.reshape(scale, (1, -1)), to_plot, axis=1)
+                        plt.plot(ticks, scale, label=r"Perfect linear scaling, $\alpha=1$, $\beta=1$", linestyle="--")
                         labels = [
                             l + r", $\alpha=" + "%.2f"%sf + r"$, $\beta=" + "%.2f"%sr + r"$" 
                             for l, sf, sr in zip(labels, alpha, beta)

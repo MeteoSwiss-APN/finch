@@ -108,7 +108,7 @@ brn_repeated_run = False
 """Whether to performa a run experiment for the brn repeated function(s)"""
 brn_repeated_n = range(10, 50, 10)
 """A list with the number of times to repeat the computation"""
-brn_repeated_workers = [1, 2, 4, 8, 12]
+brn_repeated_workers = [1, 2, 4, 8]
 """A list of the number of workers to spawn"""
 brn_repeated_cores_per_worker = 10
 """The number of cores available per worker"""

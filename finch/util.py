@@ -372,8 +372,12 @@ def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int = None) -> Tuple[np.n
     """
     xm = x.mean(axis=axis)
     ym = y.mean(axis=axis)
-    xd = x - np.expand_dims(xm, axis)
-    yd = y - np.expand_dims(ym, axis)
+    if axis is not None:
+        xd = x - np.expand_dims(xm, axis)
+        yd = y - np.expand_dims(ym, axis)
+    else:
+        xd = x - xm
+        yd = y - ym
     beta = np.sum(xd*yd, axis=axis) / np.sum(xd*xd, axis=axis)
     alpha = ym - beta*xm
     return alpha, beta
