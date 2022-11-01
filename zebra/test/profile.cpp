@@ -54,7 +54,8 @@ void profile_brn(int max_threads = 10) {
     }
     double a = a1 / a2;
     double b = ym - a*xm;
-    std::cout << "Fitted scaling factor: " << -a << " (1 is perfect scaling)" << std::endl;
+    std::cout << "Fitted scaling rate: " << -a << " (1 is perfect scaling)" << std::endl;
+    std::cout << "Fitted scaling factor: " << b << " (1 is perfect scaling)" << std::endl;
     double mean_rel_err = 0;
     for(int i = 0; i < max_threads; i++) {
         double pred = a*logx[i] + b;
