@@ -36,7 +36,7 @@ class ClusterConfig(util.Config):
     """The number of workers to spawn per SLURM job"""
     cores_per_worker: int = dask.config.get("jobqueue.slurm.cores", 1)
     """The number of cores available per worker"""
-    inner_parallelism: bool = True
+    omp_parallelism: bool = True
     """
     Toggle whether the cores of the worker should be reserved to the implementation of the task.
     If true, a worker thinks it has only one one thread available and won't run tasks in parallel.
@@ -63,6 +63,8 @@ def start_slurm_cluster(
     if client is not None:
         client.shutdown()
 
+    worker_env = env.WorkerEnvironment()
+
     walltime = dask.config.get("jobqueue.slurm.walltime", "01:00:00")
     node_cores = dask.config.get("jobqueue.slurm.cores", 1)
     node_memory: str = dask.config.get("jobqueue.slurm.memory", "1GB")
@@ -72,10 +74,8 @@ def start_slurm_cluster(
     jobs_per_node = node_cores // job_cpu
     job_mem = dask.utils.format_bytes(node_memory_bytes // jobs_per_node)
 
-    if cfg.inner_parallelism:
-        zebra.set_threads(cfg.cores_per_worker)
-
-    cores = job_cpu if not cfg.inner_parallelism else cfg.workers_per_job # the number of cores dask believes it has available per job
+    cores = job_cpu if not cfg.omp_parallelism else cfg.workers_per_job # the number of cores dask believes it has available per job
+    worker_env.omp_threads = 1 if not cfg.omp_parallelism else cfg.cores_per_worker
 
     walltime_delta = parse_slurm_time(walltime)
     worker_lifetime = walltime_delta - timedelta(minutes=5)
@@ -102,7 +102,9 @@ def start_slurm_cluster(
         # filesystem config
         local_directory=config["global"]["scratch_dir"],
         shared_temp_directory=config["global"]["tmp_dir"],
-        log_directory=config["global"]["log_dir"]
+        log_directory=config["global"]["log_dir"],
+        # other
+        job_script_prologue=worker_env.get_job_script_prologue()
     )
 
     client = Client(cluster)

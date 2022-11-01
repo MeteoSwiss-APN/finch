@@ -64,10 +64,10 @@ def create_result_array(
     rca_keys = list(rc_attrs[0].keys())
     if impl_names is not None:
         # set implementation names
-        if isinstance(impl_name, list):
+        if isinstance(impl_names, list):
             for a, impl_name in zip(rc_attrs, impl_names):
                 a["impl"] = impl_name
-        elif isinstance(impl_name, Callable):
+        elif isinstance(impl_names, Callable):
             for a, rc in zip(rc_attrs, run_configs):
                 a["impl"] = impl_name(rc.impl)
     # construct coordinates
