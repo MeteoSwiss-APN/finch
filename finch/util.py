@@ -16,7 +16,6 @@ import numpy as np
 import inspect
 import re
 from dask_jobqueue.slurm import SLURMJob
-from . import environment as env
 import tqdm
 from wonderwords import RandomWord
 import copy
@@ -176,7 +175,7 @@ class SLURMRunner(SLURMJob):
         self._command_template = " ".join(map(str, cmd))
         await super().start()
 
-def get_absolute(path: pathlib.Path | str, context: pathlib.Path | str = env.proj_root) -> pathlib.Path | str:
+def get_absolute(path: pathlib.Path | str, context: pathlib.Path) -> pathlib.Path | str:
     """
     Returns the abolute path in the given context if a relative path was given.
     If an absolute path is given, it is directly returned.
@@ -381,3 +380,10 @@ def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int = None) -> Tuple[np.n
     beta = np.sum(xd*yd, axis=axis) / np.sum(xd*xd, axis=axis)
     alpha = ym - beta*xm
     return alpha, beta
+
+T = TypeVar("T")
+def arg2list(x: T | list[T]) -> list[T]:
+    """Return a single-element list if x is not a list. Otherwise return x."""
+    if isinstance(x, list):
+        x = [x]
+    return x
