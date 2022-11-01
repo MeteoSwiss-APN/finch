@@ -217,11 +217,14 @@ def create_plots(
                     group_size = len(labels) + 1
                     bar_width = 1 / group_size
                     xpos = np.arange(0, len(ticks), bar_width) - (1 - 2*bar_width)/2
-                    xpos = xpos.reshape((len(ticks), len(labels))).transpose()
+                    xpos = xpos.reshape((len(ticks), len(labels)+1)).transpose()
                     xpos = xpos[:-1, :] # remove empty bar
                     for l, rt, xp in zip(labels, to_plot, xpos):
-                        plt.bar(xp, rt, label=l)
+                        plt.bar(xp, rt, width=bar_width, label=l)
                     plt.xticks(range(len(ticks)), ticks)
+                    plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
+                    plt.xlabel(d)
+                    matplotx.ylabel_top("Runtime [s]")
                 else:
                     # line plot
                     ylabel = "Runtime [s]"
