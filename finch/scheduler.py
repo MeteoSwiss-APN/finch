@@ -10,7 +10,6 @@ from . import env
 from . import config
 from datetime import timedelta
 from dataclasses import dataclass
-import zebra
 
 def parse_slurm_time(t: str) -> timedelta:
     """Returns a timedelta from the given duration as is being passed to SLURM"""
@@ -61,7 +60,9 @@ def start_slurm_cluster(
         return client
 
     if client is not None:
-        client.shutdown()
+        cluster = client.cluster
+        client.close()
+        cluster.close()
 
     worker_env = env.WorkerEnvironment()
 
