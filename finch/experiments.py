@@ -131,7 +131,6 @@ def measure_runtimes(
                 impl_runner(c.impl, *args)
                 _end = perf_counter()
                 cur_times.append(_end - _start)
-                print("Full compute time: ", cur_times[-1])
                 pbar.update()
             if warmup:
                 cur_times = cur_times[1:]
@@ -149,17 +148,11 @@ def measure_runtimes(
     return out
 
 def xarray_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset):
-    start = perf_counter()
     # construct the dask graph
     out = impl(ds)
     cloned: da.Array = dask.graph_manipulation.clone(out.data)
-    end = perf_counter()
-    print("Graph construction time: ", end-start)
     # compute
-    start = perf_counter()
     cloned.compute()
-    end = perf_counter()
-    print("Compute time: ", end-start)
 
 def measure_operator_runtimes(
     run_config: list[RunConfig] | RunConfig, 

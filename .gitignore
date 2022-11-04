@@ -133,3 +133,6 @@ dmypy.json
 
 # custom config
 config/custom.ini
+
+# experiments script
+experiments.py
