@@ -13,6 +13,8 @@ from . import config
 from . import env
 from . import scheduler
 import tqdm
+import dask.graph_manipulation
+import dask.array as da
 
 @dataclass
 class RunConfig(util.Config):
@@ -30,7 +32,8 @@ class RunConfig(util.Config):
 
 def list_run_configs(**kwargs) -> list[RunConfig]:
     """
-    Returns a list of run configurations, which is the euclidean product between the given lists of individual configurations.
+    Returns a list of run configurations, 
+    which is the euclidean product between the given lists of individual configurations.
     """
     configs: list[dict[str, Any]] = []
     for arg in kwargs:
@@ -49,7 +52,8 @@ def measure_runtimes(
     run_config: list[RunConfig] | RunConfig, 
     inputs: list[Callable[[], list]] | Callable[[], list] | list[list] | None = None, 
     iterations: int = 1,
-    cache_inputs: bool = True,
+    impl_runner: Callable[..., None] = None,
+    cache_inputs: bool = False,
     reduction: Callable[[list[float]], float] = np.mean,
     warmup: bool = False,
     pbar: PbarArg = True,
@@ -68,8 +72,14 @@ def measure_runtimes(
         - `Callable[[], list]`: A single argumnent generating function 
         if the same should be used for every function to be benchmarked.
     - iterations: int, optional. The number of times to repeat a run (including input preparation).
+    - impl_runner: Callable. The function responsible for running 
+    the impl argument of a run configuration for the given list of arguments.
+    The first argument of impl_runner is `impl` while the remaining arguments are the arguments passed to `impl`.
+    The execution of `impl_runner` will be timed and reported.
+    Defaults to directly running the passed function on the passed arguments.
     - cache_inputs: bool, default: `True`. Whether to reuse the input for a function for its iterations.
-    - reduction: Callable[[list[float]], float], default: `np.mean`. The function to be used to combine the results of the iterations.
+    - reduction: Callable[[list[float]], float], default: `np.mean`. 
+    The function to be used to combine the results of the iterations.
     - warmup: bool, default: `False`. If `True`, runs the function once before measuring.
     - pbar: PbarArg, default: `True`. Progressbar argument
 
@@ -97,6 +107,10 @@ def measure_runtimes(
     if isinstance(inputs[0], list):
         inputs = [lambda : i for i in inputs]
 
+    # prepare impl_runner
+    if impl_runner is None:
+        impl_runner = lambda f, args: f(args)
+
     if warmup:
         iterations += 1
 
@@ -110,13 +124,14 @@ def measure_runtimes(
             cur_times = []
             if cache_inputs:
                 args = prep()
-                prep = lambda : args
+                prep = lambda a=args : a
             for _ in range(iterations):
                 args = prep()
-                start = perf_counter()
-                c.impl(*args)
-                end = perf_counter()
-                cur_times.append(end - start)
+                _start = perf_counter()
+                impl_runner(c.impl, *args)
+                _end = perf_counter()
+                cur_times.append(_end - _start)
+                print("Full compute time: ", cur_times[-1])
                 pbar.update()
             if warmup:
                 cur_times = cur_times[1:]
@@ -132,6 +147,19 @@ def measure_runtimes(
     if singleton_rc:
         out = out[0]
     return out
+
+def xarray_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset):
+    start = perf_counter()
+    # construct the dask graph
+    out = impl(ds)
+    cloned: da.Array = dask.graph_manipulation.clone(out.data)
+    end = perf_counter()
+    print("Graph construction time: ", end-start)
+    # compute
+    start = perf_counter()
+    cloned.compute()
+    end = perf_counter()
+    print("Compute time: ", end-start)
 
 def measure_operator_runtimes(
     run_config: list[RunConfig] | RunConfig, 
@@ -159,21 +187,7 @@ def measure_operator_runtimes(
     ]
     if single_version:
         preps = preps[0]
-    # make sure to run compute by storing to zarr
-    compute = lambda a : a.rename("finch_exp_output").to_dataset().to_zarr(
-        pathlib.Path(config["data"]["zarr_dir"], "finch_exp_output"),
-        mode="w"
-    )
-    single_run = False
-    if isinstance(run_config, RunConfig):
-        single_run = True
-        run_config = [run_config]
-    run_config = [copy(rc) for rc in run_config]
-    for rc in run_config:
-        rc.impl = lambda x, funcs=rc.impl : compute(funcs(x))
-    if single_run:
-        run_config = run_config[0]
-    return measure_runtimes(run_config, preps, **kwargs)
+    return measure_runtimes(run_config, preps, impl_runner=xarray_impl_runner, **kwargs)
 
 def measure_loading_times(
     input: Input,
