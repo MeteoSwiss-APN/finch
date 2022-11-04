@@ -19,6 +19,7 @@ from dask_jobqueue.slurm import SLURMJob
 import tqdm
 from wonderwords import RandomWord
 import copy
+import uuid
 
 def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     """
@@ -343,8 +344,10 @@ def get_primitive_attrs_from_dataclass(dc) -> dict[str, str | numbers.Number]:
         if isinstance(v, Callable): # extract function name from callable
             if isinstance(v, functools.partial):
                 v_str = v.func.__name__
-                v_str += "_" + "_".join(str(a) for a in v.args)
-                v_str += "_" + "_".join(k + "=" + str(v) for k, v in v.keywords.items())
+                if len(v.args) > 0:
+                    v_str += "_" + "_".join(str(a) for a in v.args)
+                if len(v.keywords) > 0:
+                    v_str += "_" + "_".join(k + "=" + str(v) for k, v in v.keywords.items())
                 v = v_str
             else:
                 v = v.__name__
@@ -384,6 +387,6 @@ def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int = None) -> Tuple[np.n
 T = TypeVar("T")
 def arg2list(x: T | list[T]) -> list[T]:
     """Return a single-element list if x is not a list. Otherwise return x."""
-    if isinstance(x, list):
+    if not isinstance(x, list):
         x = [x]
     return x
