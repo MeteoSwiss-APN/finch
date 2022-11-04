@@ -63,6 +63,7 @@ def start_slurm_cluster(
         cluster = client.cluster
         client.close()
         cluster.close()
+        logging.info("Closed SLURM cluster")
 
     worker_env = env.WorkerEnvironment()
 
@@ -111,6 +112,11 @@ def start_slurm_cluster(
     client = Client(cluster)
     _active_config = cfg
     logging.info(f"Started new SLURM cluster. Dashboard available at {cluster.dashboard_link}")
+    if env.node_name_env_var in os.environ:
+        nodename = os.environ[env.node_name_env_var]
+    else:
+        nodename = "local"
+    logging.info(f"Current node name: {nodename}")
     logging.debug(cluster.job_script())
     return client
 
