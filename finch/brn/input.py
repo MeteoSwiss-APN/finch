@@ -4,6 +4,7 @@ from .. import data
 from .. import config
 import xarray as xr
 import dask.array as da
+import numpy as np
 
 brn_array_names = ["P", "T", "QV", "U", "V", "HHL", "HSURF"]
 """The names of the brn input arrays"""
@@ -45,14 +46,14 @@ def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
         # create a fake dataset
         shape = {"x": 1170, "y": 700, "z": 80}
         dims = list(version.dim_order)
-        shape = [shape[d] for d in dims]
-        chunks = [version.chunks[d] for d in dims]
-        array = da.random.random(shape, chunks)
+        size = [shape[d] for d in dims]
+        chunks = [version.chunks[d] if d in version.chunks else shape[d] for d in dims]
+        array = da.random.random(size, chunks)
         array = xr.DataArray(array, dims=translate_order(version.dim_order))
         arrays: list[xr.DataArray] = [
             (array + x).rename(n) 
             for n, x 
-            in zip(brn_array_names, range(0, 0.1*len(brn_array_names), 0.1))
+            in zip(brn_array_names, np.arange(0, 0.1*len(brn_array_names), 0.1))
         ]
         return xr.merge(arrays)
 
