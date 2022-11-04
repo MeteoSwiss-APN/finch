@@ -118,3 +118,14 @@ def brn_blocked_cpp(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
         return out
     arrays = [dataset[n] for n in input.brn_array_names]
     return util.custom_map_blocks(wrapper, *arrays, name="brn")
+
+def zebra_test(array: xr.Dataset):
+    def compute(x):
+        x = np.zeros_like(x)
+        out = np.empty_like(x)
+        for _ in range(100):
+            zebra.brn(x, x, x, x, x, x, x[:, :, 0], out)
+        return out
+    array = array.to_array().squeeze().data
+    array = da.blockwise(compute, "ijk", array, "ijk", dtype=float, meta=np.array((), dtype=float), align_arrays=False)
+    return xr.DataArray(array)
