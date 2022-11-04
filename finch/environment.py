@@ -39,6 +39,8 @@ default_custom_config = os.path.join(proj_root, "config", "custom.ini")
 custom_config_env_var = "CONFIG"
 """The name of the environment variable specifying the location of a custom configuration file."""
 
+node_name_env_var = "SLURMD_NODENAME"
+
 class WorkerEnvironment():
     """
     This class manages environments for dask workers.
@@ -65,7 +67,7 @@ class WorkerEnvironment():
     @property
     def _env_vars(self) -> dict[str, str]:
         """This worker environment as a dictionary mapping environment variable names to values"""
-        return {e : str(self.__dict__[v]) for v, es in self.env_var_map for e in util.arg2list(es)}
+        return {e : str(self.__dict__[v]) for v, es in self.env_var_map.items() for e in util.arg2list(es)}
 
     def set(self):
         """Sets environment variables according to this worker environment"""
