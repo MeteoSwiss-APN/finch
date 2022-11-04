@@ -26,6 +26,7 @@ class Format(enum.Enum):
     GRIB = "grib"
     NETCDF = "netcdf"
     ZARR = "zarr"
+    FAKE = "fake" # special format for fake data
 
 def translate_order(order: List[str] | str, index: Dict[str, str]) -> str | List[str]:
     """
@@ -256,7 +257,7 @@ class Input():
     def __init__(self, 
         store_path: pathlib.Path | str, 
         name: str, 
-        source: Callable[[], xr.Dataset],
+        source: Callable[[Version], xr.Dataset],
         source_version: Version,
         dim_index: dict[str, str],
     ) -> None:
@@ -361,6 +362,7 @@ class Input():
                 target = util.fill_none_properties(version, v)
 
         if target is None:
+            # create new version if wished, or if the new version can be deduced from the source version
             if create_if_not_exists or \
                 (not weak_compare and util.has_attributes(version, self.source_version)) or \
                 (weak_compare and self.source_version <= version):

@@ -3,6 +3,7 @@ import os
 from .. import data
 from .. import config
 import xarray as xr
+import dask.array as da
 
 brn_array_names = ["P", "T", "QV", "U", "V", "HHL", "HSURF"]
 """The names of the brn input arrays"""
@@ -39,6 +40,21 @@ def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
     for s in dim_index:
         if s in chunks:
             chunks[dim_index[s]] = chunks.pop(s)
+
+    if version.format == data.Format.FAKE:
+        # create a fake dataset
+        shape = {"x": 1170, "y": 700, "z": 80}
+        dims = list(version.dim_order)
+        shape = [shape[d] for d in dims]
+        chunks = [version.chunks[d] for d in dims]
+        array = da.random.random(shape, chunks)
+        array = xr.DataArray(array, dims=translate_order(version.dim_order))
+        arrays: list[xr.DataArray] = [
+            (array + x).rename(n) 
+            for n, x 
+            in zip(brn_array_names, range(0, 0.1*len(brn_array_names), 0.1))
+        ]
+        return xr.merge(arrays)
 
     # load data from first grib file
     grib_file = "lfff00000000"
