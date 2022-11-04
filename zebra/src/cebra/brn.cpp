@@ -132,7 +132,7 @@ void thetav_vec_par(const double *p, const double *t, const double *qv, double *
         ti.load(&t[i]);
         pi.load(&p[i]);
         qvi.load(&qv[i]);
-        Vec8d outi = pow(P0 / pi,pc_rdocp) * ti * (1 + (pc_rvd_o * qvi / (1-qvi)));
+        Vec8d outi = pow(P0 / pi, pc_rdocp) * ti * (1 + (pc_rvd_o * qvi / (1-qvi)));
         outi.store(&out[i]);
     }
 }

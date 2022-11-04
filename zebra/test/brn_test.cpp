@@ -3,6 +3,7 @@
 #include <test_utils.h>
 #include <util.h>
 #include <mock.h>
+#include <config.h>
 
 TEST(ThetaVTests, Extensive) {
     const int m = 2, n = 2, o = 8;
@@ -33,7 +34,7 @@ TEST(BrnTests, ZeroOutput) {
 
 
 TEST(BrnTests, Extensive) {
-    const int m = 2, n = 2, o = 8;
+    const int m = 2, n = 2, o = 16;
     double *x = malloc_d(m*n*o*8 + m*n);
     double *p = x, 
         *t = &x[m*n*o], 
@@ -47,7 +48,7 @@ TEST(BrnTests, Extensive) {
     brn_mock(p, t, qv, u, v, hhl, hsurf, out_ref, m, n, o);
     brn(p, t, qv, u, v, hhl, hsurf, out, m, n, o);
     for(int i = 0; i < m*n*o; i++) {
-        EXPECT_DOUBLE_EQ(out[i], out_ref[i]) << "Output differs at index " << i;
+        EXPECT_NEAR(out[i], out_ref[i], 1e-15) << "Output differs at index " << i;
     }
     free(x);
 }
