@@ -296,20 +296,24 @@ def plot_runtime_parts(
     """
     Plots how the full runtimes are split up.
     """
+    # collect data
+    rt_types = list(results.data_vars.keys())
+    rt_data = np.vstack([results.data_vars[rtt].data.flatten() for rtt in rt_types if rtt != "full"])
+    # normalize
+    rt_data /= np.sum(rt_data, axis=0)[np.newaxis, :]
+
     style = matplotx.styles.duftify(matplotx.styles.dracula)
     plt.clf()
     with plt.style.context(style):
         bottom = 0
-        for rt_type, rt_data in results.data_vars.items():
-            if rt_type == "full":
-                continue
-            flattened = rt_data.data.flatten()
-            ticks = range(len(flattened))
-            plt.bar(ticks, flattened, bottom=bottom, label=rt_type)
-            bottom += flattened
+        for i, rt_type in enumerate(rt_types):
+            row = rt_data[i, :]
+            ticks = range(len(row))
+            plt.bar(ticks, row, bottom=bottom, label=rt_type)
+            bottom += row
         path = pathlib.Path(config["evaluation"]["plot_dir"], results.attrs["name"])
         path.mkdir(parents=True, exist_ok=True)
         plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
         plt.xticks(ticks)
-        matplotx.ylabel_top("Runtime")
+        matplotx.ylabel_top("Runtime %")
         plt.savefig(path.joinpath("runtime_parts.png"), format="png", bbox_inches="tight")

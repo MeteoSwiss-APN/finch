@@ -138,6 +138,7 @@ def sig_matches_hint(
     if typing.get_origin(hint) != Callable:
         return False
     params, ret = typing.get_args(hint)
+    
     if sig.return_annotation != ret:
         return False
 
