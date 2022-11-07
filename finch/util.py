@@ -140,11 +140,28 @@ def sig_matches_hint(
     params, ret = typing.get_args(hint)
     if sig.return_annotation != ret:
         return False
-    if len(sig.parameters) != len(params):
+
+    required_params = [ph for ph in sig.parameters.values() if ph.default is ph.empty]
+    default_params = [ph for ph in sig.parameters.values() if ph.default is not ph.empty]
+
+    if len(required_params) > len(params) or len(params) > len(sig.parameters):
         return False
-    return all(
-        ps.annotation == ph for ps, ph in zip(sig.parameters.values(), params)
+    
+    required_match = all(
+        ps.annotation == ph for ps, ph in zip(required_params, params[:len(required_params)])
     )
+    if not required_match:
+        return False
+
+    remaining = params[len(required_params):]
+    j = 0
+    for r in remaining:
+        while default_params[j].annotation != r and j < len(default_params):
+            j += 1
+        if j == len(default_params):
+            return False
+        j += 1
+    return True
     
 
 def list_funcs_matching(module: types.ModuleType, regex: str | None = None, type_hint: type | None = None) -> List[Callable]:
