@@ -81,13 +81,14 @@ def create_result_dataset(
         for a in rca_keys
     })
 
-    # initialize data
     dim_sizes = [len(coords[a]) for a in coords]
-    data = np.full(dim_sizes, np.nan, dtype=float)
 
     # create dataset
     ds = xr.Dataset(coords=coords)
     for attr in util.get_class_attributes(Runtime):
+        # initialize data
+        data = np.full(dim_sizes, np.nan, dtype=float)
+
         array = xr.DataArray(data, coords, name=attr)
         has_entries = False # indicates whether the current runtime attribute has entries
         for result, rca in zip(results, rc_attrs):
@@ -98,6 +99,7 @@ def create_result_dataset(
                 array.loc[va | rca] = entry
         if has_entries: # only add runtimes which were actually recorded
             ds[attr] = array
+    ds.attrs["name"] = experiment_name
     return ds
 
 def create_cores_dimension(
@@ -127,12 +129,12 @@ def create_cores_dimension(
     out[cores_dim] = coords
     # reduce cores_dim to have unique values
     coords = np.unique(coords) # output is sorted
-    out_cols = [out.loc[{cores_dim : c}] for c in coords]
-    out_cols = [c if cores_dim in c.dims else c.expand_dims(cores_dim) for c in out_cols]
-    out_cols = [c.reduce(reduction, cores_dim) for c in out_cols]
-    out_cols = xr.concat(out_cols, cores_dim)
+    out_cols = [out.loc[{cores_dim : c}] for c in coords] # collect columns according to core size
+    out_cols = [col if cores_dim in col.dims else col.expand_dims(cores_dim) for col in out_cols] # make sure there is cores_dim
+    out_cols = [col.reduce(reduction, cores_dim) for col in out_cols]
     out = xr.concat(out_cols, cores_dim)
     out[cores_dim] = coords
+    out.attrs = results.attrs
     return out
 
 def speedup(runtimes: np.ndarray, axis: int = -1, base: np.ndarray = None) -> np.ndarray:
@@ -175,6 +177,7 @@ def create_plots(
     find_scaling_props: bool = True,
     plot_scaling_fits: bool = False,
     plot_scaling_baseline: bool = True,
+    runtime_selection: list[str] = None
 ):
     """
     Creates a series of plots for the results array.
@@ -198,9 +201,10 @@ def create_plots(
     Whether to plot the functions which are being fitted for calculating the scaling factor and rate.
     - plot_scaling_baseline: bool.
     Whether to plot a baseline for scaling dimensions.
+    - runtime_selection: list[str]. The runtime types to plot. Defaults to all recorded runtimes.
     """
 
-    path = pathlib.Path(config["evaluation"]["plot_dir"], results.name)
+    path = pathlib.Path(config["evaluation"]["plot_dir"], results.attrs["name"])
     path.mkdir(parents=True, exist_ok=True)
 
     for d in results.dims:
@@ -212,10 +216,12 @@ def create_plots(
             to_plot = to_plot.sortby(list(to_plot.dims))
             # reorder dimensions
             to_plot = to_plot.transpose("impl", d)
-            # get plotting arguments
-            labels = to_plot.coords["impl"].data
-            ticks = to_plot.coords[d].data
             for runtime_type, runtime_data in to_plot.data_vars.items():
+                if runtime_selection is not None and runtime_type not in runtime_selection:
+                    continue
+                # get plotting arguments
+                labels = to_plot.coords["impl"].data
+                ticks = to_plot.coords[d].data
                 # convert to numpy array
                 runtime_data = runtime_data.data
                 # prepare plotting arguments
@@ -271,7 +277,7 @@ def create_plots(
                             # plt.xscale("log", base=2)
                             # plt.yscale("log", base=2)
                             ylabel = "Speedup"
-                        for l, rt in zip(labels, to_plot):
+                        for l, rt in zip(labels, runtime_data):
                             plt.plot(ticks, rt, label=l)
                         plt.xlabel(d)
                         plt.xticks(ticks)

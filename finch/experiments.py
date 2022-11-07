@@ -15,6 +15,7 @@ from . import scheduler
 import dask.graph_manipulation
 import dask.array as da
 import dask
+import warnings
 
 @dataclass
 class RunConfig(util.Config):
@@ -49,15 +50,18 @@ def list_run_configs(**kwargs) -> list[RunConfig]:
 
 @dataclass
 class Runtime():
-    full: float
-    graph_construction: float
-    graph_opt: float
-    graph_serial: float
-    compute: float
+    full: float = None
+    graph_construction: float = None
+    graph_opt: float = None
+    graph_serial: float = None
+    compute: float = None
 
 def _reduce_runtimes(rt: list[Runtime], reduction: Callable[[np.ndarray, int], np.ndarray]) -> Runtime:
     array = [[r.full, r.graph_construction, r.graph_opt, r.graph_serial, r.compute] for r in rt]
-    out = reduction(np.array(array, dtype=float), axis=0)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        out = reduction(np.array(array, dtype=float), axis=0)
+    out = [o if o is not float("NaN") else None for o in out]
     return Runtime(*out)
 
 def measure_runtimes(
@@ -175,18 +179,26 @@ def xarray_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Datase
     runtime.graph_construction = end-start
     # optimize the graph
     start = perf_counter()
-    optimized = dask.optimize(cloned)
+    optimized = dask.optimize(cloned)[0]
     end = perf_counter()
     runtime.graph_opt = end-start
     # compute
-    start = perf_counter()
-    fut = scheduler.get_client().compute(optimized)
-    end = perf_counter()
-    runtime.graph_serial = end-start
-    start = perf_counter()
-    fut.result()
-    end = perf_counter()
-    runtime.compute = end-start
+    client = scheduler.get_client()
+    if client is not None:
+        start = perf_counter()
+        fut = client.compute(optimized)
+        end = perf_counter()
+        runtime.graph_serial = end-start
+        start = perf_counter()
+        fut.result()
+        end = perf_counter()
+        runtime.compute = end-start
+    else:
+        start = perf_counter()
+        optimized.compute()
+        end = perf_counter()
+        runtime.compute = end-start
+    return runtime
 
 
 def measure_operator_runtimes(

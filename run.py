@@ -32,7 +32,7 @@ import finch
 # general configurations
 ######################################################
 
-iterations = 1 if debug else 5
+iterations = 1 if debug else 2
 """The number of iterations when measuring runtime"""
 warmup = not debug
 """Whether to perform a warmup before measuring the runtimes"""
@@ -111,11 +111,11 @@ brn_multi_omp = False
 
 # repeated experiment
 
-brn_repeated_run = True
-"""Whether to performa a run experiment for the brn repeated function(s)"""
-brn_repeated_n = range(10, 50, 10)
+brn_repeated_run = False
+"""Whether to perform a run experiment for the brn repeated function(s)"""
+brn_repeated_n = range(10, 20, 10)
 """A list with the number of times to repeat the computation"""
-brn_repeated_workers = [1, 2, 4, 8, 16]
+brn_repeated_workers = [1,2] #[1, 2, 4, 8, 16]
 """A list of the number of workers to spawn"""
 brn_repeated_cores_per_worker = 4
 """The number of cores available per worker"""
@@ -139,6 +139,8 @@ brn_multicore_run = True
 
 brn_evaluation = True
 """Whether or not to run evaluation"""
+brn_eval_runtimes_plot = ["full"]
+"""The runtimes to plot"""
 
 
 ######################################################
@@ -201,7 +203,7 @@ if __name__ == "__main__":
                 cluster_config=cluster_configs
             )
             times = finch.measure_operator_runtimes(run_configs, brn_input, brn_multi_versions, **config)
-            results = finch.eval.create_result_array(times, run_configs, brn_multi_versions, "brn_"+brn_multi_name)
+            results = finch.eval.create_result_dataset(times, run_configs, brn_multi_versions, "brn_"+brn_multi_name)
             results.to_netcdf(brn_results_file)
 
         if brn_repeated_run:
@@ -217,7 +219,7 @@ if __name__ == "__main__":
                 impl=[finch.brn.get_repeated_implementation(n) for n in brn_repeated_n]
             )
             times = finch.measure_operator_runtimes(run_configs, finch.brn.brn_input, brn_repeated_input_version, **config)
-            results = finch.eval.create_result_array(
+            results = finch.eval.create_result_dataset(
                 times, 
                 run_configs, 
                 brn_repeated_input_version, 
@@ -230,4 +232,4 @@ if __name__ == "__main__":
             logging.info(f"Evaluating experiment results")
             results = xr.open_dataset(brn_results_file)
             results = finch.eval.create_cores_dimension(results)
-            finch.eval.create_plots(results)
+            finch.eval.create_plots(results, runtime_selection=brn_eval_runtimes_plot)
