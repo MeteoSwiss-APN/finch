@@ -233,3 +233,5 @@ if __name__ == "__main__":
             results = xr.open_dataset(brn_results_file)
             results = finch.eval.create_cores_dimension(results)
             finch.eval.create_plots(results, runtime_selection=brn_eval_runtimes_plot)
+            if len(results.data_vars) > 1:
+                finch.eval.plot_runtime_parts(results)

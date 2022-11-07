@@ -217,7 +217,8 @@ def create_plots(
             # reorder dimensions
             to_plot = to_plot.transpose("impl", d)
             for runtime_type, runtime_data in to_plot.data_vars.items():
-                if runtime_selection is not None and runtime_type not in runtime_selection:
+                if runtime_selection is not None and runtime_type not in runtime_selection or \
+                    d in scaling_dims and runtime_type not in ["full", "compute"]:
                     continue
                 # get plotting arguments
                 labels = to_plot.coords["impl"].data
@@ -285,6 +286,27 @@ def create_plots(
                         if d in scaling_dims:
                             matplotx.line_labels()
                         else:
-                            plt.legend()
+                            plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
                     # save plot
                     plt.savefig(path.joinpath(d + "_" + runtime_type + ".png"), format="png", bbox_inches="tight")
+
+def plot_runtime_parts(
+    results: xr.Dataset
+):
+    style = matplotx.styles.duftify(matplotx.styles.dracula)
+    plt.clf()
+    with plt.style.context(style):
+        bottom = 0
+        for rt_type, rt_data in results.data_vars.items():
+            if rt_type == "full":
+                continue
+            flattened = rt_data.data.flatten()
+            ticks = range(len(flattened))
+            plt.bar(ticks, flattened, bottom=bottom, label=rt_type)
+            bottom += flattened
+        path = pathlib.Path(config["evaluation"]["plot_dir"], results.attrs["name"])
+        path.mkdir(parents=True, exist_ok=True)
+        plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
+        plt.xticks(ticks)
+        matplotx.ylabel_top("Runtime")
+        plt.savefig(path.joinpath("runtime_parts.png"), format="png", bbox_inches="tight")
