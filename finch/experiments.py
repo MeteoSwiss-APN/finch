@@ -12,9 +12,9 @@ from . import util
 from . import config
 from . import env
 from . import scheduler
-import tqdm
 import dask.graph_manipulation
 import dask.array as da
+import dask
 
 @dataclass
 class RunConfig(util.Config):
@@ -165,12 +165,29 @@ def measure_runtimes(
         out = out[0]
     return out
 
-def xarray_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset):
+def xarray_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset) -> Runtime:
+    runtime = Runtime()
     # construct the dask graph
+    start = perf_counter()
     out = impl(ds)
     cloned: da.Array = dask.graph_manipulation.clone(out.data)
+    end = perf_counter()
+    runtime.graph_construction = end-start
+    # optimize the graph
+    start = perf_counter()
+    optimized = dask.optimize(cloned)
+    end = perf_counter()
+    runtime.graph_opt = end-start
     # compute
-    cloned.compute()
+    start = perf_counter()
+    fut = scheduler.get_client().compute(optimized)
+    end = perf_counter()
+    runtime.graph_serial = end-start
+    start = perf_counter()
+    fut.result()
+    end = perf_counter()
+    runtime.compute = end-start
+
 
 def measure_operator_runtimes(
     run_config: list[RunConfig] | RunConfig, 
