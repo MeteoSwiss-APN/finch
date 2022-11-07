@@ -47,18 +47,30 @@ def list_run_configs(**kwargs) -> list[RunConfig]:
             configs = [c | u for c in configs for u in updates]
     return [RunConfig(**c) for c in configs]
 
+@dataclass
+class Runtime():
+    full: float
+    graph_construction: float
+    graph_opt: float
+    graph_serial: float
+    compute: float
+
+def _reduce_runtimes(rt: list[Runtime], reduction: Callable[[np.ndarray, int], np.ndarray]) -> Runtime:
+    array = [[r.full, r.graph_construction, r.graph_opt, r.graph_serial, r.compute] for r in rt]
+    out = reduction(np.array(array, dtype=float), axis=0)
+    return Runtime(*out)
 
 def measure_runtimes(
     run_config: list[RunConfig] | RunConfig, 
     inputs: list[Callable[[], list]] | Callable[[], list] | list[list] | None = None, 
     iterations: int = 1,
-    impl_runner: Callable[..., None] = None,
+    impl_runner: Callable[..., Runtime | None] = None,
     cache_inputs: bool = False,
-    reduction: Callable[[list[float]], float] = np.mean,
+    reduction: Callable[[np.ndarray, int], np.ndarray] = np.nanmean,
     warmup: bool = False,
     pbar: PbarArg = True,
     **kwargs
-) -> list[list[float]] | list[float] | float:
+) -> list[list[Runtime]] | list[Runtime] | Runtime:
     """
     Measures the runtimes of multiple functions, each accepting the same inputs.
     Parameters
@@ -76,10 +88,12 @@ def measure_runtimes(
     the impl argument of a run configuration for the given list of arguments.
     The first argument of impl_runner is `impl` while the remaining arguments are the arguments passed to `impl`.
     The execution of `impl_runner` will be timed and reported.
+    A runtime can be returned if the implementation runner supports fine-grained runtime repoting.
     Defaults to directly running the passed function on the passed arguments.
     - cache_inputs: bool, default: `True`. Whether to reuse the input for a function for its iterations.
-    - reduction: Callable[[list[float]], float], default: `np.mean`. 
+    - reduction: Callable, default: `np.nanmean`. 
     The function to be used to combine the results of the iterations.
+    This is a reduction function which is able to reduce a specific dimenion (kwarg axis) of a numpy array.
     - warmup: bool, default: `False`. If `True`, runs the function once before measuring.
     - pbar: PbarArg, default: `True`. Progressbar argument
 
@@ -127,14 +141,18 @@ def measure_runtimes(
                 prep = lambda a=args : a
             for _ in range(iterations):
                 args = prep()
-                _start = perf_counter()
-                impl_runner(c.impl, *args)
-                _end = perf_counter()
-                cur_times.append(_end - _start)
+                start = perf_counter()
+                runtime = impl_runner(c.impl, *args)
+                end = perf_counter()
+                if runtime is None:
+                    runtime = Runtime()
+                if runtime.full is None:
+                    runtime.full = end-start
+                cur_times.append(runtime)
                 pbar.update()
             if warmup:
                 cur_times = cur_times[1:]
-            f_times.append(reduction(cur_times))
+            f_times.append(_reduce_runtimes(cur_times, reduction))
         times.append(f_times)
     # reorder according to original run config order
     out = [0]*len(times)

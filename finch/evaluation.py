@@ -7,7 +7,7 @@ from collections.abc import Callable
 from . import Input
 from . import util
 from . import config
-from .experiments import RunConfig
+from .experiments import RunConfig, Runtime
 import xarray as xr
 import numpy as np
 import pandas as pd
@@ -32,19 +32,20 @@ def print_results(results: list[list[Any]], run_configs: list[RunConfig], versio
         print_version_results(r, versions)
         print()
 
-def create_result_array(
-    results: list[list[float]] | list[float] | float, 
+def create_result_dataset(
+    results: list[list[Runtime]] | list[Runtime] | Runtime, 
     run_configs: list[RunConfig] | RunConfig, 
     versions: list[Input.Version] | Input.Version, 
     experiment_name: str = None, 
     impl_names: list[str] | Callable[[Callable], str] | None = None
-) -> xr.DataArray:
+) -> xr.Dataset:
     """
-    Constructs a data array from the results of an experiment.
+    Constructs a dataset from the results of an experiment.
     The dimensions are given by the attributes of the Version and RunConfig classes.
     The coordinates are labels for the version and run config attributes.
-    This result array can then be used as an input for different evaluation functions.
-    The result array will contain NaN for every combination of version and run config attributes, which is not listed in `versions`.
+    The array entries in the dataset are the different runtimes which were recorded
+    This result dataset can then be used as an input for different evaluation functions.
+    The result dataset will contain NaN for every combination of version and run config attributes, which is not listed in `versions`.
     """
     # prepare arguments
     if not isinstance(run_configs, list):
@@ -69,7 +70,7 @@ def create_result_array(
                 a["impl"] = impl_name
         elif isinstance(impl_names, Callable):
             for a, rc in zip(rc_attrs, run_configs):
-                a["impl"] = impl_name(rc.impl)
+                a["impl"] = impl_names(rc.impl)
     # construct coordinates
     coords = {
         a : list(set(va[a] for va in version_attrs))
@@ -84,22 +85,30 @@ def create_result_array(
     dim_sizes = [len(coords[a]) for a in coords]
     data = np.full(dim_sizes, np.nan, dtype=float)
 
-    # create array
-    array = xr.DataArray(data, coords, name=experiment_name)
-    for result, rca in zip(results, rc_attrs):
-        for r, va in zip(result, version_attrs):
-            array.loc[va | rca] = r
-    return array
+    # create dataset
+    ds = xr.Dataset(coords=coords)
+    for attr in util.get_class_attributes(Runtime):
+        array = xr.DataArray(data, coords, name=attr)
+        has_entries = False # indicates whether the current runtime attribute has entries
+        for result, rca in zip(results, rc_attrs):
+            for r, va in zip(result, version_attrs):
+                entry = r.__dict__[attr] # get the runtime entry
+                if entry is not None:
+                    has_entries = True
+                array.loc[va | rca] = entry
+        if has_entries: # only add runtimes which were actually recorded
+            ds[attr] = array
+    return ds
 
 def create_cores_dimension(
-    results: xr.DataArray, 
+    results: xr.Dataset, 
     contributors: list[str] = [
         "workers",
         "cluster_config_cores_per_worker"
     ],
     cores_dim = "cores",
     reduction: Callable = np.min
-) -> xr.DataArray:
+) -> xr.Dataset:
     """
     Merges the dimensions in the results array which contribute to the total amount of cores into a single 'cores' dimension.
     The number of cores are calculated by the product of the coordinates of the individual dimensions.
@@ -160,7 +169,7 @@ def find_scaling(scale: np.ndarray, speedup: np.ndarray, axis: int = None) -> Tu
 
 
 def create_plots(
-    results: xr.DataArray, 
+    results: xr.Dataset, 
     reduction: Callable = np.nanmin, 
     scaling_dims: list[str] = ["cores"],
     find_scaling_props: bool = True,
@@ -201,72 +210,75 @@ def create_plots(
             to_plot = results.reduce(reduction, to_reduce)
             # sort dimensions
             to_plot = to_plot.sortby(list(to_plot.dims))
-            # convert to numpy array
+            # reorder dimensions
             to_plot = to_plot.transpose("impl", d)
+            # get plotting arguments
             labels = to_plot.coords["impl"].data
             ticks = to_plot.coords[d].data
-            to_plot = to_plot.data
-            # prepare plotting arguments
-            style = matplotx.styles.duftify(matplotx.styles.dracula)
-            # plot
-            plt.clf()
-            with plt.style.context(style):
-                if isinstance(ticks[0], str):
-                    # bar plot
-                    # calculate the bar postions
-                    group_size = len(labels) + 1
-                    bar_width = 1 / group_size
-                    xpos = np.arange(0, len(ticks), bar_width) - (1 - 2*bar_width)/2
-                    xpos = xpos.reshape((len(ticks), len(labels)+1)).transpose()
-                    xpos = xpos[:-1, :] # remove empty bar
-                    for l, rt, xp in zip(labels, to_plot, xpos):
-                        plt.bar(xp, rt, width=bar_width, label=l)
-                    plt.xticks(range(len(ticks)), ticks)
-                    plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
-                    plt.xlabel(d)
-                    matplotx.ylabel_top("Runtime [s]")
-                else:
-                    # line plot
-                    ylabel = "Runtime [s]"
-                    # handle scaling dimension
-                    if d in scaling_dims:
-                        # compute speedup
-                        to_plot = speedup(to_plot)
-                        # calculate scaling rate and factor
-                        if find_scaling_props:
-                            scale = ticks / ticks[0]
-                            alpha, beta = find_scaling(np.reshape(scale, (1, -1)), to_plot, axis=1)
-                            labels = [
-                                l + r", $\alpha=" + "%.2f"%sf + r"$, $\beta=" + "%.2f"%sr + r"$" 
-                                for l, sf, sr in zip(labels, alpha, beta)
-                            ]
-                        # plot baseline
-                        if plot_scaling_baseline:
-                            base_label = "Perfect linear scaling"
-                            if find_scaling_props:
-                                base_label += r", $\alpha=1$, $\beta=1$"
-                            plt.plot(ticks, scale, label=base_label, linestyle="--")
-                        # plot fitted scaling functions
-                        if plot_scaling_fits and find_scaling_props:
-                            cycler = style["axes.prop_cycle"]
-                            if plot_scaling_baseline:
-                                cycler = cycler[1:]
-                            for a, b, c in zip(alpha, beta, cycler):
-                                x = np.linspace(ticks[0], ticks[-1], 100)
-                                xt = x / ticks[0]
-                                y = a*xt**b
-                                plt.plot(x, y, linestyle=":", color=c["color"])
-                        # plt.xscale("log", base=2)
-                        # plt.yscale("log", base=2)
-                        ylabel = "Speedup"
-                    for l, rt in zip(labels, to_plot):
-                        plt.plot(ticks, rt, label=l)
-                    plt.xlabel(d)
-                    plt.xticks(ticks)
-                    matplotx.ylabel_top(ylabel)
-                    if d in scaling_dims:
-                        matplotx.line_labels()
+            for runtime_type, runtime_data in to_plot.data_vars.items():
+                # convert to numpy array
+                runtime_data = runtime_data.data
+                # prepare plotting arguments
+                style = matplotx.styles.duftify(matplotx.styles.dracula)
+                # plot
+                plt.clf()
+                with plt.style.context(style):
+                    if isinstance(ticks[0], str):
+                        # bar plot
+                        # calculate the bar postions
+                        group_size = len(labels) + 1
+                        bar_width = 1 / group_size
+                        xpos = np.arange(0, len(ticks), bar_width) - (1 - 2*bar_width)/2
+                        xpos = xpos.reshape((len(ticks), len(labels)+1)).transpose()
+                        xpos = xpos[:-1, :] # remove empty bar
+                        for l, rt, xp in zip(labels, runtime_data, xpos):
+                            plt.bar(xp, rt, width=bar_width, label=l)
+                        plt.xticks(range(len(ticks)), ticks)
+                        plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
+                        plt.xlabel(d)
+                        matplotx.ylabel_top("Runtime [s]")
                     else:
-                        plt.legend()
-                # save plot
-                plt.savefig(path.joinpath(d + ".png"), format="png", bbox_inches="tight")
+                        # line plot
+                        ylabel = "Runtime [s]"
+                        # handle scaling dimension
+                        if d in scaling_dims:
+                            # compute speedup
+                            runtime_data = speedup(runtime_data)
+                            # calculate scaling rate and factor
+                            if find_scaling_props:
+                                scale = ticks / ticks[0]
+                                alpha, beta = find_scaling(np.reshape(scale, (1, -1)), runtime_data, axis=1)
+                                labels = [
+                                    l + r", $\alpha=" + "%.2f"%sf + r"$, $\beta=" + "%.2f"%sr + r"$" 
+                                    for l, sf, sr in zip(labels, alpha, beta)
+                                ]
+                            # plot baseline
+                            if plot_scaling_baseline:
+                                base_label = "Perfect linear scaling"
+                                if find_scaling_props:
+                                    base_label += r", $\alpha=1$, $\beta=1$"
+                                plt.plot(ticks, scale, label=base_label, linestyle="--")
+                            # plot fitted scaling functions
+                            if plot_scaling_fits and find_scaling_props:
+                                cycler = style["axes.prop_cycle"]
+                                if plot_scaling_baseline:
+                                    cycler = cycler[1:]
+                                for a, b, c in zip(alpha, beta, cycler):
+                                    x = np.linspace(ticks[0], ticks[-1], 100)
+                                    xt = x / ticks[0]
+                                    y = a*xt**b
+                                    plt.plot(x, y, linestyle=":", color=c["color"])
+                            # plt.xscale("log", base=2)
+                            # plt.yscale("log", base=2)
+                            ylabel = "Speedup"
+                        for l, rt in zip(labels, to_plot):
+                            plt.plot(ticks, rt, label=l)
+                        plt.xlabel(d)
+                        plt.xticks(ticks)
+                        matplotx.ylabel_top(ylabel)
+                        if d in scaling_dims:
+                            matplotx.line_labels()
+                        else:
+                            plt.legend()
+                    # save plot
+                    plt.savefig(path.joinpath(d + "_" + runtime_type + ".png"), format="png", bbox_inches="tight")

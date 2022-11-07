@@ -111,8 +111,8 @@ def brn_blocked_cpp(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
     dataset = dataset.transpose(*data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
     def wrapper(*arrays):
         arrays = list(arrays)
+        out = np.empty_like(arrays[0])
         for _ in range(reps):
-            out = np.zeros_like(arrays[0])
             zebra.brn(*arrays, out)
             arrays[0] = out
         return out

@@ -89,7 +89,7 @@ brn_single_name = "single"
 
 # multi run
 
-brn_multi_run = True
+brn_multi_run = False
 """Wether to perform a run experiment with different run configurations"""
 brn_multi_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.FAKE,
@@ -102,29 +102,29 @@ brn_multi_imps = finch.brn.impl.brn_blocked_cpp
 """The brn implementations used"""
 brn_multi_name = "cpp_scaling"
 """The name of the brn multi run experiment"""
-brn_multi_workers = [2, 4, 8, 16, 32, 64]
+brn_multi_workers = [1, 2, 4, 8, 16]
 """A list of the number of workers to spawn for the brn multi run"""
-brn_multi_cores_per_worker = 1
+brn_multi_cores_per_worker = 4
 """The number of cores dedicated to each worker"""
 brn_multi_omp = False
 """Whether to delegate parallelism to OpenMP for a worker"""
 
 # repeated experiment
 
-brn_repeated_run = False
+brn_repeated_run = True
 """Whether to performa a run experiment for the brn repeated function(s)"""
 brn_repeated_n = range(10, 50, 10)
 """A list with the number of times to repeat the computation"""
-brn_repeated_workers = [1, 2, 4, 8]
+brn_repeated_workers = [1, 2, 4, 8, 16]
 """A list of the number of workers to spawn"""
-brn_repeated_cores_per_worker = 10
+brn_repeated_cores_per_worker = 4
 """The number of cores available per worker"""
-brn_repeated_omp = True
+brn_repeated_omp = False
 """Whether to reserve parallelism to OpenMP"""
 brn_repeated_input_version = finch.Input.Version(
-    format=finch.data.Format.ZARR,
+    format=finch.data.Format.FAKE,
     dim_order="xyz",
-    chunks={"x": 30},
+    chunks={"x": 10},
     coords=False
 )
 brn_repeated_name = "repeated"
@@ -228,6 +228,6 @@ if __name__ == "__main__":
 
         if brn_evaluation:
             logging.info(f"Evaluating experiment results")
-            results = xr.open_dataarray(brn_results_file)
+            results = xr.open_dataset(brn_results_file)
             results = finch.eval.create_cores_dimension(results)
             finch.eval.create_plots(results)
