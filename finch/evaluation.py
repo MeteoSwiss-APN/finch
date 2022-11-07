@@ -293,6 +293,9 @@ def create_plots(
 def plot_runtime_parts(
     results: xr.Dataset
 ):
+    """
+    Plots how the full runtimes are split up.
+    """
     style = matplotx.styles.duftify(matplotx.styles.dracula)
     plt.clf()
     with plt.style.context(style):

@@ -16,6 +16,7 @@ import dask.graph_manipulation
 import dask.array as da
 import dask
 import warnings
+import dask.distributed
 
 @dataclass
 class RunConfig(util.Config):
@@ -186,11 +187,11 @@ def xarray_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Datase
     client = scheduler.get_client()
     if client is not None:
         start = perf_counter()
-        fut = client.compute(optimized)
+        fut = client.persist(optimized)
         end = perf_counter()
         runtime.graph_serial = end-start
         start = perf_counter()
-        fut.result()
+        dask.distributed.wait(fut)
         end = perf_counter()
         runtime.compute = end-start
     else:

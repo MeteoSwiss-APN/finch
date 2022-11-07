@@ -32,7 +32,7 @@ import finch
 # general configurations
 ######################################################
 
-iterations = 1 if debug else 2
+iterations = 1 if debug else 5
 """The number of iterations when measuring runtime"""
 warmup = not debug
 """Whether to perform a warmup before measuring the runtimes"""
@@ -89,16 +89,16 @@ brn_single_name = "single"
 
 # multi run
 
-brn_multi_run = False
+brn_multi_run = True
 """Wether to perform a run experiment with different run configurations"""
 brn_multi_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.FAKE,
     dim_order="xyz",
     coords=False,
-    chunks={"x" : 10}
+    chunks=[{"x" : x} for x in [5, 10, 20, 30, 50]]
 )
 """The input versions for the brn multi run experiment"""
-brn_multi_imps = finch.brn.impl.brn_blocked_cpp
+brn_multi_imps = finch.brn.list_brn_implementations()
 """The brn implementations used"""
 brn_multi_name = "cpp_scaling"
 """The name of the brn multi run experiment"""
@@ -113,9 +113,9 @@ brn_multi_omp = False
 
 brn_repeated_run = False
 """Whether to perform a run experiment for the brn repeated function(s)"""
-brn_repeated_n = range(10, 20, 10)
+brn_repeated_n = range(10, 50, 10)
 """A list with the number of times to repeat the computation"""
-brn_repeated_workers = [1,2] #[1, 2, 4, 8, 16]
+brn_repeated_workers = [1, 2, 4, 8, 16]
 """A list of the number of workers to spawn"""
 brn_repeated_cores_per_worker = 4
 """The number of cores available per worker"""
