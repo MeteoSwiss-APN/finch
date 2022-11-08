@@ -20,6 +20,7 @@ import tqdm
 from wonderwords import RandomWord
 import copy
 import uuid
+import shutil
 
 def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     """
@@ -209,6 +210,24 @@ def get_absolute(path: pathlib.Path | str, context: pathlib.Path) -> pathlib.Pat
         return path
     else:
         return str(path)
+
+def get_path(*args) -> pathlib.Path:
+    """
+    Returns a new pathlib path by joining the given pathlike arguments.
+    If the directories do not exist yet, they will be created.
+    """
+    out = pathlib.Path(*args)
+    to_make = out if out.is_dir else out.parent
+    to_make.mkdir(parents=True, exist_ok=True)
+    return out
+
+def remove_if_exists(path: pathlib.Path) -> pathlib.Path:
+    """
+    Removes the given directory if it exists and returns the original path.
+    """
+    if path.exists:
+        shutil.rmtree(path)
+    return path
 
 def funcs_from_args(f: Callable, args: list[dict]) -> list[Callable]:
     """
