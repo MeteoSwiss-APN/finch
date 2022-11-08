@@ -187,11 +187,11 @@ def xarray_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Datase
     client = scheduler.get_client()
     if client is not None:
         start = perf_counter()
-        fut = client.persist(optimized)
+        fut: da.Array = client.persist(optimized)
         end = perf_counter()
         runtime.graph_serial = end-start
         start = perf_counter()
-        dask.distributed.wait(fut)
+        fut.to_zarr(str(util.get_path(config["global"]["tmp_dir"], "exp_out")), overwrite=True)
         end = perf_counter()
         runtime.compute = end-start
     else:

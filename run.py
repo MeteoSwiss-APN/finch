@@ -89,18 +89,18 @@ brn_single_name = "single"
 
 # multi run
 
-brn_multi_run = False
+brn_multi_run = True
 """Wether to perform a run experiment with different run configurations"""
 brn_multi_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.FAKE,
     dim_order="xyz",
     coords=False,
-    chunks=[{"x" : x} for x in [5, 10, 20, 30, 50]]
+    chunks=[{"x" : x} for x in [10, 20, 30, 50]]
 )
 """The input versions for the brn multi run experiment"""
 brn_multi_imps = finch.brn.list_brn_implementations()
 """The brn implementations used"""
-brn_multi_name = "cpp_scaling"
+brn_multi_name = "rand_multi"
 """The name of the brn multi run experiment"""
 brn_multi_workers = [1, 2, 4, 8, 16]
 """A list of the number of workers to spawn for the brn multi run"""
