@@ -55,6 +55,7 @@ def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
             for n, x 
             in zip(brn_array_names, np.arange(0, 0.1*len(brn_array_names), 0.1))
         ]
+        arrays[-1] = arrays[-1].loc[{dim_index["z"]: 0}]
         return xr.merge(arrays)
 
     # load data from first grib file
