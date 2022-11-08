@@ -89,7 +89,7 @@ brn_single_name = "single"
 
 # multi run
 
-brn_multi_run = True
+brn_multi_run = False
 """Wether to perform a run experiment with different run configurations"""
 brn_multi_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.FAKE,

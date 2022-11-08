@@ -297,8 +297,8 @@ def plot_runtime_parts(
     Plots how the full runtimes are split up.
     """
     # collect data
-    rt_types = list(results.data_vars.keys())
-    rt_data = np.vstack([results.data_vars[rtt].data.flatten() for rtt in rt_types if rtt != "full"])
+    rt_types = [rtt for rtt in results.data_vars.keys() if rtt != "full"]
+    rt_data = np.vstack([results.data_vars[rtt].data.flatten() for rtt in rt_types])
     # normalize
     rt_data /= np.sum(rt_data, axis=0)[np.newaxis, :]
 
