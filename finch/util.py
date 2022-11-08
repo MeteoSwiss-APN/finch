@@ -21,6 +21,7 @@ from wonderwords import RandomWord
 import copy
 import uuid
 import shutil
+import os
 
 def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     """
@@ -228,6 +229,17 @@ def remove_if_exists(path: pathlib.Path) -> pathlib.Path:
     if path.exists:
         shutil.rmtree(path)
     return path
+
+def clear_dir(path: pathlib.Path):
+    """
+    Removes the content of the given directory
+    """
+    assert path.is_dir, "The given path must be a directory"
+    for file in path.iterdir():
+        if os.path.isdir(file):
+            shutil.rmtree(file)
+        else:
+            os.remove(file)
 
 def funcs_from_args(f: Callable, args: list[dict]) -> list[Callable]:
     """

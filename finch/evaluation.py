@@ -283,10 +283,7 @@ def create_plots(
                         plt.xlabel(d)
                         plt.xticks(ticks)
                         matplotx.ylabel_top(ylabel)
-                        if d in scaling_dims:
-                            matplotx.line_labels()
-                        else:
-                            plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
+                        matplotx.line_labels()
                     # save plot
                     plt.savefig(path.joinpath(d + "_" + runtime_type + ".png"), format="png", bbox_inches="tight")
 
@@ -314,6 +311,7 @@ def plot_runtime_parts(
         path = pathlib.Path(config["evaluation"]["plot_dir"], results.attrs["name"])
         path.mkdir(parents=True, exist_ok=True)
         plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
-        plt.xticks(ticks)
+        plt.xticks([])
+        plt.xlabel("Measurements")
         matplotx.ylabel_top("Runtime %")
         plt.savefig(path.joinpath("runtime_parts.png"), format="png", bbox_inches="tight")

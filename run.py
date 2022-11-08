@@ -99,6 +99,7 @@ brn_multi_versions = finch.Input.Version.list_configs(
 )
 """The input versions for the brn multi run experiment"""
 brn_multi_imps = finch.brn.list_brn_implementations()
+brn_multi_imps += [finch.brn.interface.get_repeated_implementation(10)]
 """The brn implementations used"""
 brn_multi_name = "rand_multi"
 """The name of the brn multi run experiment"""
