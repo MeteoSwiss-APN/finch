@@ -6,3 +6,5 @@ main.pdf
 *.log
 *.toc
 *.out
+*.bbl
+*.blg
