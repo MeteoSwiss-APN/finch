@@ -4,3 +4,5 @@
 *.synctex.gz
 main.pdf
 *.log
+*.toc
+*.out

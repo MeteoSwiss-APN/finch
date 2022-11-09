@@ -1,7 +1,6 @@
 \documentclass{article}
 
-% packages
-\usepackage[utf8]{inputenc}
+\input{packages.tex}
 
 \title{Finch User Guide}
 \author{Tierry Hörmann}
@@ -9,7 +8,11 @@
 
 \begin{document}
     \maketitle
-    \input{introduction.tex}
+    \tableofcontents
+
+    \newpage
+
+    \input{introduction/section.tex}
     \input{setup.tex}
     \input{scalability-blockers.tex}
 \end{document}
