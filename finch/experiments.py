@@ -18,6 +18,7 @@ import dask
 import warnings
 import dask.distributed
 import functools
+import random
 
 zarr_out_path = util.get_path(config["global"]["tmp_dir"], "exp_out")
 
@@ -183,9 +184,11 @@ def xr_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset) -
     runtime = Runtime()
     # construct the dask graph
     start = perf_counter()
+    ds = ds + xr.full_like(ds, random.random()) # instead of clone. See https://github.com/dask/dask/issues/9621
     out = impl(ds)
-    cloned: da.Array = dask.graph_manipulation.clone(out.data)
-    stored = cloned.to_zarr(str(zarr_out_path), overwrite=False, compute=False)
+    # clone the graph to ensure that the scheduler does not use results computed in an earlier round
+    # cloned: da.Array = dask.graph_manipulation.clone(out.data)
+    stored = out.data.to_zarr(str(zarr_out_path), overwrite=False, compute=False)
     end = perf_counter()
     runtime.graph_construction = end-start
     # optimize the graph
