@@ -27,8 +27,8 @@ def list_thetav_implementations() -> list[THETAV_SIG]:
 def list_brn_implementations() -> list[BRN_SIG]:
     return util.list_funcs_matching(impl, BRN_REGEX, BRN_SIG)
 
-def get_repeated_implementation(n: int):
-    return functools.partial(impl.brn_blocked_cpp, reps=n)
+def get_repeated_implementation(n: int, base = impl.brn_blocked_cpp):
+    return functools.partial(base, reps=n)
 
 def get_repeated_impl_name(impl: functools.partial):
     reps = str(impl.keywords["reps"])

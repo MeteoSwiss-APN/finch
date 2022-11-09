@@ -21,19 +21,22 @@ def thetav_xr(dataset: xr.Dataset) -> xr.DataArray:
 
     return (const.P0 / p) ** pc_rdocp * t * (1.+(pc_rvd_o*qv / (1.-qv)))
 
-def brn_xr(dataset: xr.Dataset) -> xr.DataArray:
+def brn_xr(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
     nlevels = dataset.sizes["generalVerticalLayer"]
 
-    thetav = thetav_xr(dataset.drop_vars(input.brn_only_array_names))
-    thetav_sum = thetav.isel(generalVerticalLayer=slice(None, None, -1)).cumsum(dim='generalVerticalLayer')
-    nlevels_xr =xr.DataArray(data=np.arange(nlevels,0,-1), dims=["generalVerticalLayer"])
+    for _ in range(reps):
+        thetav = thetav_xr(dataset.drop_vars(input.brn_only_array_names))
+        thetav_sum = thetav.isel(generalVerticalLayer=slice(None, None, -1)).cumsum(dim='generalVerticalLayer')
+        nlevels_xr =xr.DataArray(data=np.arange(nlevels,0,-1), dims=["generalVerticalLayer"])
 
-    u, v, hhl, hsurf = [dataset[n] for n in input.brn_only_array_names]
+        u, v, hhl, hsurf = [dataset[n] for n in input.brn_only_array_names]
 
-    brn_1 = const.PC_G * (hhl-hsurf)*(thetav - thetav.isel(generalVerticalLayer=-1)) * nlevels_xr
-    brn_2 = (thetav_sum)*(u*u + v*v)
+        brn_1 = const.PC_G * (hhl-hsurf)*(thetav - thetav.isel(generalVerticalLayer=-1)) * nlevels_xr
+        brn_2 = (thetav_sum)*(u*u + v*v)
 
-    brn = brn_1 / brn_2
+        brn = brn_1 / brn_2
+        dataset["P"] = brn
+
     return brn
 
 def block_thetav_np(
@@ -118,14 +121,3 @@ def brn_blocked_cpp(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
         return out
     arrays = [dataset[n] for n in input.brn_array_names]
     return util.custom_map_blocks(wrapper, *arrays, name="brn")
-
-def zebra_test(array: xr.Dataset):
-    def compute(x):
-        x = np.zeros_like(x)
-        out = np.empty_like(x)
-        for _ in range(100):
-            zebra.brn(x, x, x, x, x, x, x[:, :, 0], out)
-        return out
-    array = array.to_array().squeeze().data
-    array = da.blockwise(compute, "ijk", array, "ijk", dtype=float, meta=np.array((), dtype=float), align_arrays=False)
-    return xr.DataArray(array)
