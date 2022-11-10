@@ -1,6 +1,123 @@
+%% LaTeX Font encoding -- DO NOT CHANGE
+\usepackage[OT1]{fontenc}
+
+%% Babel provides support for languages.  'english' uses British
+%% English hyphenation and text snippets like "Figure" and
+%% "Theorem". Use the option 'ngerman' if your document is in German.
+%% Use 'american' for American English.  Note that if you change this,
+%% the next LaTeX run may show spurious errors.  Simply run it again.
+%% If they persist, remove the .aux file and try again.
+\usepackage[english]{babel}
+
+%% Input encoding 'utf8'. In some cases you might need 'utf8x' for
+%% extra symbols. Not all editors, especially on Windows, are UTF-8
+%% capable, so you may want to use 'latin1' instead.
+\usepackage[utf8]{inputenc}
+
+%% This changes default fonts for both text and math mode to use Herman Zapfs
+%% excellent Palatino font.  Do not change this.
+\usepackage[sc]{mathpazo}
+
+%% The AMS-LaTeX extensions for mathematical typesetting.  Do not
+%% remove.
+\usepackage{amsmath,amssymb,amsfonts,mathrsfs}
+
+%% NTheorem is a reimplementation of the AMS Theorem package. This
+%% will allow us to typeset theorems like examples, proofs and
+%% similar.  Do not remove.
+%% NOTE: Must be loaded AFTER amsmath, or the \qed placement will
+%% break
+\usepackage[amsmath,thmmarks]{ntheorem}
+
+%% LaTeX' own graphics handling
+\usepackage{graphicx}
+
+%% This allows you to add .pdf files.
+\usepackage{pdfpages}
+
+%% We unfortunately need this for the Rules chapter.  Remove it
+%% afterwards; or at least NEVER use its underlining features.
+\usepackage{soul}
+
 % utf8 encoding
 \usepackage[utf8]{inputenc}
 % space instead of indentation for paragraphs
 \usepackage{parskip}
 % interactive table of contents
 \usepackage[hidelinks]{hyperref}
+% disable hyphenation in titles
+\usepackage[raggedright]{titlesec}
+
+%% See the TeXed file for more explanations
+
+%% [OPT] Multi-rowed cells in tabulars
+%\usepackage{multirow}
+
+%% [REC] Intelligent cross reference package. This allows for nice
+%% combined references that include the reference and a hint to where
+%% to look for it.
+\usepackage{varioref}
+
+%% [OPT] Easily changeable quotes with \enquote{Text}
+%\usepackage[german=swiss]{csquotes}
+
+%% [REC] Format dates and time depending on locale
+\usepackage{datetime}
+
+%% [OPT] Provides a \cancel{} command to stroke through mathematics.
+%\usepackage{cancel}
+
+%% [NEED] This allows for additional typesetting tools in mathmode.
+%% See its excellent documentation.
+\usepackage{mathtools}
+
+%% [ADV] Conditional commands
+%\usepackage{ifthen}
+
+%% [OPT] Manual large braces or other delimiters.
+%\usepackage{bigdelim, bigstrut}
+
+%% [REC] Alternate vector arrows. Use the command \vv{} to get scaled
+%% vector arrows.
+\usepackage[h]{esvect}
+
+%% [NEED] Some extensions to tabulars and array environments.
+\usepackage{array}
+
+%% [OPT] Postscript support via pstricks graphics package. Very
+%% diverse applications.
+%\usepackage{pstricks,pst-all}
+
+%% [?] This seems to allow us to define some additional counters.
+%\usepackage{etex}
+
+%% [ADV] XY-Pic to typeset some matrix-style graphics
+%\usepackage[all]{xy}
+
+%% [OPT] This is needed to generate an index at the end of the
+%% document.
+%\usepackage{makeidx}
+
+%% [OPT] Fancy package for source code listings.  The template text
+%% needs it for some LaTeX snippets; remove/adapt the \lstset when you
+%% remove the template content.
+\usepackage{listings}
+\lstset{language=TeX,basicstyle={\normalfont\ttfamily}}
+
+%% [REC] Fancy character protrusion.  Must be loaded after all fonts.
+% \usepackage[activate]{pdfcprot}
+
+%% [REC] Nicer tables.  Read the excellent documentation.
+\usepackage{booktabs}
+
+%% Better enumeration support
+\usepackage{enumitem}
+
+%% Algorithms
+\usepackage[ruled, linesnumbered]{algorithm2e}
+\SetKwComment{Comment}{/* }{ */}
+
+% Landscape support
+\usepackage{lscape}
+
+\usepackage{multicol}
