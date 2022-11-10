@@ -3,17 +3,21 @@
 How does the runtime of a program improve when we increase the number of cores?
 
 \begin{definition}{Speedup}
-    Let $T_p$ be the execution time of a program running on $p$ cores.
-    The \emph{speedup} $S_p$ is defined as
-    $$S_p = \frac{T_1}{T_p}$$
+    Let $T_c$ be the execution time of a program running on $c$ compute cores.
+    The \emph{speedup} $S_c$ is defined as
+    \begin{equation}
+        S_c = \frac{T_1}{T_c}
+    \end{equation}
 \end{definition}
 
 We can group the speedup into three categories:
 \begin{itemize}
-    \item $S_p = p$: linear (perfect) speedup
-    \item $S_p < p$: Sub-linear speedup, usual case
-    \item $S_p > p$: Super-linear speedup, something is probably wrong
+    \item $S_c = c$: linear (perfect) speedup
+    \item $S_c < c$: Sub-linear speedup, usual case
+    \item $S_c > c$: Super-linear speedup, something is probably wrong
 \end{itemize}
+
+Super-linear speedup can only be achieved, if parallelization also improves single core performance of at least some part of the program.
 
 \emph{Scalability} is an informal term to describe that a program has a smaller runtime when the number of cores increase.
 A program scales linearly if we have a linear speedup.
