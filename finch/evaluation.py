@@ -202,7 +202,7 @@ def serial_overhead_analysis(
     f1 = (t - t1/c) * cf
     f1 = np.sum(f1, axis=1)
     f2 = cf*cf
-    f2 = t1 * np.sum(f2, axis=1)
+    f2 = t1.reshape(-1) * np.sum(f2, axis=1)
     f = f1 / f2
     f = f.flatten()
 
@@ -295,14 +295,14 @@ def create_plots(
                                 cs = np.tile(ticks, (runtime_data.shape[0], 1))
                                 fs = serial_overhead_analysis(runtime_data, cs)
                                 labels = [
-                                    l + r", $f=" + "%.2f"%f + r"$" 
+                                    l + r", $f=" + "%.2f"%(f*100) + r"$%" 
                                     for l, f in zip(labels, fs)
                                 ]
                             # plot baseline
                             if plot_scaling_baseline:
                                 base_label = "Perfect linear scaling"
                                 if find_scaling_props:
-                                    base_label += r", $f=0$"
+                                    base_label += r", $f=0%$"
                                 plt.plot(ticks, ticks / ticks[0], label=base_label, linestyle="--")
                             # plot fitted scaling functions
                             if plot_scaling_fits and find_scaling_props:
@@ -320,7 +320,7 @@ def create_plots(
                         for l, rt in zip(labels, runtime_data):
                             plt.plot(ticks, rt, label=l)
                         plt.xlabel(d)
-                        plt.xticks(ticks)
+                        #plt.xticks(ticks)
                         matplotx.ylabel_top(ylabel)
                         matplotx.line_labels()
                     # save plot
