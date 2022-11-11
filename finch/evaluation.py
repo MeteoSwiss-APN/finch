@@ -170,12 +170,25 @@ def find_scaling(scale: np.ndarray, speedup: np.ndarray, axis: int = None) -> Tu
     return alpha, beta
 
 def amdahl_speedup(f: np.ndarray, c: np.ndarray) -> np.ndarray:
+    """
+    Returns the speedups for a serial runtime fractions and a selection of core counts.
+    """
     return 1 / (f + (1-f)/c)
 
 def serial_overhead_analysis(
     t: np.ndarray, c: np.ndarray, 
     t1: np.ndarray = None, c1: np.ndarray = None,
 ) -> np.ndarray:
+    """
+    Estimates the serial fraction of the total runtime
+
+    Arguments:
+    ---
+    - t: shape: (n_implementations, n_core_selections). The runtime measurements
+    - c: shape: (n_implementations, n_core_selections). The core selections
+    - t1: shape: n_implementations. The runtime baseline. If None, the first column of `t` will be used.
+    - c1: shape: n_implementations. The core counts for the runtime baselines. If None, the first column of `c` will be used.
+    """
     # prepare arguments
     if t1 is None:
         t1 = t[:, 0]
