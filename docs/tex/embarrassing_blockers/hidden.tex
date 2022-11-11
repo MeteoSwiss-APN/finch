@@ -1,0 +1,11 @@
+\subsection{Hidden Blockers in Graph Construction}
+
+Some dask and xarray methods impose a serial overhead which might not be expected.
+This subsection provides a selection of such hidden blockers, which I encountered.
+
+\subsubsection{Overwriting Zarr Directories}
+Writing to a zarr directory is common for storing outputs or intermediate results.
+Dask provides the ability to overwrite a preexisting zarr directory.
+Do not use this feature!
+It seems that the zarr backend cleans the directory as soon as we call the respective dask method, increasing our serial overhead during graph construction.
+Instead, just write to an empty directory.
