@@ -1,0 +1,38 @@
+\subsection{Approximating the Serial Overhead}
+
+In practice, it is often difficult to measure the serial overhead.
+An alternative is to use approximation techniques where we use some mathematical model and infer the serial overhead based on some runtime measurements of the full program.
+
+\subsubsection{Embarrassingly Parallel Problems}
+
+Embarrassingly parallel problems can in theory be perfectly parallelized in their parallel regions. Assuming our work size is fixed, we can use the derivation of Amdahl's law as our basis to form a mathematical model of the runtime.
+
+Let $t_i$ be a series of $n$ runtime measurements and $c_i$ the according number of cores used for the computation.
+Our goal is to find the serial fraction $f$ of the full runtime $T_1$ when running the computation on one core.
+
+Let $t(c)$ indicate the runtime of our computation executed on $c$ cores.
+
+\begin{align*}
+    t(c) &= T_1 * f + \frac{T_1*(1-f)}{c}\\
+    &= f * T_1 \frac{c-1}{c} + \frac{T_1}{c}
+\end{align*}
+
+We can use the mean squared error to describe the error between our model and our measurements.
+
+\begin{align*}
+    \mathcal{L} &= \frac{1}{n} \sum_{i=1}^n \left(t(c_i) - t_i\right)^2\\
+    &= \frac{1}{n} \sum_{i=1}^n \left(f T_1 \frac{c_i-1}{c_i} + \frac{T_1}{c_i} - t_i\right)^2
+\end{align*}
+
+Let's minimize this loss to find the optimal $f$.
+
+\begin{align*}
+    \frac{d \mathcal{L}}{d f} &= 2T_1 \sum_{i=1}^n \left(f T_1 \gamma + \frac{T_1}{c_i} - t_i\right) * \gamma \overset{!}{=} 0\\
+    0 &= f * \sum_{i=1}^n T_1 \gamma^2 + \sum_{i=1}^n \left(\frac{T_1}{c_i} - t_i\right) * \gamma\\
+    f &= \frac{\sum_{i=1}^n \left(t_i - \frac{T_1}{c_i}\right) * \gamma}{\sum_{i=1}^n T_1 \gamma^2}
+\end{align*}
+
+where we substituted
+\begin{equation*}
+    \gamma = \frac{c_i-1}{c_i}
+\end{equation*}

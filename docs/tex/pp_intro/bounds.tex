@@ -11,7 +11,7 @@ $W_p$ is the runtime of the part that is parallelizable.
 
 In practice, there is always a serial part of the program.
 The serial part imposes a lower bound on the runtime of the program and an upper bound on the maximally achievable speedup.
-This is known as Amdahl's law.
+This is known as Amdahl's law \cite{amdahl1967}.
 \begin{align*}
     T_c &\geq W_s + \frac{W_p}{c} \\
     S_c &\leq \frac{T_1}{W_s + \frac{W_p}{c}} = \frac{1}{f + \frac{1-f}{c}}
