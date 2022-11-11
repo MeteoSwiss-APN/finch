@@ -169,6 +169,32 @@ def find_scaling(scale: np.ndarray, speedup: np.ndarray, axis: int = None) -> Tu
     alpha = np.exp(alpha)
     return alpha, beta
 
+def amdahl_speedup(f: np.ndarray, c: np.ndarray) -> np.ndarray:
+    return 1 / (f + (1-f)/c)
+
+def serial_overhead_analysis(
+    t: np.ndarray, c: np.ndarray, 
+    t1: np.ndarray = None, c1: np.ndarray = None,
+) -> np.ndarray:
+    # prepare arguments
+    if t1 is None:
+        t1 = t[:, 0]
+    if c1 is None:
+        c1 = c[:, 0]
+    t1 = t1[:, np.newaxis]
+    c1 = c1[:, np.newaxis]
+    c = c / c1
+
+    cf = (c-1)/c
+    f1 = (t - t1/c) * cf
+    f1 = np.sum(f1, axis=1)
+    f2 = cf*cf
+    f2 = t1 * np.sum(f2, axis=1)
+    f = f1 / f2
+    f = f.flatten()
+
+    return f
+        
 
 def create_plots(
     results: xr.Dataset, 
@@ -250,34 +276,34 @@ def create_plots(
                         # handle scaling dimension
                         if d in scaling_dims:
                             # compute speedup
-                            runtime_data = speedup(runtime_data)
+                            spd = speedup(runtime_data)
                             # calculate scaling rate and factor
                             if find_scaling_props:
-                                scale = ticks / ticks[0]
-                                alpha, beta = find_scaling(np.reshape(scale, (1, -1)), runtime_data, axis=1)
+                                cs = np.tile(ticks, (runtime_data.shape[0], 1))
+                                fs = serial_overhead_analysis(runtime_data, cs)
                                 labels = [
-                                    l + r", $\alpha=" + "%.2f"%sf + r"$, $\beta=" + "%.2f"%sr + r"$" 
-                                    for l, sf, sr in zip(labels, alpha, beta)
+                                    l + r", $f=" + "%.2f"%f + r"$" 
+                                    for l, f in zip(labels, fs)
                                 ]
                             # plot baseline
                             if plot_scaling_baseline:
                                 base_label = "Perfect linear scaling"
                                 if find_scaling_props:
-                                    base_label += r", $\alpha=1$, $\beta=1$"
-                                plt.plot(ticks, scale, label=base_label, linestyle="--")
+                                    base_label += r", $f=0$"
+                                plt.plot(ticks, ticks / ticks[0], label=base_label, linestyle="--")
                             # plot fitted scaling functions
                             if plot_scaling_fits and find_scaling_props:
                                 cycler = style["axes.prop_cycle"]
                                 if plot_scaling_baseline:
                                     cycler = cycler[1:]
-                                for a, b, c in zip(alpha, beta, cycler):
+                                for f, c in zip(fs, cycler):
                                     x = np.linspace(ticks[0], ticks[-1], 100)
                                     xt = x / ticks[0]
-                                    y = a*xt**b
+                                    y = amdahl_speedup(f, xt)
                                     plt.plot(x, y, linestyle=":", color=c["color"])
-                            # plt.xscale("log", base=2)
-                            # plt.yscale("log", base=2)
+                            
                             ylabel = "Speedup"
+                            runtime_data = spd
                         for l, rt in zip(labels, runtime_data):
                             plt.plot(ticks, rt, label=l)
                         plt.xlabel(d)
