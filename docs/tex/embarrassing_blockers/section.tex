@@ -1,0 +1,17 @@
+\section{Scalability Blockers for Embarrassingly Parallel Problems}
+
+We start by looking at embarrassingly parallel problems and how we can properly parallelize them with dask such that they actually scale.
+While not every operator might be embarrassingly parallel, the challenges we encounter for these will also apply to more complex problems.
+
+For embarrassingly parallel problems, we can assume that we can perfectly parallelize the parallel part of our computation.
+Implementing a scalable embarrassingly parallel operator mostly boils down to avoiding unnecessary serial computations.
+This means that we need to be fully aware of all the serial computations happening in our program.
+In complex parallelization frameworks, such as dask, it is easy to miss some serial computations happening below the surface.
+However, what is going on under the hood might quickly block proper scalability.
+In this section I will therefore list some pitfalls which I encountered when parallelizing operators in Finch.
+
+\input{embarrassing_blockers/stages.tex}
+
+\input{embarrassing_blockers/graph_size.tex}
+
+\input{embarrassing_blockers/hidden.tex}

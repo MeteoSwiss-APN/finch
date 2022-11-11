@@ -1,0 +1,40 @@
+\subsection{Runtime Bounds}
+
+We can split the runtime of a program into two parts:
+\begin{equation}
+    T_1 = W_s + W_p
+\end{equation}
+$W_s$ indicates the runtime of the non-parallelizable, serial part.
+$W_p$ is the runtime of the part that is parallelizable.
+
+\subsubsection{Amdahl's law}
+
+In practice, there is always a serial part of the program.
+The serial part imposes a lower bound on the runtime of the program and an upper bound on the maximally achievable speedup.
+This is known as Amdahl's law.
+\begin{align*}
+    T_c &\geq W_s + \frac{W_p}{c} \\
+    S_c &\leq \frac{T_1}{W_s + \frac{W_p}{c}} = \frac{1}{f + \frac{1-f}{c}}
+\end{align*}
+where $f$ is the fraction of the serial runtime to the full runtime:
+\begin{equation*}
+    f = \frac{W_s}{T_1} = 1 - \frac{W_p}{T_1}
+\end{equation*}
+
+So our maximally achievable speedup is
+\begin{equation}
+    S_\infty \leq \frac{1}{f}
+\end{equation}
+
+Amdahl's law shows that minimizing the serial part of a program is a very important task in parallel programming and has a big effect on which speedups are possible.
+We can now also see that we can never reach perfect linear scalability.
+Instead, our speedup will eventually saturate and adding more cores will no longer give any significant speedup.
+Therefore, in practice we usually only consider scalability up to some maximum amount of cores $c^*$.
+
+\subsubsection{Gustafson's law}
+
+Amdahl's law illustrated the importance of the ratio between $W_s$ and $W_p$.
+We concluded that minimizing $W_s$ is crucial for achieving good scalability.
+However, we can also conclude that increasing $W_p$ has the same effect.
+In particular, we can increase the workload in parallel regions of our program without it having an effect on our runtime, as long as we have enough cores available.
+This principle is known as Gustafson's law.

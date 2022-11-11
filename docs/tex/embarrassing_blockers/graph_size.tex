@@ -1,0 +1,49 @@
+\subsection{Reducing the Graph Size}
+
+All the above serial overhead works on the computation graph and scales with its size.
+So reducing the size of the graph can be essential in reducing this overhead.
+There are multiple ways of doing so.
+
+\paragraph{Increasing the chunk size}
+
+The chunk size, and coupled with it the total number of chunks $k$, is an important parameter for controlling the runtime of a dask program.
+In the embarrassingly parallel setting, the chunk size controls the maximum achievable parallelism $c^*$.
+If we want $c^*$ to be big, we also need to select an appropriately small chunk size.
+Unfortunately, this comes with the drawback of increasing the graph size.
+So increasing the chunk size and sacrificing some parallelism potential is sometimes beneficial for the overall compute time.
+For a fixed $c^*$, we should also not choose a too small chunk size.
+In theory, we won't be able to make use of the parallelism potential, as soon as $k$ is larger than $c^*$.
+In practice, a $k$ which is slightly larger than $c^*$ might still be beneficial to give the scheduler some flexibility.
+
+Summarizing, we want to choose a chunk size with a $k$ as large as possible, but not much larger than $c^*$, which does not impose a significant serial overhead.
+
+\paragraph{Increasing the task sizes}
+
+Per default, dask creates a new task per chunk and tensor operation.
+For example, if we want to compute $x*y + z$ with $x$, $y$ and $z$ being tensors with 20 chunks each, dask will create a total of 40 tasks.
+If we combined the multiplication and addition into a single task, we would only have 20 tasks in our graph.
+
+Dask can sometimes do this on its own in the graph optimization phase. However, it is often beneficial to do this manually for example via the \lstinline{map_blocks} function.
+Finch provides a custom wrapper for xarray, which can be used for blockwise functions with a xarray, dask or numpy interface.
+
+\paragraph{Using \lstinline{persist}}
+
+Dask's \lstinline{persist} method runs a computation but leaves the results on the workers instead of collecting them together and sending to the client.
+A dask collection is then returned holding the content of the (future) result, which can be used for further computation.
+As soon as we call \lstinline{persist}, we submit the graph that was computed until now to the scheduler and trigger computation.
+
+Regularly calling persist has two benefits.
+First we split up the full graph into multiple smaller graphs, which can be easier handled by dask.
+Additionally, we can run the serial overhead on the client side for future computations in parallel with the ongoing computation.
+
+The main drawback is that since we split the graph into different parts, dask needs to wait for the full results of a previous sub-computation before it can continue with the remaining parts of the computation.
+Calling persist too frequently is therefore also a bad idea, since dask would need to synchronize its workers too often.
+
+\paragraph{Avoid numpy arrays for in- and outputs}
+
+Not only the node count in the dask graph is important, but also the size of the nodes themselves.
+Every node in the dask graph holds some data, which must be serialized and transferred from the client to the scheduler. Keeping the size of this data low is therefore crucial for reducing the serial overhead.
+NumPy arrays should therefore be avoided as inputs or outputs.
+Instead, dask should be used for input loading whenever possible.
+Considering outputs, one should avoid calling \lstinline{compute}, which creates a numpy array on the scheduler and sends it over the network to the client.
+The \lstinline{compute} method is a more hidden way for how numpy arrays are being transferred, but a very important one to be aware of, as it can completely block scalability.

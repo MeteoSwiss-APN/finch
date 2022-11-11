@@ -1,0 +1,34 @@
+\subsection{Serial Stages of Computation in Dask}
+
+In the \href{https://docs.dask.org/en/stable/phases-of-computation.html}{dask documentation} one can find an overview on what is happening behind the scenes when using dask for parallel computation.
+Only the "Execution" phase runs in parallel.
+All the other stages are run sequentially and are therefore part of the serial overhead.
+Finch can profile the runtimes of those stages, except for the "Graph Communication" and the "Scheduling" stage.
+We can therefore get an estimation about the fraction $f$ of the serial runtime in our program.
+
+\paragraph{Graph Construction}
+Here we capture everything that prepares the computation.
+Finch runs the actual implementation of the operator in this stage, which is supposed to construct the dask graph.
+
+\paragraph{Graph optimization}
+Dask performs some optimization heuristics on the graph to decrease the runtime.
+Finch profiles this separately.
+
+\paragraph{Graph serialization}
+Dask distributed (which we use) runs the scheduler in a separate process than the client.
+To communicate with other processes, the scheduler (as well as the workers) are implemented as servers.
+In order to send the computation graph to the scheduler, dask must therefore serialize the graph before sending it.
+Finch measures the runtime of this graph serialization on the client side.
+
+All the above stages of computation happen sequentially on the client, which is the process from which we launch the whole computation.
+Unfortunately this is not the complete story.
+There is still some serial overhead happening after sending the serialized computation graph to the scheduler.
+They can be split up into the following parts:
+\begin{itemize}
+    \item Graph Communication: Sending the serialized graph from the client to the scheduler over the network.
+    \item Graph Deserialization: Deserializing the graph sent by the client on the scheduler.
+    \item Scheduling: Managing individual tasks and sending them to the workers. This happens before and during the parallel computation phase.
+\end{itemize}
+
+Unfortunately, we cannot profile the above overheads.
+But luckily, we can usually assume that their runtime reduces along with runtime reductions in serial stages which we can profile.
