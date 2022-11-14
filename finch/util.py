@@ -22,6 +22,7 @@ import copy
 import uuid
 import shutil
 import os
+from ._util import arg2list, parse_bool
 
 def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     """
@@ -408,15 +409,6 @@ def get_primitive_attrs_from_dataclass(dc) -> dict[str, str | numbers.Number]:
     out = flatten_dict(out) # dataclasses were transformed to dicts. So flatten them.
     return out
 
-def parse_bool(b: str) -> bool:
-    b = b.lower()
-    if b == "true":
-        return True
-    elif b == "false":
-        return False
-    else:
-        raise ValueError(f"Could not parse {b} to boolean type.")
-
 def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int = None) -> Tuple[np.ndarray, np.ndarray]:
     """
     Performs simple linear regression along the given axis.
@@ -432,10 +424,3 @@ def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int = None) -> Tuple[np.n
     beta = np.sum(xd*yd, axis=axis) / np.sum(xd*xd, axis=axis)
     alpha = ym - beta*xm
     return alpha, beta
-
-T = TypeVar("T")
-def arg2list(x: T | list[T]) -> list[T]:
-    """Return a single-element list if x is not a list. Otherwise return x."""
-    if not isinstance(x, list):
-        x = [x]
-    return x

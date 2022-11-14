@@ -1,5 +1,6 @@
+from . import _util
 from . import environment as env
-from .config import config
+from .config import config, set_debug_mode, set_log_level, debug, logging_format, log_level
 import os
 os.environ["GRIB_DEFINITION_PATH"] = config["data"]["grib_definition_path"]
 

@@ -5,7 +5,6 @@ from dask.distributed import performance_report
 import pathlib
 import sys
 import argparse
-import xarray as xr
 import os
 
 # command line arguments
@@ -27,6 +26,7 @@ debug_finch = debug
 # apply pre-import configurations
 os.environ["DEBUG"] = str(debug_finch)
 import finch
+import xarray as xr
 
 
 # general configurations
@@ -92,19 +92,29 @@ brn_single_name = "single"
 brn_multi_run = True
 """Wether to perform a run experiment with different run configurations"""
 brn_multi_versions = finch.Input.Version.list_configs(
-    format=finch.data.Format.ZARR,
-    dim_order="xyz",
+#     format=finch.data.Format.ZARR,
+#     dim_order="xyz",
+#     coords=False,
+#     chunks={"x" : 30}
+# ) + finch.Input.Version.list_configs(
+#     format=finch.data.Format.NETCDF,
+#     dim_order="xyz",
+#     coords=False,
+#     chunks={"x" : 30}
+# ) + finch.Input.Version.list_configs(
+    format=finch.data.Format.GRIB,
+    dim_order="zyx",
     coords=False,
-    chunks=[{"x" : x} for x in [20]]
+    chunks={"generalVerticalLayer" : 2}
 )
 """The input versions for the brn multi run experiment"""
-brn_multi_imps = [finch.brn.interface.get_repeated_implementation(n, base=finch.brn.impl.brn_xr) for n in [100]]
+brn_multi_imps = finch.brn.impl.brn_xr #[finch.brn.interface.get_repeated_implementation(n, base=finch.brn.impl.brn_blocked_cpp) for n in [10, 20, 30, 40, 50]]
 """The brn implementations used"""
-brn_multi_name = "repeated_single_xr"
+brn_multi_name = "format"
 """The name of the brn multi run experiment"""
-brn_multi_workers = [1, 2, 4, 8, 16]
+brn_multi_workers = [1, 5, 10, 15, 20, 25, 30, 35, 40]
 """A list of the number of workers to spawn for the brn multi run"""
-brn_multi_cores_per_worker = 4
+brn_multi_cores_per_worker = 1
 """The number of cores dedicated to each worker"""
 brn_multi_omp = False
 """Whether to delegate parallelism to OpenMP for a worker"""
@@ -150,12 +160,12 @@ brn_eval_runtimes_plot = ["full"]
 if __name__ == "__main__":
 
     # configure logging
-    logging.basicConfig(format=finch.env.logging_format, level=logging.INFO)
+    logging.basicConfig(format=finch.logging_format, level=logging.INFO)
 
     # configure debug setup
     if debug:
         logging.basicConfig(level=logging.DEBUG)
-        finch.env.set_log_level(logging.DEBUG)
+        finch.set_log_level(logging.DEBUG)
 
     # brn experiments
 
@@ -232,6 +242,7 @@ if __name__ == "__main__":
             logging.info(f"Evaluating experiment results")
             results = xr.open_dataset(brn_results_file)
             results = finch.eval.create_cores_dimension(results)
-            finch.eval.create_plots(results, runtime_selection=brn_eval_runtimes_plot)
+            plot_fits = results["full"].sizes["impl"] < 10
+            finch.eval.create_plots(results, runtime_selection=brn_eval_runtimes_plot, plot_scaling_fits=plot_fits)
             if len(results.data_vars) > 1:
                 finch.eval.plot_runtime_parts(results)

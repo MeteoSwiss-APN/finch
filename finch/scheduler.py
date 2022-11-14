@@ -7,7 +7,7 @@ from dask_jobqueue import SLURMCluster
 import dask.utils
 from . import util
 from . import env
-from . import config
+from . import config, debug
 from datetime import timedelta
 from dataclasses import dataclass
 
@@ -120,7 +120,7 @@ def start_slurm_cluster(
     logging.debug(cluster.job_script())
     return client
 
-def start_scheduler(debug: bool = env.debug, *cluster_args, **cluster_kwargs) -> Client | None:
+def start_scheduler(debug: bool = debug, *cluster_args, **cluster_kwargs) -> Client | None:
     """
     Starts a new scheduler either in debug or run mode.
     If `debug` is `False`, a new SLURM cluster will be started and a client connected to the new cluster is returned.

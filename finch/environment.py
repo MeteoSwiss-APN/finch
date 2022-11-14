@@ -1,31 +1,6 @@
-from dataclasses import dataclass
-import logging
 import os
 import pathlib
-from dask.distributed import Client
-from dask_jobqueue import SLURMCluster
-from . import util
-
-debug = False
-"""Debug mode toggle"""
-
-log_level = logging.INFO
-"""The current log level"""
-
-logging_format = '[%(levelname)s]: %(message)s'
-"""The format used for logging outputs"""
-
-def set_log_level(level):
-    global log_level
-    log_level = level
-    logging.basicConfig(format=logging_format, level=log_level)
-
-def set_debug_mode(dbg: bool):
-    global debug, log_level
-    debug = dbg
-    set_log_level(logging.DEBUG if debug else logging.INFO)
-
-set_debug_mode(debug)
+from . import _util
 
 proj_root = str(pathlib.Path(__file__).parent.parent.absolute())
 """The root directory of the project"""
@@ -67,7 +42,7 @@ class WorkerEnvironment():
     @property
     def _env_vars(self) -> dict[str, str]:
         """This worker environment as a dictionary mapping environment variable names to values"""
-        return {e : str(self.__dict__[v]) for v, es in self.env_var_map.items() for e in util.arg2list(es)}
+        return {e : str(self.__dict__[v]) for v, es in self.env_var_map.items() for e in _util.arg2list(es)}
 
     def set(self):
         """Sets environment variables according to this worker environment"""
