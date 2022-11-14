@@ -237,8 +237,10 @@ class Input():
             """Transforms the given dataset such that it conforms to this version."""
             if self.dim_order is not None and translate_order(ds.dims, dim_index) != self.dim_order:
                 ds = ds.transpose(*translate_order(self.dim_order, dim_index))
-            if self.chunks is not None and ds.chunks != self.chunks:
-                ds = ds.chunk(util.map_keys(self.chunks, dim_index))
+            if self.chunks is not None:
+                chunks = util.map_keys(self.chunks, dim_index)
+                if not util.chunk_args_equal(chunks, ds.chunksizes, ds.sizes):
+                    ds = ds.chunk(util.map_keys(self.chunks, dim_index))
             if self.coords is not None and not self.coords:
                 ds = ds.drop_vars(ds.coords.keys())
             return ds

@@ -424,3 +424,35 @@ def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int = None) -> Tuple[np.n
     beta = np.sum(xd*yd, axis=axis) / np.sum(xd*xd, axis=axis)
     alpha = ym - beta*xm
     return alpha, beta
+
+def chunk_args_equal(c1: dict[str, int | tuple[int] | None | str], c2: dict[str, int | tuple[int] | None | str], dim_sizes: dict[str, int]) -> bool:
+    """
+    Returns whether two xarray chunk arguments are equal.
+    Auto and None chunk arguments will always be equal.
+    If a dimension name is not present, its size will be interpreted as `None`.
+    """
+    def get_chunk_list(i: int, d: int) -> list[int]:
+        out =  [i] * (d//i)
+        if d % i != 0:
+            out.append(d % i)
+        return out
+    for k, v1 in c1.items():
+        if k in c2:
+            v2 = c2[k]
+            if v1 is None or v2 is None or v1 == "auto" or v2 == "auto":
+                continue
+            if v1 == v2:
+                continue
+            if isinstance(v1, int):
+                v1 = get_chunk_list(v1, dim_sizes[k])
+            else:
+                v1 = list(v1)
+            if isinstance(v2, int):
+                v2 = get_chunk_list(v2, dim_sizes[k])
+            else:
+                v2 = list(v2)
+            if v1 == v2:
+                continue
+            else:
+                return False
+    return True
