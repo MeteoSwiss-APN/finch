@@ -9,3 +9,5 @@ main.pdf
 *.bbl
 *.blg
 *.thm
+*.run.xml
+*.bcf
