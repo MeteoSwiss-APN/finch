@@ -14,6 +14,7 @@ import pandas as pd
 import matplotx
 import matplotlib.pyplot as plt
 from copy import deepcopy
+import warnings
 
 
 def print_version_results(results: list[Any], versions: list[Input.Version]):
@@ -264,7 +265,9 @@ def create_plots(
         if d != main_dim and results.sizes[d] > 1:
             # reduce dimensions other than d and impl
             to_reduce = [dd for dd in results.dims if dd != main_dim and dd != d]
-            to_plot = results.reduce(reduction, to_reduce)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                to_plot = results.reduce(reduction, to_reduce)
             # sort dimensions
             to_plot = to_plot.sortby(list(to_plot.dims))
             # reorder dimensions
@@ -272,6 +275,9 @@ def create_plots(
             for runtime_type, runtime_data in to_plot.data_vars.items():
                 if runtime_selection is not None and runtime_type not in runtime_selection or \
                     d in scaling_dims and runtime_type not in ["full", "compute"]:
+                    continue
+                if np.isnan(runtime_data).any():
+                    # only create plots where all runtime data is provided
                     continue
                 # get plotting arguments
                 labels = to_plot.coords[main_dim].data
