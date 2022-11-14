@@ -18,3 +18,12 @@ def parse_bool(b: str) -> bool:
         return False
     else:
         raise ValueError(f"Could not parse {b} to boolean type.")
+
+T = TypeVar("T")
+U = TypeVar("U")
+V = TypeVar("V")
+def map_keys(d1: dict[T, U], d2: dict[T, V]) -> dict[V, U]:
+    """
+    Maps the keys of `d1` according to `d2`.
+    """
+    return {d2[k] : v for k, v in d1.items()}

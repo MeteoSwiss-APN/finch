@@ -47,7 +47,7 @@ def translate_order(order: List[str] | str, index: Dict[str, str]) -> str | List
         return [index[x] for x in list(order)]
     else:
         rev_index = {v: k for k, v in index.items()}
-        return "".join([rev_index[x] for x in order])
+        return "".join([rev_index[x] for x in order])    
 
 def load_array_grib(
     path: str | List[str], 
@@ -212,7 +212,7 @@ class Input():
         dim_order: str = None
         """The dimension order in compact notation"""
         chunks: dict[str, int] = None
-        """The chunking as a dict, mapping dimension names to chunk sizes"""
+        """The chunking as a dict, mapping dimension short names to chunk sizes"""
         name: str = None
         """The name of this version"""
         coords: bool = None
@@ -238,10 +238,14 @@ class Input():
             if self.dim_order is not None and translate_order(ds.dims, dim_index) != self.dim_order:
                 ds = ds.transpose(*translate_order(self.dim_order, dim_index))
             if self.chunks is not None and ds.chunks != self.chunks:
-                ds = ds.chunk(self.chunks)
+                ds = ds.chunk(util.map_keys(self.chunks, dim_index))
             if self.coords is not None and not self.coords:
                 ds = ds.drop_vars(ds.coords.keys())
             return ds
+
+        def get_all_chunks(self, dims: list[str]) -> dict[str, str]:
+            """Returns a dict which holds a chunk size for every dimension provided (as short name)"""
+            return {d : self.chunks[d] if d in dims else -1 for d in dims}
 
         @classmethod
         def get_class_attr(cls) -> list[str]:
@@ -373,7 +377,7 @@ class Input():
                 # impose version
                 dataset = target.impose(dataset, self.dim_index)
 
-                # add version (if not grib)
+                # add version
                 if add_if_not_exists:
                     self.add_version(target, dataset)
             else:

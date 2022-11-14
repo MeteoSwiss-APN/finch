@@ -36,6 +36,7 @@ def create_result_dataset(
     results: list[list[Runtime]] | list[Runtime] | Runtime, 
     run_configs: list[RunConfig] | RunConfig, 
     versions: list[Input.Version] | Input.Version, 
+    input: Input,
     experiment_name: str = None, 
     impl_names: list[str] | Callable[[Callable], str] | None = None
 ) -> xr.Dataset:
@@ -54,6 +55,10 @@ def create_result_dataset(
     if not isinstance(versions, list):
         versions = [versions]
         results = [[r] for r in results]
+
+    for v in versions:
+        # make sure that all versions have the same chunking dimensions
+        v.chunks = v.get_all_chunks(input.dim_index.keys())
 
     if experiment_name is None:
         experiment_name = util.random_entity_name()

@@ -105,7 +105,7 @@ brn_multi_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.GRIB,
     dim_order="zyx",
     coords=False,
-    chunks={"generalVerticalLayer" : 2}
+    chunks={"z" : 2}
 )
 """The input versions for the brn multi run experiment"""
 brn_multi_imps = finch.brn.impl.brn_xr #[finch.brn.interface.get_repeated_implementation(n, base=finch.brn.impl.brn_blocked_cpp) for n in [10, 20, 30, 40, 50]]
@@ -197,7 +197,7 @@ if __name__ == "__main__":
             with performance_report(filename=pathlib.Path(finch.config["evaluation"]["perf_report_dir"], "dask-report.html")) \
                 if brn_single_perf_report else nullcontext():
                 times = finch.measure_operator_runtimes(run_configs, brn_input, brn_single_versions, **config)
-            results = finch.eval.create_result_array(times, run_configs, brn_single_versions, "brn_"+brn_single_name)
+            results = finch.eval.create_result_array(times, run_configs, brn_single_versions, finch.brn.brn_input, "brn_"+brn_single_name)
             results.to_netcdf(brn_results_file)
         
         if brn_multi_run:
@@ -213,7 +213,7 @@ if __name__ == "__main__":
                 cluster_config=cluster_configs
             )
             times = finch.measure_operator_runtimes(run_configs, brn_input, brn_multi_versions, **config)
-            results = finch.eval.create_result_dataset(times, run_configs, brn_multi_versions, "brn_"+brn_multi_name)
+            results = finch.eval.create_result_dataset(times, run_configs, brn_multi_versions, finch.brn.brn_input, "brn_"+brn_multi_name)
             results.to_netcdf(brn_results_file)
 
         if brn_repeated_run:
@@ -232,7 +232,8 @@ if __name__ == "__main__":
             results = finch.eval.create_result_dataset(
                 times, 
                 run_configs, 
-                brn_repeated_input_version, 
+                brn_repeated_input_version,
+                finch.brn.brn_input,
                 brn_repeated_name, 
                 impl_names=finch.brn.get_repeated_impl_name
             )
