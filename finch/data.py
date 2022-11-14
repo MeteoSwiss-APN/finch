@@ -247,7 +247,7 @@ class Input():
 
         def get_all_chunks(self, dims: list[str]) -> dict[str, str]:
             """Returns a dict which holds a chunk size for every dimension provided (as short name)"""
-            return {d : self.chunks[d] if d in dims else -1 for d in dims}
+            return {d : self.chunks[d] if d in self.chunks else -1 for d in dims}
 
         @classmethod
         def get_class_attr(cls) -> list[str]:
