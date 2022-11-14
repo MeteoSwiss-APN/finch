@@ -219,6 +219,7 @@ def serial_overhead_analysis(
 def create_plots(
     results: xr.Dataset, 
     reduction: Callable = np.nanmin, 
+    main_dim: str = "impl",
     scaling_dims: list[str] = ["cores"],
     find_scaling_props: bool = True,
     plot_scaling_fits: bool = False,
@@ -260,20 +261,20 @@ def create_plots(
         plt.savefig(path.joinpath(name), format=format, bbox_inches="tight")
 
     for d in results.dims:
-        if d != "impl" and results.sizes[d] > 1:
+        if d != main_dim and results.sizes[d] > 1:
             # reduce dimensions other than d and impl
-            to_reduce = [dd for dd in results.dims if dd != "impl" and dd != d]
+            to_reduce = [dd for dd in results.dims if dd != main_dim and dd != d]
             to_plot = results.reduce(reduction, to_reduce)
             # sort dimensions
             to_plot = to_plot.sortby(list(to_plot.dims))
             # reorder dimensions
-            to_plot = to_plot.transpose("impl", d)
+            to_plot = to_plot.transpose(main_dim, d)
             for runtime_type, runtime_data in to_plot.data_vars.items():
                 if runtime_selection is not None and runtime_type not in runtime_selection or \
                     d in scaling_dims and runtime_type not in ["full", "compute"]:
                     continue
                 # get plotting arguments
-                labels = to_plot.coords["impl"].data
+                labels = to_plot.coords[main_dim].data
                 ticks = to_plot.coords[d].data
                 # convert to numpy array
                 runtime_data = runtime_data.data

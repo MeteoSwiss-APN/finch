@@ -89,19 +89,19 @@ brn_single_name = "single"
 
 # multi run
 
-brn_multi_run = True
+brn_multi_run = False
 """Wether to perform a run experiment with different run configurations"""
 brn_multi_versions = finch.Input.Version.list_configs(
-#     format=finch.data.Format.ZARR,
-#     dim_order="xyz",
-#     coords=False,
-#     chunks={"x" : 30}
-# ) + finch.Input.Version.list_configs(
-#     format=finch.data.Format.NETCDF,
-#     dim_order="xyz",
-#     coords=False,
-#     chunks={"x" : 30}
-# ) + finch.Input.Version.list_configs(
+    format=finch.data.Format.ZARR,
+    dim_order="xyz",
+    coords=False,
+    chunks={"x" : 30}
+) + finch.Input.Version.list_configs(
+    format=finch.data.Format.NETCDF,
+    dim_order="xyz",
+    coords=False,
+    chunks={"x" : 30}
+) + finch.Input.Version.list_configs(
     format=finch.data.Format.GRIB,
     dim_order="zyx",
     coords=False,
@@ -151,6 +151,7 @@ brn_evaluation = True
 """Whether or not to run evaluation"""
 brn_eval_runtimes_plot = ["full"]
 """The runtimes to plot"""
+brn_eval_main_dim = "format"
 
 
 ######################################################
@@ -243,7 +244,7 @@ if __name__ == "__main__":
             logging.info(f"Evaluating experiment results")
             results = xr.open_dataset(brn_results_file)
             results = finch.eval.create_cores_dimension(results)
-            plot_fits = results["full"].sizes["impl"] < 10
-            finch.eval.create_plots(results, runtime_selection=brn_eval_runtimes_plot, plot_scaling_fits=plot_fits)
+            plot_fits = results["full"].sizes[brn_eval_main_dim] < 10
+            finch.eval.create_plots(results, main_dim=brn_eval_main_dim, runtime_selection=brn_eval_runtimes_plot, plot_scaling_fits=plot_fits)
             if len(results.data_vars) > 1:
                 finch.eval.plot_runtime_parts(results)
