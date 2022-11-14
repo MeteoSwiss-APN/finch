@@ -252,6 +252,12 @@ def create_plots(
 
     path = pathlib.Path(config["evaluation"]["plot_dir"], results.attrs["name"])
     path.mkdir(parents=True, exist_ok=True)
+    def save_plot(dim: str, runtime_type: str, extra: str = None, format: str = "png"):
+        name = dim + "_" + runtime_type
+        if extra is not None:
+            name += "_" + extra
+        name += "." + format
+        plt.savefig(path.joinpath(name), format=format, bbox_inches="tight")
 
     for d in results.dims:
         if d != "impl" and results.sizes[d] > 1:
@@ -292,16 +298,15 @@ def create_plots(
                         matplotx.ylabel_top("Runtime [s]")
                     else:
                         # line plot
-                        ylabel = "Runtime [s]"
-                        # handle scaling dimension
                         if d in scaling_dims:
+                            # create speedup plot for scaling dimension
                             # compute speedup
                             spd = speedup(runtime_data)
                             # calculate scaling rate and factor
                             if find_scaling_props:
                                 cs = np.tile(ticks, (runtime_data.shape[0], 1))
                                 fs = serial_overhead_analysis(runtime_data, cs)
-                                labels = [
+                                spd_labels = [
                                     l + r", $f=" + "%.2f"%(f*100) + r"$%" 
                                     for l, f in zip(labels, fs)
                                 ]
@@ -321,17 +326,23 @@ def create_plots(
                                     xt = x / ticks[0]
                                     y = amdahl_speedup(f, xt)
                                     plt.plot(x, y, linestyle=":", color=c["color"])
-                            
-                            ylabel = "Speedup"
-                            runtime_data = spd
+                            # finish speedup plot
+                            for l, rt in zip(spd_labels, spd):
+                                plt.plot(ticks, rt, label=l)
+                            plt.xlabel(d)
+                            matplotx.ylabel_top("Speedup")
+                            matplotx.line_labels()
+                            save_plot(d, runtime_type, "speedup")
+                            plt.clf()
+                        # plot runtime
                         for l, rt in zip(labels, runtime_data):
                             plt.plot(ticks, rt, label=l)
                         plt.xlabel(d)
                         #plt.xticks(ticks)
-                        matplotx.ylabel_top(ylabel)
+                        matplotx.ylabel_top("Runtime [s]")
                         matplotx.line_labels()
                     # save plot
-                    plt.savefig(path.joinpath(d + "_" + runtime_type + ".png"), format="png", bbox_inches="tight")
+                    save_plot(d, runtime_type)
 
 def plot_runtime_parts(
     results: xr.Dataset
