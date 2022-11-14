@@ -15,6 +15,7 @@ import matplotx
 import matplotlib.pyplot as plt
 from copy import deepcopy
 import warnings
+import yaml
 
 
 def print_version_results(results: list[Any], versions: list[Input.Version]):
@@ -383,3 +384,15 @@ def plot_runtime_parts(
         plt.xlabel("Measurements")
         matplotx.ylabel_top("Runtime %")
         plt.savefig(path.joinpath("runtime_parts.png"), format="png", bbox_inches="tight")
+
+def store_config(results: xr.Dataset):
+    """
+    Stores the configuration of the runtime experiment as a yaml.
+    The configuration are the coordinate values of the results array.
+    """
+    path = util.get_path(config["evaluation"]["config_dir"], results.attrs["name"], "config.yaml")
+    # create config dict
+    res_config = {c : a.data.tolist() for c, a in results.coords.items()}
+    res_config = {k : a[0] if len(a) == 1 else a for k, a in res_config.items()}
+    with open(path, mode="w") as f:
+        yaml.dump(res_config, f)

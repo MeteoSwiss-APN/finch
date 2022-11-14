@@ -110,7 +110,7 @@ brn_multi_versions = finch.Input.Version.list_configs(
 """The input versions for the brn multi run experiment"""
 brn_multi_imps = finch.brn.impl.brn_xr #[finch.brn.interface.get_repeated_implementation(n, base=finch.brn.impl.brn_blocked_cpp) for n in [10, 20, 30, 40, 50]]
 """The brn implementations used"""
-brn_multi_name = "format"
+brn_multi_name = "input_loading"
 """The name of the brn multi run experiment"""
 brn_multi_workers = [1, 5, 10, 15, 20, 25, 30, 35, 40]
 """A list of the number of workers to spawn for the brn multi run"""
@@ -248,3 +248,5 @@ if __name__ == "__main__":
             finch.eval.create_plots(results, main_dim=brn_eval_main_dim, runtime_selection=brn_eval_runtimes_plot, plot_scaling_fits=plot_fits)
             if len(results.data_vars) > 1:
                 finch.eval.plot_runtime_parts(results)
+            finch.eval.store_config(results)
+            results.to_netcdf(finch.util.get_path(finch.config["evaluation"]["results_dir"], results.attrs["name"], "results.nc"))
