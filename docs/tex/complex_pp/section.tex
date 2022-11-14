@@ -1,0 +1,11 @@
+\section{Complex Parallel Programs}
+
+Naturally, not every problem is embarrassingly parallel.
+Here are some techniques for non-embarrassingly parallel computations.
+
+\subsection{Reformulation}
+
+Sometimes it is possible to reformulate the problem such that it becomes embarrassingly parallel.
+For example, let's say we have a computation over a grid with three dimensions, which reduces the vertical dimension and otherwise only performs point wise computations in the horizontal dimensions.
+For such a computation, we can simply chunk in the horizontal dimensions instead of the vertical dimension.
+The result is an embarrassingly parallel computation.

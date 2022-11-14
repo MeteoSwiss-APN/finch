@@ -1,0 +1,18 @@
+\subsection{Input Formats}
+
+How input for our computation is provided is crucial for the final runtime of our program.
+Finch support three different data formats: Grib, NetCDF and Zarr
+
+Grib is a common format for providing weather data.
+For reading Grib data, xarray provides cfgrib \cite{cfgrib2022} as a backend.
+Unfortunately, cfgrib is quite slow compared to alternative data formats and also might also increase the serial overhead vastly.
+Additionally, Grib stores its data in layers, which means the chunking is pre-defined.
+For three-dimensional data, chunking will be in the vertical.
+Re-chunking is possible, but very expensive.
+
+NetCDF is a common alternative to Grib and is currently much faster.
+Chunking is not restricted.
+Parallel IO is available in principle but is not yet supported by xarray.
+
+Zarr is a cloud-native data format which stores all chunks in individual files.
+Unfortunately, Zarr is not yet very common for weather data.

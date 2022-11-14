@@ -1,4 +1,4 @@
-\section{Scalability Blockers for Embarrassingly Parallel Problems}
+\section{Embarrassingly Parallel Programs}
 
 We start by looking at embarrassingly parallel problems and how we can properly parallelize them with dask such that they actually scale.
 While not every operator might be embarrassingly parallel, the challenges we encounter for these will also apply to more complex problems.
@@ -15,3 +15,5 @@ In this section I will therefore list some pitfalls which I encountered when par
 \input{embarrassing_blockers/graph_size.tex}
 
 \input{embarrassing_blockers/hidden.tex}
+
+\input{embarrassing_blockers/inputs.tex}
