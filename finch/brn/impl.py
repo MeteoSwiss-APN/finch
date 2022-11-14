@@ -27,7 +27,8 @@ def brn_xr(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
     for _ in range(reps):
         thetav = thetav_xr(dataset.drop_vars(input.brn_only_array_names))
         thetav_sum = thetav.isel(generalVerticalLayer=slice(None, None, -1)).cumsum(dim='generalVerticalLayer')
-        nlevels_xr =xr.DataArray(data=np.arange(nlevels,0,-1), dims=["generalVerticalLayer"])
+        nlevels_xr = da.arange(nlevels, 0, -1, chunks=dataset.chunksizes["generalVerticalLayer"])
+        nlevels_xr =xr.DataArray(data=nlevels_xr, dims=["generalVerticalLayer"])
 
         u, v, hhl, hsurf = [dataset[n] for n in input.brn_only_array_names]
 
