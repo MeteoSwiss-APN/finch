@@ -5,6 +5,7 @@ from .. import config
 import xarray as xr
 import dask.array as da
 import numpy as np
+from .. import util
 
 brn_array_names = ["P", "T", "QV", "U", "V", "HHL", "HSURF"]
 """The names of the brn input arrays"""
@@ -18,6 +19,8 @@ dim_index = {
     "z": "generalVerticalLayer"
 }
 """Dictionary for translating dimension names"""
+
+inv_dim_index = util.inverse(dim_index)
 
 def translate_order(order):
     return data.translate_order(order, dim_index)
@@ -37,10 +40,6 @@ grib_input_version = data.Input.Version(
 def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
     if version is None:
         version = grib_input_version
-    chunks = dict(version.chunks)
-    for s in dim_index:
-        if s in chunks:
-            chunks[dim_index[s]] = chunks.pop(s)
 
     if version.format == data.Format.FAKE:
         # create a fake dataset
@@ -57,6 +56,8 @@ def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
         ]
         arrays[-1] = arrays[-1].loc[{dim_index["z"]: 0}]
         return xr.merge(arrays)
+
+    chunks = util.map_keys(version.chunks, dim_index)
 
     # load data from first grib file
     grib_file = "lfff00000000"

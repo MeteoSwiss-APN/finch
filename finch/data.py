@@ -383,6 +383,7 @@ class Input():
             else:
                 return None
         else:
+            # load the preexisting version
             filename = str(self._path.joinpath(target.name))
             if target.format == Format.NETCDF:
                 dataset = xr.open_dataset(filename+".nc", chunks=target.chunks)

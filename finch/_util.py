@@ -1,5 +1,6 @@
 # basic utility functions
-# they can be used during module setup
+# can be used during module setup, which is the only place where this module should be imported directly
+# otherwise use the `util` module
 
 from typing import TypeVar
 
@@ -24,6 +25,12 @@ U = TypeVar("U")
 V = TypeVar("V")
 def map_keys(d1: dict[T, U], d2: dict[T, V]) -> dict[V, U]:
     """
-    Maps the keys of `d1` according to `d2`.
+    Returns a dictionary where the keys of `d1` were mapped according to `d2`.
     """
     return {d2[k] : v for k, v in d1.items()}
+
+T = TypeVar("T")
+U = TypeVar("U")
+def inverse(d: dict[T, U]) -> dict[U, V]:
+    """Returns the inverse dictionary of the input."""
+    return {v : k for k, v in d.items()}

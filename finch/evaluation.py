@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import matplotx
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
 
 def print_version_results(results: list[Any], versions: list[Input.Version]):
@@ -56,8 +57,9 @@ def create_result_dataset(
         versions = [versions]
         results = [[r] for r in results]
 
+    # make sure that all versions have the same chunking dimensions
+    versions = deepcopy(versions)
     for v in versions:
-        # make sure that all versions have the same chunking dimensions
         v.chunks = v.get_all_chunks(input.dim_index.keys())
 
     if experiment_name is None:

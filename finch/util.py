@@ -22,7 +22,7 @@ import copy
 import uuid
 import shutil
 import os
-from ._util import arg2list, parse_bool, map_keys
+from ._util import arg2list, parse_bool, map_keys, inverse
 
 def adjust_dims(dims: List[str], array: xr.DataArray) -> xr.DataArray:
     """
