@@ -252,6 +252,8 @@ def create_plots(
     - runtime_selection: list[str]. The runtime types to plot. Defaults to all recorded runtimes.
     """
 
+    plt.set_loglevel("warning") # disable debug logs from matplotlib
+
     path = pathlib.Path(config["evaluation"]["plot_dir"], results.attrs["name"])
     path.mkdir(parents=True, exist_ok=True)
     def save_plot(dim: str, runtime_type: str, extra: str = None, format: str = "png"):
@@ -359,7 +361,9 @@ def plot_runtime_parts(
     """
     # collect data
     rt_types = [rtt for rtt in results.data_vars.keys() if rtt != "full"]
-    rt_data = np.vstack([results.data_vars[rtt].data.flatten() for rtt in rt_types])
+    rt_data = np.vstack([results[rtt].data.flatten() for rtt in rt_types])
+    # remove nan columns
+    rt_data = rt_data[:, ~np.isnan(rt_data).any(axis=0)]
     # normalize
     rt_data /= np.sum(rt_data, axis=0)[np.newaxis, :]
 
