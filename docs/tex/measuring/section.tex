@@ -1,0 +1,34 @@
+\section{Measuring Runtime}
+
+This section provides some tips for properly measuring and reporting runtimes for parallel computations with dask.
+
+\subsection{Timing Systems}
+
+In principle, there are many timing systems available, depending on the platform and on whether we use serial computation, parallel computation or only want to measure timing of a specific process.
+For our purposes, we should use the \lstinline{perf_counter()} function provided by Python.
+This is a high-resolution system-wide counter, which we can use to measure elapsed time in seconds.
+The reference point is undefined, so only time intervals are actually meaningful.
+
+\subsection{Runtime Stability}
+
+\paragraph{Dynamic Frequency Scaling}
+Ensuring stability of the runtime is not trivial either.
+Modern CPUs provide features, such as dynamic frequency scaling, which means that the CPU frequency might change unexpectedly and therefore slow down or speed up our computation.
+In some environments it is possible to disable dynamic frequency scaling (such as Turbo Boost), so this is recommended whenever possible.
+
+\paragraph{Warm Up}
+In any case it is advisable to warm up the CPU by performing some computation before the actual measurements.
+The CPU will recognize that there is a high load on the CPU and will hopefully increase the frequency before measuring the runtime instead of during measurements.
+Additionally, warm up ensures that the instruction queues in the CPU are full when starting measurements.
+
+\paragraph{Free Resources}
+Modern operating systems have many processes running in parallel, which can all disturb the execution of the computation we want to measure.
+To mitigate this problem, make sure to quit as many processes as possible running in the background.
+On a SLURM system, this shouldn't be a problem, since the scheduler will dedicate the resources we requested only to our program.
+Note that if we share a node with other jobs, there might still be some slight interference, specifically, since our job will not be the only one responsible for the behavior of dynamic frequency scaling.
+
+\paragraph{Measurement Series}
+Despite all efforts, it is impossible to remove all noise in our runtime measurements.
+Hence, it is a good idea to run the same computation multiple times to generate a series of measurements and perform some statistical analysis on it.
+At the very least, we can report an average of the runtime, which will decrease the variance in our measurement results.
+We can also detect and discard outliers and compute the variance with which we can detect an unstable environment (and discard a measurement series or quit measurement altogether).
