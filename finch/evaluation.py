@@ -216,6 +216,16 @@ def serial_overhead_analysis(
     f = f.flatten()
 
     return f
+
+def get_plots_dir(results: xr.Dataset) -> pathlib.Path:
+    """
+    Returns the path to the directory where plots should be stored for a specific results dataset.
+    """
+    base = config["evaluation"]["plot_dir"]
+    args = [base, results.attrs["name"]]
+    if base == config["evaluation"]["dir"]:
+        args.append("plots")
+    return util.get_path(*args)
         
 
 def create_plots(
@@ -255,8 +265,7 @@ def create_plots(
 
     plt.set_loglevel("warning") # disable debug logs from matplotlib
 
-    path = pathlib.Path(config["evaluation"]["plot_dir"], results.attrs["name"])
-    path.mkdir(parents=True, exist_ok=True)
+    path = get_plots_dir(results)
     def save_plot(dim: str, runtime_type: str, extra: str = None, format: str = "png"):
         name = dim + "_" + runtime_type
         if extra is not None:
@@ -377,8 +386,7 @@ def plot_runtime_parts(
             ticks = range(len(row))
             plt.bar(ticks, row, bottom=bottom, label=rt_type)
             bottom += row
-        path = pathlib.Path(config["evaluation"]["plot_dir"], results.attrs["name"])
-        path.mkdir(parents=True, exist_ok=True)
+        path = get_plots_dir(results)
         plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
         plt.xticks([])
         plt.xlabel("Measurements")
