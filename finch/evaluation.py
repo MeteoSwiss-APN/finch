@@ -226,7 +226,10 @@ def get_plots_dir(results: xr.Dataset) -> pathlib.Path:
     if base == config["evaluation"]["dir"]:
         args.append("plots")
     return util.get_path(*args)
-        
+
+
+plot_style = matplotx.styles.duftify(matplotx.styles.dracula)
+
 
 def create_plots(
     results: xr.Dataset, 
@@ -296,11 +299,9 @@ def create_plots(
                 ticks = to_plot.coords[d].data
                 # convert to numpy array
                 runtime_data = runtime_data.data
-                # prepare plotting arguments
-                style = matplotx.styles.duftify(matplotx.styles.dracula)
                 # plot
                 plt.clf()
-                with plt.style.context(style):
+                with plt.style.context(plot_style):
                     if isinstance(ticks[0], str):
                         # bar plot
                         # calculate the bar postions
@@ -337,7 +338,7 @@ def create_plots(
                                 plt.plot(ticks, ticks / ticks[0], label=base_label, linestyle="--")
                             # plot fitted scaling functions
                             if plot_scaling_fits and find_scaling_props:
-                                cycler = style["axes.prop_cycle"]
+                                cycler = plot_style["axes.prop_cycle"]
                                 if plot_scaling_baseline:
                                     cycler = cycler[1:]
                                 for f, c in zip(fs, cycler):
@@ -377,9 +378,8 @@ def plot_runtime_parts(
     # normalize
     rt_data /= np.sum(rt_data, axis=0)[np.newaxis, :]
 
-    style = matplotx.styles.duftify(matplotx.styles.dracula)
     plt.clf()
-    with plt.style.context(style):
+    with plt.style.context(plot_style):
         bottom = 0
         for i, rt_type in enumerate(rt_types):
             row = rt_data[i, :]
