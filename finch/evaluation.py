@@ -301,6 +301,7 @@ def create_plots(
                     continue
                 # get plotting arguments
                 labels = to_plot.coords[main_dim].data
+                labels = [str(l) for l in labels]
                 ticks = to_plot.coords[d].data
                 # convert to numpy array
                 runtime_data = runtime_data.data
@@ -362,7 +363,7 @@ def create_plots(
                         # plot runtime
                         ylabel = "Runtime [s]"
                         # normalize
-                        if d in relative_rt_dims:
+                        if d in relative_rt_dims and runtime_data.shape[0] > 1:
                             ylabel = "Relative Runtime"
                             runtime_data /= runtime_data[0, :]
                         for l, rt in zip(labels, runtime_data):
