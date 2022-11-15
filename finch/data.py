@@ -393,12 +393,13 @@ class Input():
         else:
             # load the preexisting version
             filename = str(self._path.joinpath(target.name))
+            chunks = util.map_keys(target.chunks, self.dim_index)
             if target.format == Format.NETCDF:
-                dataset = xr.open_dataset(filename+".nc", chunks=target.chunks)
+                dataset = xr.open_dataset(filename+".nc", chunks=chunks)
             elif target.format == Format.ZARR:
-                dataset = xr.open_dataset(filename, chunks=target.chunks, engine="zarr")
+                dataset = xr.open_dataset(filename, chunks=chunks, engine="zarr")
             elif target.format == Format.GRIB:
-                dataset = xr.open_dataset(filename, chunks=target.chunks, engine="cfgrib")
+                dataset = xr.open_dataset(filename, chunks=chunks, engine="cfgrib")
 
         return dataset, target
 
