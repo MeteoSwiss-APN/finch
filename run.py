@@ -48,13 +48,13 @@ results_file = pathlib.Path(finch.config["global"]["tmp_dir"], "results.nc")
 
 run_brn = True
 """Whether to run brn experiments"""
-brn_add_input_version = False
+brn_add_input_version = True
 """Whether to alter the brn input versions"""
 brn_load_experiment = False
 """Whether to measure the different input loading times"""
 brn_measure_runtimes = False
 """Wether to measure brn runtimes"""
-brn_evaluation = True
+brn_evaluation = False
 """Whether or not to run evaluation"""
 
 # input management
@@ -66,6 +66,15 @@ brn_add_input_version = finch.Input.Version(
     coords=False
 )
 """New brn input version to add"""
+brn_input_management_cluster = finch.scheduler.ClusterConfig(
+    workers_per_job=1,
+    cores_per_worker=5,
+    omp_parallelism=False,
+    exclusive_jobs=False
+)
+"""The cluster configuration used for input management"""
+brn_input_management_workers = 8
+"""The number of workers used for input management"""
 
 # input loading
 
@@ -148,8 +157,10 @@ if __name__ == "__main__":
     if run_brn:
 
         if brn_add_input_version:
-            logging.info("Adjusting input versions")
+            logging.info("Adding new input version")
             if brn_add_input_version:
+                finch.scheduler.start_scheduler(debug, brn_input_management_cluster)
+                finch.scheduler.scale_and_wait(brn_input_management_workers)
                 brn_input.add_version(brn_add_input_version)
 
         if brn_load_experiment:

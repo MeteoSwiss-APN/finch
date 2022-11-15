@@ -166,6 +166,9 @@ def get_client():
     return client
 
 def scale_and_wait(n: int):
+    """
+    Scales the current registered cluster to `n` workers and waits for them to start up.
+    """
     if client:
         client.cluster.scale(n)
         client.wait_for_workers(n, timeout=config["experiments"]["scaling_timeout"])

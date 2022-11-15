@@ -294,7 +294,7 @@ class Input():
         Arguments:
         ---
         - version: The version properties of the new version
-        - dataset: optional. The data of the new version. If `None`, the data will be generated from the source version.
+        - dataset: optional. The data of the new version. If `None`, the data will be generated from a preexisting version.
 
         Returns:
         ---
