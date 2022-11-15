@@ -10,6 +10,7 @@ from . import config
 from . import util
 from collections.abc import Callable
 import yaml
+import copy
 
 data_config = config["data"]
 grib_dir = data_config["grib_dir"]
@@ -231,7 +232,12 @@ class Input():
             return self.format != Format.ZARR \
                 or self.chunks is None \
                 or other.chunks is None \
-                or all(c > 0 and c <= other.chunks[d] for d,c in self.chunks.items())
+                or all(
+                    c > 0 and \
+                    c <= other.chunks[d] and \
+                    other.chunks[d] % c == 0 # must be divisible
+                    for d,c in self.chunks.items()
+                )
 
         def impose(self, ds: xr.Dataset, dim_index: dict[str, str]) -> xr.Dataset:
             """Transforms the given dataset such that it conforms to this version."""
@@ -395,4 +401,10 @@ class Input():
                 dataset = xr.open_dataset(filename, chunks=target.chunks, engine="cfgrib")
 
         return dataset, target
+
+    def list_versions(self) -> list[Version]:
+        """
+        Lists the available versions for this input
+        """
+        return copy.deepcopy(self.versions)
         
