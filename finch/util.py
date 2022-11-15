@@ -8,7 +8,7 @@ import pathlib
 import socket
 import types
 from typing import Dict, List, Tuple, TypeVar, Any
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 import typing
 import dask.array as da
 import xarray as xr
@@ -425,17 +425,31 @@ def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int = None) -> Tuple[np.n
     alpha = ym - beta*xm
     return alpha, beta
 
-def chunk_args_equal(c1: dict[str, int | tuple[int] | None | str], c2: dict[str, int | tuple[int] | None | str], dim_sizes: dict[str, int]) -> bool:
+def get_chunk_sizes(s: int, d: int) -> list[int]:
+    """
+    Returns a list of chunk sizes from a single chunk size.
+
+    Arguments:
+    ---
+    - i: The single chunk size
+    - d: The size of the dimension.
+    """
+    if s == -1:
+        return [d]
+    out =  [s] * (d//s)
+    if d % s != 0:
+        out.append(d % s)
+    return out
+
+Chunks = dict[str, int | tuple[int] | None | str]
+"""A typehint for chunks"""
+
+def chunk_args_equal(c1: Chunks, c2: Chunks, dim_sizes: dict[str, int]) -> bool:
     """
     Returns whether two xarray chunk arguments are equal.
     Auto and None chunk arguments will always be equal.
     If a dimension name is not present, its size will be interpreted as `None`.
     """
-    def get_chunk_list(i: int, d: int) -> list[int]:
-        out =  [i] * (d//i)
-        if d % i != 0:
-            out.append(d % i)
-        return out
     for k, v1 in c1.items():
         if k in c2:
             v2 = c2[k]
@@ -444,15 +458,53 @@ def chunk_args_equal(c1: dict[str, int | tuple[int] | None | str], c2: dict[str,
             if v1 == v2:
                 continue
             if isinstance(v1, int):
-                v1 = get_chunk_list(v1, dim_sizes[k])
+                v1 = get_chunk_sizes(v1, dim_sizes[k])
             else:
                 v1 = list(v1)
             if isinstance(v2, int):
-                v2 = get_chunk_list(v2, dim_sizes[k])
+                v2 = get_chunk_sizes(v2, dim_sizes[k])
             else:
                 v2 = list(v2)
             if v1 == v2:
                 continue
             else:
                 return False
+    return True
+
+def can_rechunk_no_split(c1: Chunks, c2: Chunks) -> bool:
+    """
+    Returns True, if `c1` can be rechunked according to `c2` without requiring to split up any chunks.
+    """
+    for k, v1 in c1.items():
+        if k in c2:
+            v2 = c2[k]
+            if v1 is None or v2 is None or v1 == "auto" or v2 == "auto" or v2 == -1:
+                continue
+            if v1 == -1:
+                return False
+            # v1 and v2 are now either integers or tuples
+            if isinstance(v1, int) and isinstance(v2, int):
+                if v1 > v2 or v2 % v1 != 0:
+                    return False
+            else:
+                if isinstance(v1, int):
+                    d = np.sum(v2)
+                    v1 = get_chunk_sizes(v1, d)
+                elif isinstance(v2, int):
+                    d = np.sum(v1)
+                    v2 = get_chunk_sizes(v2, d)
+                v1: list[int] = list(v1)
+                v2: list[int] = list(v2)
+                if len(v2) > len(v1):
+                    return False
+                cur = 0
+                while v1:
+                    cur += v1.pop()
+                    if cur > v2[-1]:
+                        return False
+                    elif cur == c2[-1]:
+                        cur = 0
+                        v2.pop()
+                if v2:
+                    return False
     return True
