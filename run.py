@@ -48,13 +48,13 @@ results_file = pathlib.Path(finch.config["global"]["tmp_dir"], "results.nc")
 
 run_brn = True
 """Whether to run brn experiments"""
-brn_add_input_version = True
+brn_manage_input = False
 """Whether to alter the brn input versions"""
 brn_load_experiment = False
 """Whether to measure the different input loading times"""
 brn_measure_runtimes = False
 """Wether to measure brn runtimes"""
-brn_evaluation = False
+brn_evaluation = True
 """Whether or not to run evaluation"""
 
 # input management
@@ -84,24 +84,24 @@ brn_input_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
     coords=False,
-    chunks={"x" : 30}
-) + finch.Input.Version.list_configs(
-    format=finch.data.Format.NETCDF,
-    dim_order="xyz",
-    coords=False,
-    chunks={"x" : 30}
-) + finch.Input.Version.list_configs(
-    format=finch.data.Format.GRIB,
-    dim_order="zyx",
-    coords=False,
-    chunks={"z" : 2}
+    chunks={"x" : 1}
+# ) + finch.Input.Version.list_configs(
+#     format=finch.data.Format.NETCDF,
+#     dim_order="xyz",
+#     coords=False,
+#     chunks={"x" : 30}
+# ) + finch.Input.Version.list_configs(
+#     format=finch.data.Format.GRIB,
+#     dim_order="zyx",
+#     coords=False,
+#     chunks={"z" : 2}
 )
 """The input versions for the runtime experiment"""
-brn_imps = finch.brn.impl.brn_xr #[finch.brn.interface.get_repeated_implementation(n, base=finch.brn.impl.brn_blocked_cpp) for n in [10, 20, 30, 40, 50]]
+brn_imps = finch.brn.impl.brn_blocked_cpp #[finch.brn.interface.get_repeated_implementation(n, base=finch.brn.impl.brn_blocked_cpp) for n in [10, 20, 30, 40, 50]]
 """The brn implementations used"""
-brn_exp_name = "input_loading"
+brn_exp_name = "zarr_high_parallel"
 """The name of the runtime experiment"""
-brn_workers = [1, 5, 10, 15, 20, 25, 30, 35, 40]
+brn_workers = [1] + list(range(5, 155, 5))
 """A list of the number of workers to spawn for the runtime experiment"""
 brn_cores_per_worker = 1
 """The number of cores dedicated to each worker"""
@@ -126,7 +126,10 @@ brn_perf_report = len(run_configs) == 1
 
 brn_eval_runtimes_plot = ["full"]
 """The runtimes to plot"""
-brn_eval_main_dim = "format"
+brn_eval_main_dim = "impl"
+"""The dimension in the results dataset to choose as the main dimension for comparison"""
+brn_eval_plot_fits = False
+"""Whether to plot fitted scaling model"""
 
 
 ######################################################
@@ -156,7 +159,7 @@ if __name__ == "__main__":
 
     if run_brn:
 
-        if brn_add_input_version:
+        if brn_manage_input:
             logging.info("Adding new input version")
             if brn_add_input_version:
                 finch.scheduler.start_scheduler(debug, brn_input_management_cluster)
@@ -181,8 +184,7 @@ if __name__ == "__main__":
             logging.info(f"Evaluating experiment results")
             results = xr.open_dataset(results_file)
             results = finch.eval.create_cores_dimension(results)
-            plot_fits = results["full"].sizes[brn_eval_main_dim] < 10
-            finch.eval.create_plots(results, main_dim=brn_eval_main_dim, runtime_selection=brn_eval_runtimes_plot, plot_scaling_fits=plot_fits)
+            finch.eval.create_plots(results, main_dim=brn_eval_main_dim, runtime_selection=brn_eval_runtimes_plot, plot_scaling_fits=brn_eval_plot_fits)
             if len(results.data_vars) > 1:
                 finch.eval.plot_runtime_parts(results)
             finch.eval.store_config(results)
