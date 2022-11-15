@@ -40,57 +40,37 @@ cache_input = True
 """Whether to cache the input between multiple iterations"""
 pbar = True
 """Whether to print a progress bar"""
+results_file = pathlib.Path(finch.config["global"]["tmp_dir"], "results.nc")
+"""The file where runtime results are temporarily stored."""
 
 # BRN experiment settings
 ######################################################
 
 run_brn = True
 """Whether to run brn experiments"""
-brn_results_file = pathlib.Path(finch.config["global"]["tmp_dir"], "brn_results.nc")
+brn_add_input_version = False
+"""Whether to alter the brn input versions"""
+brn_load_experiment = False
+"""Whether to measure the different input loading times"""
+brn_measure_runtimes = False
+"""Wether to measure brn runtimes"""
+brn_evaluation = True
+"""Whether or not to run evaluation"""
 
 # input management
 
-brn_add_input_version = False
-"""Whether to alter the brn input versions"""
 brn_add_input_version = finch.Input.Version(
-    format=finch.data.Format.NETCDF,
+    format=finch.data.Format.ZARR,
     dim_order="xyz",
-    chunks={"x": 10},
+    chunks={"x": 1},
     coords=False
 )
 """New brn input version to add"""
 
 # input loading
 
-brn_load_experiment = False
-"""Whether to measure the different input loading times"""
-
-# single run
-
-brn_single_run = False
-"""Whether to perform a single run experiment with brn"""
-brn_imp_to_inspect = finch.brn.impl.brn_blocked_cpp
-"""The brn implementation to inspect during the single run experiment"""
-brn_single_versions = [finch.Input.Version(
-    format=finch.data.Format.ZARR,
-    dim_order="xyz",
-    chunks={"x": 30},
-    coords=False
-)]
-"""The input version for the brn single run experiment"""
-brn_single_workers = 3
-"""The number of jobs to spawn for the brn single run"""
-brn_single_perf_report = True
-"""Whether to record a performance report for the brn single run"""
-brn_single_iterations = iterations
-"""The number of iterations for the brn single run experiment"""
-brn_single_name = "single"
-"""The name for the brn single run experiment"""
-
 # runtime measurements
 
-brn_measure_runtimes = False
-"""Wether to measure brn runtimes"""
 brn_input_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
@@ -135,8 +115,6 @@ brn_perf_report = len(run_configs) == 1
 
 # evaluation
 
-brn_evaluation = True
-"""Whether or not to run evaluation"""
 brn_eval_runtimes_plot = ["full"]
 """The runtimes to plot"""
 brn_eval_main_dim = "format"
@@ -186,11 +164,11 @@ if __name__ == "__main__":
             with performance_report(filename=reportfile) if brn_perf_report else nullcontext():
                 times = finch.measure_operator_runtimes(run_configs, brn_input, brn_input_versions, **config)
             results = finch.eval.create_result_dataset(times, run_configs, brn_input_versions, finch.brn.brn_input, "brn_"+brn_exp_name)
-            results.to_netcdf(brn_results_file)
+            results.to_netcdf(results_file)
 
         if brn_evaluation:
             logging.info(f"Evaluating experiment results")
-            results = xr.open_dataset(brn_results_file)
+            results = xr.open_dataset(results_file)
             results = finch.eval.create_cores_dimension(results)
             plot_fits = results["full"].sizes[brn_eval_main_dim] < 10
             finch.eval.create_plots(results, main_dim=brn_eval_main_dim, runtime_selection=brn_eval_runtimes_plot, plot_scaling_fits=plot_fits)
