@@ -119,32 +119,6 @@ brn_multi_cores_per_worker = 1
 brn_multi_omp = False
 """Whether to delegate parallelism to OpenMP for a worker"""
 
-# repeated experiment
-
-brn_repeated_run = False
-"""Whether to perform a run experiment for the brn repeated function(s)"""
-brn_repeated_n = range(10, 50, 10)
-"""A list with the number of times to repeat the computation"""
-brn_repeated_workers = [1, 2, 4, 8, 16]
-"""A list of the number of workers to spawn"""
-brn_repeated_cores_per_worker = 4
-"""The number of cores available per worker"""
-brn_repeated_omp = False
-"""Whether to reserve parallelism to OpenMP"""
-brn_repeated_input_version = finch.Input.Version(
-    format=finch.data.Format.FAKE,
-    dim_order="xyz",
-    chunks={"x": 10},
-    coords=False
-)
-brn_repeated_name = "repeated"
-"""The name of the repeated experiment"""
-
-# multicore experiment
-
-brn_multicore_run = True
-"""Whether to run the brn multicore experiment"""
-
 # evaluation
 
 brn_evaluation = True
@@ -215,29 +189,6 @@ if __name__ == "__main__":
             )
             times = finch.measure_operator_runtimes(run_configs, brn_input, brn_multi_versions, **config)
             results = finch.eval.create_result_dataset(times, run_configs, brn_multi_versions, finch.brn.brn_input, "brn_"+brn_multi_name)
-            results.to_netcdf(brn_results_file)
-
-        if brn_repeated_run:
-            logging.info(f"Measuring runtimes of repeated brn and thetav runs")
-            cluster_configs = finch.scheduler.ClusterConfig.list_configs(
-                cores_per_worker=brn_repeated_cores_per_worker,
-                omp_parallelism=brn_repeated_omp,
-                exclusive_jobs=False
-            )
-            run_configs = finch.experiments.RunConfig.list_configs(
-                workers=brn_repeated_workers,
-                cluster_config=cluster_configs,
-                impl=[finch.brn.get_repeated_implementation(n) for n in brn_repeated_n]
-            )
-            times = finch.measure_operator_runtimes(run_configs, finch.brn.brn_input, brn_repeated_input_version, **config)
-            results = finch.eval.create_result_dataset(
-                times, 
-                run_configs, 
-                brn_repeated_input_version,
-                finch.brn.brn_input,
-                brn_repeated_name, 
-                impl_names=finch.brn.get_repeated_impl_name
-            )
             results.to_netcdf(brn_results_file)
 
         if brn_evaluation:
