@@ -35,13 +35,13 @@ class ClusterConfig(util.Config):
     """The number of workers to spawn per SLURM job"""
     cores_per_worker: int = dask.config.get("jobqueue.slurm.cores", 1)
     """The number of cores available per worker"""
-    omp_parallelism: bool = True
+    omp_parallelism: bool = False
     """
     Toggle whether the cores of the worker should be reserved to the implementation of the task.
     If true, a worker thinks it has only one one thread available and won't run tasks in parallel.
     Instead, zebra is configured with the given number of threads.
     """
-    exclusive_jobs: bool = True
+    exclusive_jobs: bool = False
     """Toggle whether to use a full node exclusively for one job."""
 
 client: Client = None
