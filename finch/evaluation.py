@@ -235,6 +235,7 @@ def create_plots(
     results: xr.Dataset, 
     reduction: Callable = np.nanmin, 
     main_dim: str = "impl",
+    relative_rt_dims: list[str] = ["cores"],
     scaling_dims: list[str] = ["cores"],
     find_scaling_props: bool = True,
     plot_scaling_fits: bool = False,
@@ -256,8 +257,12 @@ def create_plots(
     ---
     - results: xr.DataArray. The result array
     - reduction: Callable. The reduction function. (See `xarray.DataArray.reduce`)
+    - relative_rt_dims: list[str]. Dimensions for which a relative runtime plot will be produced.
+    The first row (first entry of the main dim) of the plot data will be used as the reference. All other rows will be divided by the first row.
+    A relative runtime plot is often more practical for comparing results, instead of the raw data.
+    If the main_dim has only one entry, no normalization will happen.
     - scaling dims: list[str]. Dimensions which are used for scalability plots.
-    For those dimensions, a log-log plot of the speedup will be created and the scaling factor calculated.
+    For those dimensions, a plot of the speedup will be created in addition to the usual runtime plot.
     - find_scaling_props: bool. Whether to calculate the scaling factor and scaling rate for scaling dimensions
     - plot_scaling_fits: bool. 
     Whether to plot the functions which are being fitted for calculating the scaling factor and rate.
@@ -283,8 +288,8 @@ def create_plots(
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
                 to_plot = results.reduce(reduction, to_reduce)
-            # sort dimensions
-            to_plot = to_plot.sortby(list(to_plot.dims))
+            # sort x dimension
+            to_plot = to_plot.sortby(d)
             # reorder dimensions
             to_plot = to_plot.transpose(main_dim, d)
             for runtime_type, runtime_data in to_plot.data_vars.items():
@@ -355,11 +360,16 @@ def create_plots(
                             save_plot(d, runtime_type, "speedup")
                             plt.clf()
                         # plot runtime
+                        ylabel = "Runtime [s]"
+                        # normalize
+                        if d in relative_rt_dims:
+                            ylabel = "Relative Runtime"
+                            runtime_data /= runtime_data[0, :]
                         for l, rt in zip(labels, runtime_data):
                             plt.plot(ticks, rt, label=l)
                         plt.xlabel(d)
                         #plt.xticks(ticks)
-                        matplotx.ylabel_top("Runtime [s]")
+                        matplotx.ylabel_top(ylabel)
                         matplotx.line_labels()
                     # save plot
                     save_plot(d, runtime_type)
