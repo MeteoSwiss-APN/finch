@@ -232,12 +232,7 @@ class Input():
             return self.format != Format.ZARR \
                 or self.chunks is None \
                 or other.chunks is None \
-                or all(
-                    c > 0 and \
-                    c <= other.chunks[d] and \
-                    other.chunks[d] % c == 0 # must be divisible
-                    for d,c in self.chunks.items()
-                )
+                or util.can_rechunk_no_split(self.chunks, other.chunks)
 
         def impose(self, ds: xr.Dataset, dim_index: dict[str, str]) -> xr.Dataset:
             """Transforms the given dataset such that it conforms to this version."""
@@ -277,6 +272,7 @@ class Input():
         self._path = pathlib.Path(store_path).joinpath(name).absolute()
         self.source = source
         self.source_version = source_version
+        assert all(d in source_version.chunks for d in dim_index), "Source version must provide chunks for all dimensions."
         self.source_version.name = "source"
         self.versions = [source_version]
         self.dim_index = dim_index
@@ -328,6 +324,11 @@ class Input():
         if dataset is None:
             # create new version to be added
             dataset, version = self.get_version(version, create_if_not_exists=True, add_if_not_exists=False)
+
+        # add missing chunk sizes
+        for d in self.dim_index:
+            if d not in version.chunks or version.chunks[d] is None or version.chunks[d] == "auto":
+                version.chunks[d] = -1
 
         # store data
         filename = str(self._path.joinpath(version.name))

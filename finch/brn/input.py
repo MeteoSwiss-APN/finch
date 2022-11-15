@@ -31,11 +31,11 @@ def reorder_dims(input, dims):
     return data.reorder_dims(input, dims)
 
 grib_input_version = data.Input.Version(
-        format=data.Format.GRIB,
-        dim_order="zyx",
-        chunks={"z" : 1},
-        coords=True
-    )
+    format=data.Format.GRIB,
+    dim_order="zyx",
+    chunks={"z" : 1, "x" : -1, "y" : -1},
+    coords=True
+)
 
 def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
     if version is None:
