@@ -219,7 +219,7 @@ def get_path(*args) -> pathlib.Path:
     If the directories do not exist yet, they will be created.
     """
     out = pathlib.Path(*args)
-    to_make = out if out.is_dir() else out.parent
+    to_make = out if out.suffix == "" else out.parent
     to_make.mkdir(parents=True, exist_ok=True)
     return out
 
