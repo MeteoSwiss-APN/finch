@@ -367,15 +367,17 @@ class Input():
         """
         # find matching preexisting version
         target = None
+        source_name = None
         for v in self.versions[1:]: # avoid loading the source version when possible
             if not weak_compare and util.has_attributes(version, v):
                 target = v
                 break
             elif weak_compare and v <= version and (target is None or target <= v):
                 target = util.fill_none_properties(version, v)
+                source_name = v.name
 
         if target is None:
-            # create new version if wished, or if the new version can be deduced from the source version
+            # create new version if desired, or if the new version can be deduced from the source version
             if create_if_not_exists or \
                 (not weak_compare and util.has_attributes(version, self.source_version)) or \
                 (weak_compare and self.source_version <= version):
@@ -393,7 +395,7 @@ class Input():
                 return None
         else:
             # load the preexisting version
-            filename = str(self._path.joinpath(target.name))
+            filename = str(self._path.joinpath(source_name))
             chunks = util.map_keys(target.chunks, self.dim_index)
             if target.format == Format.NETCDF:
                 dataset = xr.open_dataset(filename+".nc", chunks=chunks)
@@ -401,8 +403,7 @@ class Input():
                 dataset = xr.open_dataset(filename, chunks=chunks, engine="zarr")
             elif target.format == Format.GRIB:
                 dataset = xr.open_dataset(filename, chunks=chunks, engine="cfgrib")
-
-        return dataset, target
+            return dataset, target
 
     def list_versions(self) -> list[Version]:
         """
