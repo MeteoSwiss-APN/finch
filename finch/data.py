@@ -403,7 +403,7 @@ class Input():
                 dataset = xr.open_dataset(filename, chunks=chunks, engine="zarr")
             elif target.format == Format.GRIB:
                 dataset = xr.open_dataset(filename, chunks=chunks, engine="cfgrib")
-            return dataset, target
+        return dataset, target
 
     def list_versions(self) -> list[Version]:
         """
