@@ -237,7 +237,7 @@ def create_plots(
     main_dim: str = "impl",
     relative_rt_dims: list[str] = ["cores"],
     scaling_dims: list[str] = ["cores"],
-    find_scaling_props: bool = True,
+    estimate_serial: bool = True,
     plot_scaling_fits: bool = False,
     plot_scaling_baseline: bool = True,
     runtime_selection: list[str] = None
@@ -263,7 +263,7 @@ def create_plots(
     If the main_dim has only one entry, no normalization will happen.
     - scaling dims: list[str]. Dimensions which are used for scalability plots.
     For those dimensions, a plot of the speedup will be created in addition to the usual runtime plot.
-    - find_scaling_props: bool. Whether to calculate the scaling factor and scaling rate for scaling dimensions
+    - estimate_serial: bool. Whether to estimate the serial overhead.
     - plot_scaling_fits: bool. 
     Whether to plot the functions which are being fitted for calculating the scaling factor and rate.
     - plot_scaling_baseline: bool.
@@ -329,7 +329,7 @@ def create_plots(
                             # compute speedup
                             spd = speedup(runtime_data)
                             # calculate scaling rate and factor
-                            if find_scaling_props:
+                            if estimate_serial:
                                 cs = np.tile(ticks, (runtime_data.shape[0], 1))
                                 fs = serial_overhead_analysis(runtime_data, cs)
                                 spd_labels = [
@@ -339,11 +339,11 @@ def create_plots(
                             # plot baseline
                             if plot_scaling_baseline:
                                 base_label = "Perfect linear scaling"
-                                if find_scaling_props:
+                                if estimate_serial:
                                     base_label += r", $f=0%$"
                                 plt.plot(ticks, ticks / ticks[0], label=base_label, linestyle="--")
                             # plot fitted scaling functions
-                            if plot_scaling_fits and find_scaling_props:
+                            if plot_scaling_fits and estimate_serial:
                                 cycler = plot_style["axes.prop_cycle"]
                                 if plot_scaling_baseline:
                                     cycler = cycler[1:]
