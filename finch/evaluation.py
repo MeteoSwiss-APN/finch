@@ -366,7 +366,9 @@ def create_plots(
                                     x = np.linspace(ticks[0], ticks[-1], 100)
                                     xt = x / ticks[0]
                                     y = amdahl_speedup(f, xt)
-                                    plt.plot(x, y, linestyle=":", color=c["color"])
+                                    color = c["color"]
+                                    plt.plot(x, y, linestyle=":", color=color)
+                                    plt.axhline(y = 1/f, linestyle=":", color=color)
                             # plot speedups plot
                             for l, rt in zip(spd_labels, spd):
                                 plt.plot(ticks, rt, label=l)
