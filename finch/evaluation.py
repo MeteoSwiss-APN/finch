@@ -146,6 +146,28 @@ def create_cores_dimension(
     out.attrs = results.attrs
     return out
 
+def rename_labels(results: xr.Dataset, renames: dict[str, dict[Any, Any] | list[Any]] = None, **kwargs) -> xr.Dataset:
+    """
+    Rename labels for some dimensions. This changes the coordinates in the results dataset
+
+    Arguments:
+    ---
+    - results: The results dataset
+    - renames: A dictionary mapping dimension names to rename instructions.
+    Rename instructions can be either in the form of a dictionary, 
+    mapping old values to new values, or in the form of a list, replacing the old values.
+    - kwargs: The renames argument as kwargs. If neither `renames` or `kwargs` are given, 
+    """
+    if renames is None:
+        renames = kwargs
+    out = results.copy()
+    for k, v in renames.items():
+        if isinstance(v, list):
+            out[k] = v
+        else:
+            out[k] = xr.apply_ufunc(lambda x: v[x], out[k], vectorize=True)
+    return out
+
 def speedup(runtimes: np.ndarray, axis: int = -1, base: np.ndarray = None) -> np.ndarray:
     """
     Calculates the speedup for an array of runtimes.
