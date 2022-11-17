@@ -6,6 +6,7 @@ import pathlib
 import sys
 import argparse
 import os
+import matplotx
 
 # command line arguments
 parser = argparse.ArgumentParser()
@@ -32,7 +33,7 @@ import xarray as xr
 # general configurations
 ######################################################
 
-iterations = 1 if debug else 5
+iterations = 1 if debug else 10
 """The number of iterations when measuring runtime"""
 warmup = not debug
 """Whether to perform a warmup before measuring the runtimes"""
@@ -61,8 +62,8 @@ brn_evaluation = True
 
 brn_add_input_version = finch.Input.Version(
     format=finch.data.Format.ZARR,
-    dim_order="xyz",
-    chunks={"x": 1},
+    dim_order="zyx",
+    chunks={"x": 10, "y": -1, "z": -1},
     coords=False
 )
 """New brn input version to add"""
@@ -80,16 +81,18 @@ brn_input_management_workers = 8
 
 # runtime measurements
 
+brn_exp_name = "chunk_size"
+"""The name of the runtime experiment"""
 brn_input_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
     coords=False,
-    chunks={"x" : 1}
+    chunks=[{"x" : n, "y": -1, "z": -1} for n in [10, 20, 30, 40, 50]]
 # ) + finch.Input.Version.list_configs(
-#     format=finch.data.Format.NETCDF,
-#     dim_order="xyz",
+#     format=finch.data.Format.ZARR,
+#     dim_order="zyx",
 #     coords=False,
-#     chunks={"x" : 30}
+#     chunks={"z" : 2, "y": -1, "x": -1}
 # ) + finch.Input.Version.list_configs(
 #     format=finch.data.Format.GRIB,
 #     dim_order="zyx",
@@ -97,11 +100,9 @@ brn_input_versions = finch.Input.Version.list_configs(
 #     chunks={"z" : 2}
 )
 """The input versions for the runtime experiment"""
-brn_imps = finch.brn.impl.brn_blocked_cpp #[finch.brn.interface.get_repeated_implementation(n, base=finch.brn.impl.brn_blocked_cpp) for n in [10, 20, 30, 40, 50]]
+brn_imps = finch.brn.impl.brn_xr #[finch.brn.interface.get_repeated_implementation(n, base=finch.brn.impl.brn_blocked_cpp) for n in [10, 20, 30, 40, 50]]
 """The brn implementations used"""
-brn_exp_name = "zarr_high_parallel"
-"""The name of the runtime experiment"""
-brn_workers = [1] + list(range(5, 155, 5))
+brn_workers = [1] + list(range(5, 41, 5))
 """A list of the number of workers to spawn for the runtime experiment"""
 brn_cores_per_worker = 1
 """The number of cores dedicated to each worker"""
@@ -124,12 +125,23 @@ brn_perf_report = len(run_configs) == 1
 
 # evaluation
 
+brn_eval_exp_name = "brn_blockwise"
+"""If not None, then this variable is used to locate the results file. Otherwise the (temporary) results file will be used."""
 brn_eval_runtimes_plot = ["full"]
 """The runtimes to plot"""
 brn_eval_main_dim = "impl"
 """The dimension in the results dataset to choose as the main dimension for comparison"""
 brn_eval_plot_fits = False
 """Whether to plot fitted scaling model"""
+brn_eval_estimate_serial = False
+"""Whether to estimate the serial overhead for the runtime results"""
+brn_eval_plot_dark_mode = False
+"""Whether to use dark or light mode for plotting"""
+brn_eval_rename_labels = {"brn_xr": "xarray", "brn_blocked_cpp" : "C++", "brn_blocked_np": "NumPy"}
+"""If not None, then this dictionary will be used to rename the labels of the main dimensions."""
+brn_eval_reference_labels = {"cores": "NumPy"}
+"""The keys of this dictionary indicate the plots for which to plot a relative runtime. 
+The values indicate the label in the main dimension of the reference."""
 
 
 ######################################################
@@ -182,10 +194,18 @@ if __name__ == "__main__":
 
         if brn_evaluation:
             logging.info(f"Evaluating experiment results")
-            results = xr.open_dataset(results_file)
-            results = finch.eval.create_cores_dimension(results)
-            finch.eval.create_plots(results, main_dim=brn_eval_main_dim, runtime_selection=brn_eval_runtimes_plot, plot_scaling_fits=brn_eval_plot_fits)
+            if not brn_eval_plot_dark_mode:
+                finch.eval.plot_style = matplotx.styles.dufte
+            if brn_eval_exp_name is None:
+                results = xr.open_dataset(results_file)
+                results.to_netcdf(finch.util.get_path(finch.config["evaluation"]["results_dir"], results.attrs["name"], "results.nc"))
+                results = finch.eval.create_cores_dimension(results)
+            else:
+                results = xr.open_dataset(finch.util.get_path(finch.config["evaluation"]["results_dir"], brn_eval_exp_name, "results.nc"))
+            if brn_eval_rename_labels:
+                brn_eval_rename_labels = {brn_eval_main_dim : brn_eval_rename_labels}
+                results = finch.eval.rename_labels(results, brn_eval_rename_labels)
+            finch.eval.create_plots(results, main_dim=brn_eval_main_dim, relative_rt_dims=brn_eval_reference_labels, runtime_selection=brn_eval_runtimes_plot, estimate_serial=brn_eval_estimate_serial, plot_scaling_fits=brn_eval_plot_fits)
             if len(results.data_vars) > 1:
                 finch.eval.plot_runtime_parts(results)
             finch.eval.store_config(results)
-            results.to_netcdf(finch.util.get_path(finch.config["evaluation"]["results_dir"], results.attrs["name"], "results.nc"))
