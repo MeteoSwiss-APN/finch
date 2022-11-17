@@ -257,8 +257,8 @@ def create_plots(
     results: xr.Dataset, 
     reduction: Callable = np.nanmin, 
     main_dim: str = "impl",
-    relative_rt_dims: list[str] = ["cores"],
-    scaling_dims: list[str] = ["cores"],
+    relative_rt_dims: list[str] | dict[str, Any] = [],
+    scaling_dims: list[str] = [],
     estimate_serial: bool = True,
     plot_scaling_fits: bool = False,
     plot_scaling_baseline: bool = True,
@@ -279,8 +279,10 @@ def create_plots(
     ---
     - results: xr.DataArray. The result array
     - reduction: Callable. The reduction function. (See `xarray.DataArray.reduce`)
-    - relative_rt_dims: list[str]. Dimensions for which a relative runtime plot will be produced.
-    The first row (first entry of the main dim) of the plot data will be used as the reference. All other rows will be divided by the first row.
+    - relative_rt_dims: list[str] | dict[str, Any]. Dimensions for which a relative runtime plot will be produced.
+    If a dictionary is passed, the keys will be used to identify the dimensions for which to plot a relative runtime 
+    and the values will be used to identify which entry of the main dimension should be used as a reference (identified by label / coordinate value).
+    If a list is passed, the first entry will be used.
     A relative runtime plot is often more practical for comparing results, instead of the raw data.
     If the main_dim has only one entry, no normalization will happen.
     - scaling dims: list[str]. Dimensions which are used for scalability plots.
@@ -312,6 +314,12 @@ def create_plots(
                 to_plot = results.reduce(reduction, to_reduce)
             # sort x dimension
             to_plot = to_plot.sortby(d)
+            # get index of reference entry for relative runtime plotting
+            if d in relative_rt_dims:
+                if isinstance(relative_rt_dims, list):
+                    ref_idx = 0
+                else:
+                    ref_idx = to_plot.indexes[main_dim].get_loc(relative_rt_dims[d])
             # reorder dimensions
             to_plot = to_plot.transpose(main_dim, d)
             for runtime_type, runtime_data in to_plot.data_vars.items():
@@ -388,7 +396,7 @@ def create_plots(
                         # normalize
                         if d in relative_rt_dims and runtime_data.shape[0] > 1:
                             ylabel = "Relative Runtime"
-                            runtime_data /= runtime_data[0, :]
+                            runtime_data /= runtime_data[ref_idx, :]
                         for l, rt in zip(labels, runtime_data):
                             plt.plot(ticks, rt, label=l)
                         plt.xlabel(d)
