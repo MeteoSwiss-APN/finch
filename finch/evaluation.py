@@ -359,25 +359,23 @@ def create_plots(
                                     l + r", $f=" + "%.2f"%(f*100) + r"$%" 
                                     for l, f in zip(labels, fs)
                                 ]
+                            # plot fitted scaling functions
+                            if plot_scaling_fits and estimate_serial:
+                                cycler = plot_style["axes.prop_cycle"]
+                                for f, c in zip(fs, cycler):
+                                    x = np.linspace(ticks[0], ticks[-1], 100)
+                                    xt = x / ticks[0]
+                                    y = amdahl_speedup(f, xt)
+                                    plt.plot(x, y, linestyle=":", color=c["color"])
+                            # plot speedups plot
+                            for l, rt in zip(spd_labels, spd):
+                                plt.plot(ticks, rt, label=l)
                             # plot baseline
                             if plot_scaling_baseline:
                                 base_label = "Perfect linear scaling"
                                 if estimate_serial:
                                     base_label += r", $f=0%$"
                                 plt.plot(ticks, ticks / ticks[0], label=base_label, linestyle="--")
-                            # plot fitted scaling functions
-                            if plot_scaling_fits and estimate_serial:
-                                cycler = plot_style["axes.prop_cycle"]
-                                if plot_scaling_baseline:
-                                    cycler = cycler[1:]
-                                for f, c in zip(fs, cycler):
-                                    x = np.linspace(ticks[0], ticks[-1], 100)
-                                    xt = x / ticks[0]
-                                    y = amdahl_speedup(f, xt)
-                                    plt.plot(x, y, linestyle=":", color=c["color"])
-                            # finish speedup plot
-                            for l, rt in zip(spd_labels, spd):
-                                plt.plot(ticks, rt, label=l)
                             plt.xlabel(d)
                             matplotx.ylabel_top("Speedup")
                             matplotx.line_labels()
