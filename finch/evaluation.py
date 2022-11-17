@@ -329,6 +329,7 @@ def create_plots(
                             # compute speedup
                             spd = speedup(runtime_data)
                             # calculate scaling rate and factor
+                            spd_labels = labels
                             if estimate_serial:
                                 cs = np.tile(ticks, (runtime_data.shape[0], 1))
                                 fs = serial_overhead_analysis(runtime_data, cs)
