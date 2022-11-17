@@ -1,7 +1,5 @@
-from contextlib import nullcontext
 import functools
 import logging
-from dask.distributed import performance_report
 import pathlib
 import sys
 import argparse
@@ -33,9 +31,9 @@ import xarray as xr
 # general configurations
 ######################################################
 
-iterations = 1 if debug else 10
+iterations = 1 if debug else 1
 """The number of iterations when measuring runtime"""
-warmup = not debug
+warmup = not debug and False
 """Whether to perform a warmup before measuring the runtimes"""
 cache_input = True
 """Whether to cache the input between multiple iterations"""
@@ -53,10 +51,11 @@ brn_manage_input = False
 """Whether to alter the brn input versions"""
 brn_load_experiment = False
 """Whether to measure the different input loading times"""
-brn_measure_runtimes = False
+brn_measure_runtimes = True
 """Wether to measure brn runtimes"""
-brn_evaluation = True
+brn_evaluation = False
 """Whether or not to run evaluation"""
+
 
 # input management
 
@@ -77,17 +76,19 @@ brn_input_management_cluster = finch.scheduler.ClusterConfig(
 brn_input_management_workers = 8
 """The number of workers used for input management"""
 
+
 # input loading
+
 
 # runtime measurements
 
-brn_exp_name = "chunk_size"
+brn_exp_name = "tmp"
 """The name of the runtime experiment"""
 brn_input_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
     coords=False,
-    chunks=[{"x" : n, "y": -1, "z": -1} for n in [10, 20, 30, 40, 50]]
+    chunks={"x" : 30, "y": -1, "z": -1}
 # ) + finch.Input.Version.list_configs(
 #     format=finch.data.Format.ZARR,
 #     dim_order="zyx",
@@ -102,7 +103,7 @@ brn_input_versions = finch.Input.Version.list_configs(
 """The input versions for the runtime experiment"""
 brn_imps = finch.brn.impl.brn_xr #[finch.brn.interface.get_repeated_implementation(n, base=finch.brn.impl.brn_blocked_cpp) for n in [10, 20, 30, 40, 50]]
 """The brn implementations used"""
-brn_workers = [1] + list(range(5, 41, 5))
+brn_workers = 10 #[1] + list(range(5, 41, 5))
 """A list of the number of workers to spawn for the runtime experiment"""
 brn_cores_per_worker = 1
 """The number of cores dedicated to each worker"""
@@ -120,12 +121,12 @@ run_configs = finch.experiments.RunConfig.list_configs(
     cluster_config=brn_cluster_configs
 )
 """The run configurations"""
-brn_perf_report = len(run_configs) == 1
-"""Whether to write a dask performance report"""
+brn_dask_report = True
+"""Whether to write a dask performance report (instead of using the dashboard)"""
 
 # evaluation
 
-brn_eval_exp_name = "brn_blockwise"
+brn_eval_exp_name = None
 """If not None, then this variable is used to locate the results file. Otherwise the (temporary) results file will be used."""
 brn_eval_runtimes_plot = ["full"]
 """The runtimes to plot"""
@@ -137,9 +138,9 @@ brn_eval_estimate_serial = False
 """Whether to estimate the serial overhead for the runtime results"""
 brn_eval_plot_dark_mode = False
 """Whether to use dark or light mode for plotting"""
-brn_eval_rename_labels = {"brn_xr": "xarray", "brn_blocked_cpp" : "C++", "brn_blocked_np": "NumPy"}
+brn_eval_rename_labels = None
 """If not None, then this dictionary will be used to rename the labels of the main dimensions."""
-brn_eval_reference_labels = {"cores": "NumPy"}
+brn_eval_reference_labels = {}
 """The keys of this dictionary indicate the plots for which to plot a relative runtime. 
 The values indicate the label in the main dimension of the reference."""
 
@@ -164,7 +165,7 @@ if __name__ == "__main__":
         "iterations": iterations,
         "warmup": warmup,
         "cache_inputs": cache_input,
-        "pbar": pbar
+        "pbar": pbar,
     }
 
     brn_input = finch.brn.brn_input
@@ -186,9 +187,7 @@ if __name__ == "__main__":
         
         if brn_measure_runtimes:
             logging.info(f"Measuring runtimes of brn implementations")
-            reportfile = finch.util.get_path(finch.config["evaluation"]["perf_report_dir"], "dask-report.html")
-            with performance_report(filename=reportfile) if brn_perf_report else nullcontext():
-                times = finch.measure_operator_runtimes(run_configs, brn_input, brn_input_versions, **config)
+            times = finch.measure_operator_runtimes(run_configs, brn_input, brn_input_versions, dask_report = brn_dask_report, **config)
             results = finch.eval.create_result_dataset(times, run_configs, brn_input_versions, finch.brn.brn_input, "brn_"+brn_exp_name)
             results.to_netcdf(results_file)
 

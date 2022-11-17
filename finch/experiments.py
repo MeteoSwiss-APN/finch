@@ -15,10 +15,12 @@ from . import scheduler
 import dask.graph_manipulation
 import dask.array as da
 import dask
+from dask.distributed import performance_report
 import warnings
 import dask.distributed
 import functools
 import random
+from contextlib import nullcontext
 
 zarr_out_path = util.get_path(config["global"]["tmp_dir"], "exp_out")
 
@@ -79,6 +81,7 @@ def measure_runtimes(
     reduction: Callable[[np.ndarray, int], np.ndarray] = np.nanmean,
     warmup: bool = False,
     pbar: PbarArg = True,
+    dask_report: bool = False,
     **kwargs
 ) -> list[list[Runtime]] | list[Runtime] | Runtime:
     """
@@ -143,32 +146,35 @@ def measure_runtimes(
 
     pbar = util.get_pbar(pbar, len(run_config) * len(inputs) * iterations)
 
+    reportfile = util.get_path(config["evaluation"]["perf_report_dir"], "dask-report.html")
+
     times = []
     for c in run_config:
         c.setup()
-        f_times = []
-        for prep in inputs:
-            cur_times = []
-            if cache_inputs:
-                args = prep()
-                prep = lambda a=args : a
-            for _ in range(iterations):
-                args = prep()
-                if run_prep is not None:
-                    run_prep()
-                start = perf_counter()
-                runtime = impl_runner(c.impl, *args)
-                end = perf_counter()
-                if runtime is None:
-                    runtime = Runtime()
-                if runtime.full is None:
-                    runtime.full = end-start
-                cur_times.append(runtime)
-                pbar.update()
-            if warmup:
-                cur_times = cur_times[1:]
-            f_times.append(_reduce_runtimes(cur_times, reduction))
-        times.append(f_times)
+        with performance_report(filename=reportfile) if dask_report else nullcontext():
+            f_times = []
+            for prep in inputs:
+                cur_times = []
+                if cache_inputs:
+                    args = prep()
+                    prep = lambda a=args : a
+                for _ in range(iterations):
+                    args = prep()
+                    if run_prep is not None:
+                        run_prep()
+                    start = perf_counter()
+                    runtime = impl_runner(c.impl, *args)
+                    end = perf_counter()
+                    if runtime is None:
+                        runtime = Runtime()
+                    if runtime.full is None:
+                        runtime.full = end-start
+                    cur_times.append(runtime)
+                    pbar.update()
+                if warmup:
+                    cur_times = cur_times[1:]
+                f_times.append(_reduce_runtimes(cur_times, reduction))
+            times.append(f_times)
     # reorder according to original run config order
     out = [0]*len(times)
     for i, t in zip(rc_order, times):
