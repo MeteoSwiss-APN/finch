@@ -135,6 +135,7 @@ def create_cores_dimension(
     out = results.stack({cores_dim: contributors})
     coords = out[cores_dim] # this is now a multiindex
     coords = [np.prod(x) for x in coords.data] # calculate the number of cores
+    out = out.drop_vars([cores_dim] + contributors)
     out[cores_dim] = coords
     # reduce cores_dim to have unique values
     coords = np.unique(coords) # output is sorted
@@ -415,18 +416,18 @@ def plot_runtime_parts(
     The first entry will be interpreted as the main dimension.
 
     """
-    # collect data
-    rt_types = [rtt for rtt in results.data_vars.keys() if rtt != "full"]
+    # drop full runtimes
+    results = results.drop_vars("full")
     # create array
     array = results.to_array(dim="rt_types")
-    array["rt_types"] = rt_types
+    rt_types = array["rt_types"].data
     # reorder dimensions
     dim_order = ["rt_types"] + first_dims
     dim_order += [d for d in array.dims if d not in dim_order]
-    array = array.transpose(dim_order)
+    array = array.transpose(*dim_order)
     # capture tick labels
     if first_dims:
-        tick_labels = array[first_dims[0]]
+        tick_labels = array[first_dims[0]].data
     # convert to numpy and flatten
     array: np.ndarray = array.data.reshape(len(rt_types), -1)
     # remove nan columns
@@ -440,7 +441,7 @@ def plot_runtime_parts(
         bars = array.shape[1]
         if first_dims:
             groups = len(tick_labels)
-            xpos, bar_width = util.get_pyplot_grouped_bar_pos(groups, bars / groups)
+            xpos, bar_width = util.get_pyplot_grouped_bar_pos(groups, bars // groups)
             xpos = np.ravel(xpos, "F")
         else:
             xpos = range(bars)
@@ -448,12 +449,14 @@ def plot_runtime_parts(
         bottom = 0
         for i, rt_type in enumerate(rt_types):
             row = array[i, :]
-            ticks = range(len(row))
             plt.bar(xpos, row, bottom=bottom, label=rt_type, width=bar_width)
             bottom += row
         path = get_plots_dir(results)
         plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
-        plt.xticks([])
+        if first_dims:
+            plt.xticks(range(groups), tick_labels)
+        else:
+            plt.xticks([])
         plt.xlabel("Measurements")
         matplotx.ylabel_top("Runtime %")
         plt.savefig(path.joinpath("runtime_parts.png"), format="png", bbox_inches="tight")
