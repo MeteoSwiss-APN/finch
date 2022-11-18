@@ -80,7 +80,7 @@ def start_slurm_cluster(
     worker_env.omp_threads = 1 if not cfg.omp_parallelism else cfg.cores_per_worker
 
     walltime_delta = parse_slurm_time(walltime)
-    worker_lifetime = walltime_delta - timedelta(minutes=5)
+    worker_lifetime = walltime_delta - timedelta(minutes=3)
     worker_lifetime = int(worker_lifetime.total_seconds())
 
     dashboard_address = ":8877"
@@ -99,14 +99,16 @@ def start_slurm_cluster(
         },
         worker_extra_args=[
             "--lifetime", f"{worker_lifetime}s", 
-            "--lifetime-stagger", "4m"
+            "--lifetime-stagger", "2m",
+            "--lifetime-restart"
         ],
         # filesystem config
         local_directory=config["global"]["scratch_dir"],
         shared_temp_directory=config["global"]["tmp_dir"],
         log_directory=config["global"]["log_dir"],
         # other
-        job_script_prologue=worker_env.get_job_script_prologue()
+        job_script_prologue=worker_env.get_job_script_prologue(),
+        nanny=True
     )
 
     client = Client(cluster)
