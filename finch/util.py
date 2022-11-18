@@ -508,3 +508,20 @@ def can_rechunk_no_split(c1: Chunks, c2: Chunks) -> bool:
                 if v2:
                     return False
     return True
+
+def get_pyplot_grouped_bar_pos(groups: int, labels: int) -> Tuple[np.ndarray, float]:
+    """
+    Returns an array of bar positions when trying to create a grouped bar plot for pyplot, along with the width of an individual bar.
+    A row in the returned array contains the bar positions for a label, while a column contains the bar positions for a group.
+
+    Arguments:
+    ---
+    - groups: The number of groups in the bar plot
+    - labels: The number of labels in the bar plot
+    """
+    group_size = labels + 1
+    bar_width = 1 / group_size
+    xpos = np.arange(0, groups, bar_width) - (1 - 2*bar_width)/2
+    xpos = xpos.reshape(groups, group_size).transpose()
+    xpos = xpos[:-1, :] # remove empty bar
+    return xpos, bar_width

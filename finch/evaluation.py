@@ -340,12 +340,7 @@ def create_plots(
                 with plt.style.context(plot_style):
                     if isinstance(ticks[0], str):
                         # bar plot
-                        # calculate the bar postions
-                        group_size = len(labels) + 1
-                        bar_width = 1 / group_size
-                        xpos = np.arange(0, len(ticks), bar_width) - (1 - 2*bar_width)/2
-                        xpos = xpos.reshape((len(ticks), len(labels)+1)).transpose()
-                        xpos = xpos[:-1, :] # remove empty bar
+                        xpos, bar_width = util.get_pyplot_grouped_bar_pos(len(ticks), len(labels))
                         for l, rt, xp in zip(labels, runtime_data, xpos):
                             plt.bar(xp, rt, width=bar_width, label=l)
                         plt.xticks(range(len(ticks)), ticks)
@@ -407,26 +402,54 @@ def create_plots(
                     save_plot(d, runtime_type)
 
 def plot_runtime_parts(
-    results: xr.Dataset
+    results: xr.Dataset,
+    first_dims: list[str] = []
 ):
     """
     Plots how the full runtimes are split up.
+
+    Arguments:
+    ---
+    - results: The results dataset
+    - first_dims: The dimensions to prioritize in the order in which they are plotted.
+    The first entry will be interpreted as the main dimension.
+
     """
     # collect data
     rt_types = [rtt for rtt in results.data_vars.keys() if rtt != "full"]
-    rt_data = np.vstack([results[rtt].data.flatten() for rtt in rt_types])
+    # create array
+    array = results.to_array(dim="rt_types")
+    array["rt_types"] = rt_types
+    # reorder dimensions
+    dim_order = ["rt_types"] + first_dims
+    dim_order += [d for d in array.dims if d not in dim_order]
+    array = array.transpose(dim_order)
+    # capture tick labels
+    if first_dims:
+        tick_labels = array[first_dims[0]]
+    # convert to numpy and flatten
+    array: np.ndarray = array.data.reshape(len(rt_types), -1)
     # remove nan columns
-    rt_data = rt_data[:, ~np.isnan(rt_data).any(axis=0)]
+    array = array[:, ~np.isnan(array).any(axis=0)]
     # normalize
-    rt_data /= np.sum(rt_data, axis=0)[np.newaxis, :]
+    array /= np.sum(array, axis=0)[np.newaxis, :]
 
     plt.clf()
     with plt.style.context(plot_style):
+        # get ticks
+        bars = array.shape[1]
+        if first_dims:
+            groups = len(tick_labels)
+            xpos, bar_width = util.get_pyplot_grouped_bar_pos(groups, bars / groups)
+            xpos = np.ravel(xpos, "F")
+        else:
+            xpos = range(bars)
+            bar_width = 1
         bottom = 0
         for i, rt_type in enumerate(rt_types):
-            row = rt_data[i, :]
+            row = array[i, :]
             ticks = range(len(row))
-            plt.bar(ticks, row, bottom=bottom, label=rt_type)
+            plt.bar(xpos, row, bottom=bottom, label=rt_type, width=bar_width)
             bottom += row
         path = get_plots_dir(results)
         plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
@@ -434,6 +457,7 @@ def plot_runtime_parts(
         plt.xlabel("Measurements")
         matplotx.ylabel_top("Runtime %")
         plt.savefig(path.joinpath("runtime_parts.png"), format="png", bbox_inches="tight")
+
 
 def store_config(results: xr.Dataset):
     """
