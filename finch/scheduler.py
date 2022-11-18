@@ -97,11 +97,11 @@ def start_slurm_cluster(
         scheduler_options={
             "dashboard_address": dashboard_address,
         },
-        worker_extra_args=[
-            "--lifetime", f"{worker_lifetime}s", 
-            "--lifetime-stagger", "2m",
-            "--lifetime-restart"
-        ],
+        # worker_extra_args=[
+        #     "--lifetime", f"{worker_lifetime}s", 
+        #     "--lifetime-stagger", "2m",
+        #     "--lifetime-restart"
+        # ],
         # filesystem config
         local_directory=config["global"]["scratch_dir"],
         shared_temp_directory=config["global"]["tmp_dir"],
