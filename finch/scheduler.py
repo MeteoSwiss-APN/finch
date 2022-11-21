@@ -142,6 +142,10 @@ def start_scheduler(debug: bool = debug, *cluster_args, **cluster_kwargs) -> Cli
     else:
         return start_slurm_cluster(*cluster_args, **cluster_kwargs)
 
+def clear_memory():
+    """Clears the memory of the current scheduler and workers"""
+    client.restart()
+
 class WorkerCountPlugin(SchedulerPlugin):
     def __init__(self, threshold: int):
         self.threshold = threshold

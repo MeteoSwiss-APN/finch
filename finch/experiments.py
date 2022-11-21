@@ -32,19 +32,11 @@ class RunConfig(util.Config):
     """The cluster configuration to use"""
     workers: int = 1
     """The number of dask workers to spawn"""
-    prep: Callable = None
+    prep: Callable[[], dict] = None
     """
     A function with preparations to be made before running the implementation.
     The runtime of this function won't be measured.
-    """
-    output_overwrite: bool = False
-    """
-    Whether to overwrite already present outputs on the file system.
-    If `False`, we make sure that the target zarr directory for the output is empty.
-    """
-    clear_scheduler: bool = True
-    """
-    Whether to clear the scheduler's memory before every run of `impl`.
+    The output dictionary of this function will be used as arguments for the implementation runner.
     """
 
     def setup(self):
@@ -171,27 +163,26 @@ def measure_runtimes(
         c.setup()
         with performance_report(filename=reportfile) if dask_report else nullcontext():
             f_times = []
-            for prep in inputs:
+            for in_prep in inputs:
                 cur_times = []
                 if cache_inputs:
-                    args = prep()
-                    prep = lambda a=args : a
+                    args = in_prep()
+                    in_prep = lambda a=args : a
                 for _ in range(iterations):
                     start = perf_counter()
-                    args = prep()
+                    args = in_prep()
                     end = perf_counter()
                     in_prep_rt = end-start
+                    ir_args = dict()
                     if c.prep is not None:
-                        c.prep()
-                    if not c.output_overwrite:
-                        clear_output()
+                        ir_args = c.prep()
                     start = perf_counter()
-                    runtime = impl_runner(c, *args)
+                    runtime = impl_runner(c.impl, *args, **ir_args)
                     end = perf_counter()
                     if runtime is None:
                         runtime = Runtime()
                     if runtime.full is None:
-                        runtime.full = end-start
+                        runtime.full = end-start + in_prep_rt
                     runtime.input_prep = in_prep_rt
                     cur_times.append(runtime)
                     pbar.update()
@@ -210,15 +201,46 @@ def measure_runtimes(
         out = out[0]
     return out
 
-def xr_impl_runner(rc: RunConfig, ds: xr.Dataset) -> Runtime:
+def xr_run_prep_template(remove_existing_output: bool, clear_scheduler: bool) -> dict[str, Any]:
+    impl_runner_args = dict()
+    if remove_existing_output:
+        clear_output()
+        impl_runner_args["output_exists"] = False
+    if clear_scheduler:
+        scheduler.clear_memory()
+    return impl_runner_args
+
+def get_xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool = True) -> Callable[[], dict[str, Any]]:
+    """
+    Returns a run preparation for xarray operators, which can used in the run config.
+
+    Arguments:
+    ---
+    - remove_existing_output: bool. Whether to remove preexisting outputs.
+    - clear_scheduler: bool. Whether to clear the scheduler.
+    """
+    return functools.partial(remove_existing_output, clear_scheduler)
+    
+
+def xr_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, output_exists: bool = True, **kwargs) -> Runtime:
+    """
+    Implementation runner for xarray operators.
+
+    Arguments:
+    ---
+    - impl: The operator implementation to be run
+    - ds: The input for the implementation
+    - overwrite_output: Whether an output already exists at the output path and should be overwritten.
+    - kwargs: Additional arguments to be ignored
+    """
     runtime = Runtime()
     # construct the dask graph
     start = perf_counter()
     ds = ds + xr.full_like(ds, random.random()) # instead of clone. See https://github.com/dask/dask/issues/9621
-    out = rc.impl(ds)
+    out = impl(ds)
     # clone the graph to ensure that the scheduler does not use results computed in an earlier round
     # cloned: da.Array = dask.graph_manipulation.clone(out.data)
-    stored = out.data.to_zarr(str(zarr_out_path), overwrite=rc.output_overwrite, compute=False)
+    stored = out.data.to_zarr(str(zarr_out_path), overwrite=output_exists, compute=False)
     end = perf_counter()
     runtime.graph_construction = end-start
     # optimize the graph

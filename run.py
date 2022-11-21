@@ -31,9 +31,9 @@ import xarray as xr
 # general configurations
 ######################################################
 
-iterations = 1 if debug else 1
+iterations = 1 if debug else 10
 """The number of iterations when measuring runtime"""
-warmup = not debug and False
+warmup = not debug
 """Whether to perform a warmup before measuring the runtimes"""
 cache_input = True
 """Whether to cache the input between multiple iterations"""
@@ -51,9 +51,9 @@ brn_manage_input = False
 """Whether to alter the brn input versions"""
 brn_load_experiment = False
 """Whether to measure the different input loading times"""
-brn_measure_runtimes = True
+brn_measure_runtimes = False
 """Wether to measure brn runtimes"""
-brn_evaluation = False
+brn_evaluation = True
 """Whether or not to run evaluation"""
 
 
@@ -82,13 +82,13 @@ brn_input_management_workers = 8
 
 # runtime measurements
 
-brn_exp_name = "tmp"
+brn_exp_name = "output_overwrite"
 """The name of the runtime experiment"""
 brn_input_versions = finch.Input.Version.list_configs(
     format=finch.data.Format.ZARR,
     dim_order="xyz",
     coords=False,
-    chunks={"x" : 30, "y": -1, "z": -1}
+    chunks={"x" : 20, "y": -1, "z": -1}
 # ) + finch.Input.Version.list_configs(
 #     format=finch.data.Format.ZARR,
 #     dim_order="zyx",
@@ -101,28 +101,33 @@ brn_input_versions = finch.Input.Version.list_configs(
 #     chunks={"z" : 2}
 )
 """The input versions for the runtime experiment"""
-brn_imps = finch.brn.impl.brn_xr #[finch.brn.interface.get_repeated_implementation(n, base=finch.brn.impl.brn_blocked_cpp) for n in [10, 20, 30, 40, 50]]
+brn_imps = finch.brn.impl.brn_blocked_cpp #[finch.brn.interface.get_repeated_implementation(n, base=finch.brn.impl.brn_blocked_cpp) for n in [1] + list(range(10, 21, 10))]
 """The brn implementations used"""
-brn_workers = 10 #[1] + list(range(5, 41, 5))
+brn_workers = [1, 2] if debug else [1] + list(range(5, 41, 5))
 """A list of the number of workers to spawn for the runtime experiment"""
 brn_cores_per_worker = 1
 """The number of cores dedicated to each worker"""
 brn_omp = False
 """Whether to delegate parallelism to OpenMP for a worker"""
+brn_run_prep = None
+"""The preparation to do before running the experiment (not included in runtime measurements)"""
+brn_output_overwrite = [True, False]
 brn_cluster_configs = finch.scheduler.ClusterConfig.list_configs(
     cores_per_worker=brn_cores_per_worker,
     omp_parallelism=brn_omp,
-    exclusive_jobs=False
+    exclusive_jobs=False,
 )
 """The cluster configurations"""
 run_configs = finch.experiments.RunConfig.list_configs(
     workers=brn_workers,
     impl=brn_imps,
-    cluster_config=brn_cluster_configs
+    cluster_config=brn_cluster_configs,
+    prep=brn_run_prep,
+    output_overwrite=brn_output_overwrite
 )
 """The run configurations"""
-brn_dask_report = True
-"""Whether to write a dask performance report (instead of using the dashboard)"""
+brn_dask_report = False
+"""Whether to write a dask performance report"""
 
 # evaluation
 
@@ -130,19 +135,23 @@ brn_eval_exp_name = None
 """If not None, then this variable is used to locate the results file. Otherwise the (temporary) results file will be used."""
 brn_eval_runtimes_plot = ["full"]
 """The runtimes to plot"""
-brn_eval_main_dim = "impl"
+brn_eval_main_dim = "output_overwrite"
 """The dimension in the results dataset to choose as the main dimension for comparison"""
-brn_eval_plot_fits = False
-"""Whether to plot fitted scaling model"""
-brn_eval_estimate_serial = False
+brn_eval_speedup_dims = ["cores"]
+"""The dimensions for which to plot the speedups"""
+brn_eval_estimate_serial = True
 """Whether to estimate the serial overhead for the runtime results"""
+brn_eval_plot_fits = True
+"""Whether to plot fitted scaling model"""
 brn_eval_plot_dark_mode = False
 """Whether to use dark or light mode for plotting"""
-brn_eval_rename_labels = None
+brn_eval_rename_labels = {"True": "Overwrites", "False": "No Overwrites"}
 """If not None, then this dictionary will be used to rename the labels of the main dimensions."""
-brn_eval_reference_labels = {}
+brn_eval_reference_labels = {"cores": "Overwrites"}
 """The keys of this dictionary indicate the plots for which to plot a relative runtime. 
 The values indicate the label in the main dimension of the reference."""
+brn_eval_rt_parts_order = [brn_eval_main_dim, "cores"]
+"""The order of dimension (must not be complete) for plotting the runtime parts"""
 
 
 ######################################################
@@ -204,7 +213,14 @@ if __name__ == "__main__":
             if brn_eval_rename_labels:
                 brn_eval_rename_labels = {brn_eval_main_dim : brn_eval_rename_labels}
                 results = finch.eval.rename_labels(results, brn_eval_rename_labels)
-            finch.eval.create_plots(results, main_dim=brn_eval_main_dim, relative_rt_dims=brn_eval_reference_labels, runtime_selection=brn_eval_runtimes_plot, estimate_serial=brn_eval_estimate_serial, plot_scaling_fits=brn_eval_plot_fits)
+            finch.eval.create_plots(results, 
+                main_dim=brn_eval_main_dim, 
+                scaling_dims=brn_eval_speedup_dims, 
+                relative_rt_dims=brn_eval_reference_labels, 
+                runtime_selection=brn_eval_runtimes_plot, 
+                estimate_serial=brn_eval_estimate_serial, 
+                plot_scaling_fits=brn_eval_plot_fits
+            )
             if len(results.data_vars) > 1:
-                finch.eval.plot_runtime_parts(results)
+                finch.eval.plot_runtime_parts(results, first_dims=brn_eval_rt_parts_order)
             finch.eval.store_config(results)
