@@ -42,6 +42,10 @@ class RunConfig(util.Config):
     Whether to overwrite already present outputs on the file system.
     If `False`, we make sure that the target zarr directory for the output is empty.
     """
+    clear_scheduler: bool = True
+    """
+    Whether to clear the scheduler's memory before every run of `impl`.
+    """
 
     def setup(self):
         scheduler.start_scheduler(cfg=self.cluster_config)
@@ -71,18 +75,20 @@ def list_run_configs(**kwargs) -> list[RunConfig]:
 @dataclass
 class Runtime():
     full: float = None
+    input_prep: float = None
     graph_construction: float = None
     graph_opt: float = None
     graph_serial: float = None
     compute: float = None
 
 def _reduce_runtimes(rt: list[Runtime], reduction: Callable[[np.ndarray, int], np.ndarray]) -> Runtime:
-    array = [[r.full, r.graph_construction, r.graph_opt, r.graph_serial, r.compute] for r in rt]
+    attr = util.get_class_attributes(Runtime)
+    array = [[r.__dict__[a] for a in attr] for r in rt]
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         out = reduction(np.array(array, dtype=float), axis=0)
-    out = [o if o is not float("NaN") else None for o in out]
-    return Runtime(*out)
+    out = {k : o for k, o in zip(attr, out) if o is not float("NaN")}
+    return Runtime(**out)
 
 def measure_runtimes(
     run_config: list[RunConfig] | RunConfig, 
@@ -171,7 +177,10 @@ def measure_runtimes(
                     args = prep()
                     prep = lambda a=args : a
                 for _ in range(iterations):
+                    start = perf_counter()
                     args = prep()
+                    end = perf_counter()
+                    in_prep_rt = end-start
                     if c.prep is not None:
                         c.prep()
                     if not c.output_overwrite:
@@ -183,6 +192,7 @@ def measure_runtimes(
                         runtime = Runtime()
                     if runtime.full is None:
                         runtime.full = end-start
+                    runtime.input_prep = in_prep_rt
                     cur_times.append(runtime)
                     pbar.update()
                 if warmup:
