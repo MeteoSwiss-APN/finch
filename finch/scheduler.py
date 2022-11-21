@@ -5,6 +5,7 @@ import dask
 from dask.distributed import Client, Scheduler, SchedulerPlugin
 from dask_jobqueue import SLURMCluster
 import dask.utils
+import dask.config
 from . import util
 from . import env
 from . import config, debug
@@ -43,6 +44,8 @@ class ClusterConfig(util.Config):
     """
     exclusive_jobs: bool = False
     """Toggle whether to use a full node exclusively for one job."""
+    queuing: bool = False
+    """If True, queuing will be used by dask. If False, it will be disabled."""
 
 client: Client = None
 _active_config: ClusterConfig = None
@@ -84,6 +87,11 @@ def start_slurm_cluster(
     worker_lifetime = int(worker_lifetime.total_seconds())
 
     dashboard_address = ":8877"
+
+    if cfg.queuing:
+        dask.config.set({"distributed.scheduler.worker-saturation": 1.0})
+    else:
+        dask.config.set({"distributed.scheduler.worker-saturation": "inf"})
     
     cluster = SLURMCluster(
         # resources
