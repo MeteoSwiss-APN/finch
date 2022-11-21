@@ -80,7 +80,7 @@ brn_eval_exp_name = None
 """If not None, then this variable is used to locate the results file. Otherwise the (temporary) results file will be used."""
 brn_eval_runtimes_plot = ["full"]
 """The runtimes to plot"""
-brn_eval_main_dim = "output_overwrite"
+brn_eval_main_dim = "impl"
 """The dimension in the results dataset to choose as the main dimension for comparison"""
 brn_eval_speedup_dims = ["cores"]
 """The dimensions for which to plot the speedups"""
@@ -88,11 +88,11 @@ brn_eval_estimate_serial = True
 """Whether to estimate the serial overhead for the runtime results"""
 brn_eval_plot_fits = True
 """Whether to plot fitted scaling model"""
-brn_eval_plot_dark_mode = False
+brn_eval_plot_dark_mode = True
 """Whether to use dark or light mode for plotting"""
-brn_eval_rename_labels = {"True": "Overwrites", "False": "No Overwrites"}
+brn_eval_rename_labels = {"brn_xr": "xarray", "brn_blocked_cpp": "C++", "brn_blocked_np": "NumPy"}
 """If not None, then this dictionary will be used to rename the labels of the main dimensions."""
-brn_eval_reference_labels = {"cores": "Overwrites"}
+brn_eval_reference_labels = {"cores": "NumPy"}
 """The keys of this dictionary indicate the plots for which to plot a relative runtime. 
 The values indicate the label in the main dimension of the reference."""
 brn_eval_rt_parts_order = [brn_eval_main_dim, "cores"]
