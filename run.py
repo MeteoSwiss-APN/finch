@@ -11,14 +11,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--debug", action="store_true")
 cmd_args = parser.parse_args(sys.argv[1:])
 
+# debug arguments must be set before importing finch
 debug = cmd_args.debug
 """Debug mode"""
-debug_finch = debug
-"""Whether to use finch in debug mode."""
 os.environ["DEBUG"] = str(debug)
 
 import finch
 import xarray as xr
+
+# handle configuration
 from . import run_config as rc
 from . import debug_config as dc
 try:
