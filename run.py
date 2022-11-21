@@ -1,6 +1,4 @@
-import functools
 import logging
-import pathlib
 import sys
 import argparse
 import os
@@ -48,7 +46,7 @@ if __name__ == "__main__":
 
         measure_cfg = dict(
             iterations = dc.iterations if debug else rc.iterations,
-            warump = dc.warmup if debug else rc.warmup,
+            warmup = dc.warmup if debug else rc.warmup,
             cache_input = rc.cache_input,
             pbar = rc.pbar
         )

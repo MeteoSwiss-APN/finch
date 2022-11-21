@@ -144,7 +144,8 @@ def start_scheduler(debug: bool = debug, *cluster_args, **cluster_kwargs) -> Cli
 
 def clear_memory():
     """Clears the memory of the current scheduler and workers"""
-    client.restart()
+    if client:
+        client.restart()
 
 class WorkerCountPlugin(SchedulerPlugin):
     def __init__(self, threshold: int):
