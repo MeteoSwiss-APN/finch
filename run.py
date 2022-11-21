@@ -20,10 +20,10 @@ import finch
 import xarray as xr
 
 # handle configuration
-from . import run_config as rc
-from . import debug_config as dc
+import run_config as rc
+import debug_config as dc
 try:
-    from . import custom_config
+    import custom_config
 except ImportError:
     pass
 

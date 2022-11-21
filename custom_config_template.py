@@ -4,7 +4,7 @@
 # in order to apply the configurations you set here.
 #########################################
 
-from . import run_config as rc
-from . import debug_config as dc
+import run_config as rc
+import debug_config as dc
 
 # simply change the variables in rc or dc for custom configuration

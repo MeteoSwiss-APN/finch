@@ -219,7 +219,7 @@ def get_xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool =
     - remove_existing_output: bool. Whether to remove preexisting outputs.
     - clear_scheduler: bool. Whether to clear the scheduler.
     """
-    return functools.partial(remove_existing_output, clear_scheduler)
+    return functools.partial(xr_run_prep_template, remove_existing_output, clear_scheduler)
     
 
 def xr_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, output_exists: bool = True, **kwargs) -> Runtime:
