@@ -365,14 +365,13 @@ def create_plots(
                                 ]
                             # plot fitted scaling functions
                             if plot_scaling_fits and estimate_serial:
-                                cycler = plot_style["axes.prop_cycle"]
+                                cycler = plt.rcParams["axes.prop_cycle"]
                                 for f, c in zip(fs, cycler):
                                     x = np.linspace(ticks[0], ticks[-1], 100)
                                     xt = x / ticks[0]
                                     y = amdahl_speedup(f, xt)
                                     color = c["color"]
                                     plt.plot(x, y, linestyle=":", color=color)
-                                    plt.axhline(y = 1/f, linestyle=":", color=color)
                             # plot speedups plot
                             for l, rt in zip(spd_labels, spd):
                                 plt.plot(ticks, rt, label=l)
@@ -380,7 +379,7 @@ def create_plots(
                             if plot_scaling_baseline:
                                 base_label = "Perfect linear scaling"
                                 if estimate_serial:
-                                    base_label += r", $f=0%$"
+                                    base_label += r", $f=0\%$"
                                 plt.plot(ticks, ticks / ticks[0], label=base_label, linestyle="--")
                             plt.xlabel(d)
                             matplotx.ylabel_top("Speedup")
@@ -455,9 +454,10 @@ def plot_runtime_parts(
         plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
         if first_dims:
             plt.xticks(range(groups), tick_labels)
+            plt.xlabel(first_dims[0])
         else:
             plt.xticks([])
-        plt.xlabel("Measurements")
+            plt.xlabel("Measurements")
         matplotx.ylabel_top("Runtime %")
         plt.savefig(path.joinpath("runtime_parts.png"), format="png", bbox_inches="tight")
 
