@@ -405,6 +405,8 @@ def get_primitive_attrs_from_dataclass(dc) -> dict[str, str | numbers.Number]:
             v = get_primitive_attrs_from_dataclass(v) # recursive
         elif not isinstance(v, numbers.Number):
             v = str(v)
+        elif isinstance(v, bool):
+            v = str(v)
         out[k] = v
     out = flatten_dict(out) # dataclasses were transformed to dicts. So flatten them.
     return out
