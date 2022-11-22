@@ -95,3 +95,5 @@ brn_eval_reference_labels = {"cores": "NumPy"}
 The values indicate the label in the main dimension of the reference."""
 brn_eval_rt_parts_order = [brn_eval_main_dim, "cores"]
 """The order of dimension (must not be complete) for plotting the runtime parts"""
+brn_eval_ignore_labels = []
+"""A list of labels of the main dimension to ignore during evaluation"""

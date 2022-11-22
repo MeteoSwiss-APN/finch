@@ -169,6 +169,12 @@ def rename_labels(results: xr.Dataset, renames: dict[str, dict[Any, Any] | list[
             out[k] = xr.apply_ufunc(lambda x: v[x], out[k], vectorize=True)
     return out
 
+def remove_labels(results: xr.Dataset, labels: list[str], main_dim: str) -> xr.Dataset:
+    """
+    Removes the given labels in the given main dimension from the results array.
+    """
+    return results.drop_sel({main_dim: labels})
+
 def speedup(runtimes: np.ndarray, axis: int = -1, base: np.ndarray = None) -> np.ndarray:
     """
     Calculates the speedup for an array of runtimes.

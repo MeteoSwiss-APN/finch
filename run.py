@@ -92,6 +92,8 @@ if __name__ == "__main__":
             if rc.brn_eval_rename_labels:
                 brn_eval_rename_labels = {rc.brn_eval_main_dim :rc. brn_eval_rename_labels}
                 results = finch.eval.rename_labels(results, brn_eval_rename_labels)
+            if rc.brn_eval_ignore_labels:
+                results = finch.eval.remove_labels(results, rc.brn_eval_ignore_labels, rc.brn_eval_main_dim)
             finch.eval.create_plots(results, 
                 main_dim=rc.brn_eval_main_dim, 
                 scaling_dims=rc.brn_eval_speedup_dims, 
