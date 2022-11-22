@@ -144,8 +144,8 @@ def start_scheduler(debug: bool = debug, *cluster_args, **cluster_kwargs) -> Cli
 
 def clear_memory():
     """Clears the memory of the current scheduler and workers"""
-    if client:
-        client.restart()
+    # Currently the only possible way to completely reset memory is via client.restart(), which won't work many times in a row on a SLURM Cluster.
+    raise NotImplementedError()
 
 class WorkerCountPlugin(SchedulerPlugin):
     def __init__(self, threshold: int):

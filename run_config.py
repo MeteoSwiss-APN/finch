@@ -9,8 +9,6 @@ iterations = 10
 """The number of iterations when measuring runtime"""
 warmup = True
 """Whether to perform a warmup before measuring the runtimes"""
-cache_input = True
-"""Whether to cache the input between multiple iterations"""
 pbar = True
 """Whether to print a progress bar"""
 results_file = pathlib.Path(finch.config["global"]["tmp_dir"], "results.nc")

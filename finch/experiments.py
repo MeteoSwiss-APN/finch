@@ -87,7 +87,6 @@ def measure_runtimes(
     inputs: list[Callable[[], list]] | Callable[[], list] | list[list] | None = None, 
     iterations: int = 1,
     impl_runner: Callable[..., Runtime | None] = None,
-    cache_inputs: bool = False,
     reduction: Callable[[np.ndarray, int], np.ndarray] = np.nanmean,
     warmup: bool = False,
     pbar: PbarArg = True,
@@ -106,6 +105,7 @@ def measure_runtimes(
         These will be run to collect the arguments for the functions to be benchmarked.
         - `Callable[[], list]`: A single argumnent generating function 
         if the same should be used for every function to be benchmarked.
+    The preparation of the input is timed and included in the full runtime.
     - iterations: int, optional. The number of times to repeat a run (including input preparation).
     - run_prep: Callable[[], Any], optional. 
     If given, this function is run directly before starting a runtime measurement.
@@ -116,7 +116,6 @@ def measure_runtimes(
     The execution of `impl_runner` will be timed and reported.
     A runtime can be returned if the implementation runner supports fine-grained runtime repoting.
     Defaults to directly running the passed function on the passed arguments.
-    - cache_inputs: bool, default: `True`. Whether to reuse the input for a function for its iterations.
     - reduction: Callable, default: `np.nanmean`. 
     The function to be used to combine the results of the iterations.
     This is a reduction function which is able to reduce a specific dimenion (kwarg axis) of a numpy array.
@@ -165,9 +164,6 @@ def measure_runtimes(
             f_times = []
             for in_prep in inputs:
                 cur_times = []
-                if cache_inputs:
-                    args = in_prep()
-                    in_prep = lambda a=args : a
                 for _ in range(iterations):
                     start = perf_counter()
                     args = in_prep()
@@ -210,7 +206,7 @@ def xr_run_prep_template(remove_existing_output: bool, clear_scheduler: bool) ->
         scheduler.clear_memory()
     return impl_runner_args
 
-def get_xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool = True) -> Callable[[], dict[str, Any]]:
+def get_xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool = False) -> Callable[[], dict[str, Any]]:
     """
     Returns a run preparation for xarray operators, which can used in the run config.
 

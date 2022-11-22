@@ -47,7 +47,6 @@ if __name__ == "__main__":
         measure_cfg = dict(
             iterations = dc.iterations if debug else rc.iterations,
             warmup = dc.warmup if debug else rc.warmup,
-            cache_input = rc.cache_input,
             pbar = rc.pbar
         )
 
