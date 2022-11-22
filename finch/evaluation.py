@@ -166,7 +166,7 @@ def rename_labels(results: xr.Dataset, renames: dict[str, dict[Any, Any] | list[
         if isinstance(v, list):
             out[k] = v
         else:
-            out[k] = xr.apply_ufunc(lambda x: v[x], out[k], vectorize=True)
+            out[k] = xr.apply_ufunc(lambda x: v[x] if x in v else x, out[k], vectorize=True)
     return out
 
 def remove_labels(results: xr.Dataset, labels: list[str], main_dim: str) -> xr.Dataset:
