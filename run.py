@@ -86,9 +86,9 @@ if __name__ == "__main__":
             if rc.brn_eval_exp_name is None:
                 results = xr.open_dataset(rc.results_file)
                 results.to_netcdf(finch.util.get_path(finch.config["evaluation"]["results_dir"], results.attrs["name"], "results.nc"))
-                results = finch.eval.create_cores_dimension(results)
             else:
                 results = xr.open_dataset(finch.util.get_path(finch.config["evaluation"]["results_dir"], rc.brn_eval_exp_name, "results.nc"))
+            results = finch.eval.create_cores_dimension(results)
             if rc.brn_eval_rename_labels:
                 brn_eval_rename_labels = {rc.brn_eval_main_dim :rc. brn_eval_rename_labels}
                 results = finch.eval.rename_labels(results, brn_eval_rename_labels)
