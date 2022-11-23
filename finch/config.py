@@ -2,30 +2,38 @@ from configparser import ConfigParser, ExtendedInterpolation
 from . import env
 from . import _util
 import os
-import pathlib
 import logging
+import pathlib
+from io import StringIO
+from expandvars import expand
 
-# load default variables from environment
-defaults = dict()
-for k, v in os.environ.items():
-    k = k.upper
-    defaults[k] = v
+config = ConfigParser(interpolation=ExtendedInterpolation())
 
-config = ConfigParser(defaults, interpolation=ExtendedInterpolation())
+def read_config(cfg_path: str, optional: bool = False):
+    """
+    Reads a config file.
+
+    Arguments:
+    ---
+    - cfg_path: The path to the config file
+    - optional: If True, nothing happens if the file does not exist.
+    If False, an error will be raised.
+    """
+    if optional and not pathlib.Path(cfg_path).exists():
+        return
+    with open(cfg_path) as f:
+        cfg_txt = expand(f.read(), var_symbol="%")
+        config.readfp(StringIO(cfg_txt))
 
 # built-in config (defaults)
-with open(env.proj_config) as f:
-    config.read_file(f)
+read_config(env.proj_config)
 
 # custom config from default location
-if pathlib.Path(env.default_custom_config).exists():
-    with open(env.default_custom_config) as f:
-        config.read_file(f)
+read_config(env.default_custom_config, optional=True)
 
 # custom config from custom location
 if env.custom_config_env_var in os.environ:
-    with open(os.environ[env.custom_config_env_var]) as f:
-        config.read_file(f)
+    read_config(os.environ[env.custom_config_env_var])
 
 # logging
 
