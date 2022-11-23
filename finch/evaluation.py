@@ -404,6 +404,7 @@ def create_plots(
                         #plt.xticks(ticks)
                         matplotx.ylabel_top(ylabel)
                         matplotx.line_labels()
+                        plt.margins(y=0.05)
                     # save plot
                     save_plot(d, runtime_type)
 
