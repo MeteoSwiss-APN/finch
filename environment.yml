@@ -5,8 +5,10 @@ channels:
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=2_gnu
+  - _sysroot_linux-64_curr_repodata_hack=3=haa98f57_10
   - asciitree=0.3.3=py_2
-  - attrs=21.4.0=pyhd3eb1b0_0
+  - attrs=22.1.0=py310h06a4308_0
+  - autopep8=1.6.0=pyhd3eb1b0_1
   - binutils_impl_linux-64=2.36.1=h193b22a_2
   - blas=1.0=mkl
   - bokeh=2.4.3=py310h06a4308_0
@@ -16,39 +18,41 @@ dependencies:
   - brotlipy=0.7.0=py310h7f8727e_1002
   - bzip2=1.0.8=h7b6447c_0
   - c-ares=1.18.1=h7f8727e_0
-  - ca-certificates=2022.9.24=ha878542_0
-  - certifi=2022.9.24=pyhd8ed1ab_0
+  - ca-certificates=2022.10.11=h06a4308_0
+  - certifi=2022.9.24=py310h06a4308_0
   - cffi=1.15.1=py310h74dc2b5_0
   - cfgrib=0.9.10.1=pyhd8ed1ab_0
   - cftime=1.5.1.1=py310h9102076_0
   - click=8.0.4=py310h06a4308_0
   - cloudpickle=2.0.0=pyhd3eb1b0_0
-  - cmake=3.24.2=h5432695_0
-  - cryptography=37.0.1=py310h9ce1e76_0
+  - cmake=3.22.1=h1fce559_0
+  - contourpy=1.0.5=py310hdb19cb5_0
+  - cryptography=38.0.1=py310h9ce1e76_0
   - curl=7.84.0=h5eee18b_0
   - cycler=0.11.0=pyhd3eb1b0_0
-  - cytoolz=0.11.0=py310h7f8727e_0
-  - dask=2022.7.0=py310h06a4308_0
-  - dask-core=2022.7.0=py310h06a4308_0
+  - cytoolz=0.12.0=py310h5eee18b_0
+  - dask=2022.11.0=pyhd8ed1ab_0
+  - dask-core=2022.11.0=pyhd8ed1ab_0
   - dask-jobqueue=0.8.1=pyhd8ed1ab_0
   - dbus=1.13.18=hb2f20db_0
-  - distributed=2022.7.0=py310h06a4308_0
+  - distributed=2022.11.0=pyhd8ed1ab_0
   - distro=1.5.0=pyhd3eb1b0_1
   - eccodes=2.27.0=h164a9dd_0
   - expat=2.4.9=h6a678d5_0
   - fasteners=0.16.3=pyhd3eb1b0_0
   - findlibs=0.0.2=pyhd8ed1ab_0
-  - fontconfig=2.13.1=h6c09931_0
+  - fontconfig=2.13.1=hef1e5e3_1
   - fonttools=4.25.0=pyhd3eb1b0_0
   - freeglut=3.2.2=h9c3ff4c_1
   - freetype=2.11.0=h70c0345_0
-  - fsspec=2022.7.1=py310h06a4308_0
+  - fsspec=2022.10.0=py310h06a4308_0
+  - future=0.18.2=py310h06a4308_1
   - gcc=12.1.0=h9ea6d83_10
   - gcc_impl_linux-64=12.1.0=hea43390_16
-  - gdb=11.2=py310h01e0b26_0
+  - gdb=11.2=py310he3c4487_2
   - giflib=5.2.1=h7b6447c_0
   - glib=2.69.1=h4ff587b_1
-  - gmp=6.2.1=h58526e2_0
+  - gmp=6.2.1=h295c915_3
   - gst-plugins-base=1.14.0=hbbd80ab_1
   - gstreamer=1.14.0=h28cd5cc_2
   - gxx=12.1.0=h9ea6d83_10
@@ -57,13 +61,13 @@ dependencies:
   - hdf5=1.12.2=nompi_h2386368_100
   - heapdict=1.0.1=pyhd3eb1b0_0
   - icu=58.2=he6710b0_3
-  - idna=3.3=pyhd3eb1b0_0
+  - idna=3.4=py310h06a4308_0
   - iniconfig=1.1.1=pyhd3eb1b0_0
   - intel-openmp=2021.4.0=h06a4308_3561
   - jasper=2.0.33=ha77e612_0
-  - jinja2=3.0.3=pyhd3eb1b0_0
+  - jinja2=3.1.2=py310h06a4308_0
   - jpeg=9e=h7f8727e_0
-  - kernel-headers_linux-64=2.6.32=he073ed8_15
+  - kernel-headers_linux-64=3.10.0=h57e8cba_10
   - kiwisolver=1.4.2=py310h295c915_0
   - krb5=1.19.2=hac12032_0
   - lcms2=2.12=h3be6417_0
@@ -92,7 +96,7 @@ dependencies:
   - libstdcxx-devel_linux-64=12.1.0=h1ec3361_16
   - libstdcxx-ng=12.1.0=ha89aaad_16
   - libtiff=4.4.0=hecacb30_0
-  - libuuid=1.0.3=h7f8727e_2
+  - libuuid=1.41.5=h5eee18b_0
   - libuv=1.40.0=h7b6447c_0
   - libwebp=1.2.4=h11a3e52_0
   - libwebp-base=1.2.4=h5eee18b_0
@@ -108,6 +112,7 @@ dependencies:
   - markupsafe=2.1.1=py310h7f8727e_0
   - matplotlib=3.5.2=py310h06a4308_0
   - matplotlib-base=3.5.2=py310hf590b9c_0
+  - matplotx=0.3.10=pyhd8ed1ab_0
   - mkl=2021.4.0=h06a4308_640
   - mkl-service=2.4.0=py310h7f8727e_0
   - mkl_fft=1.3.1=py310hd6ae3a3_0
@@ -116,14 +121,17 @@ dependencies:
   - munkres=1.1.4=py_0
   - ncurses=6.3=h5eee18b_3
   - netcdf4=1.6.1=nompi_py310h55e1e36_100
+  - networkx=2.8.4=py310h06a4308_0
+  - ninja=1.10.2=h06a4308_5
+  - ninja-base=1.10.2=hd09550d_5
   - numcodecs=0.7.3=py310h295c915_0
-  - numexpr=2.8.3=py310hcea2de6_0
-  - numpy=1.23.1=py310h1794996_0
-  - numpy-base=1.23.1=py310hcba007f_0
+  - numexpr=2.8.4=py310h8879344_0
+  - numpy=1.23.4=py310hd5efca6_0
+  - numpy-base=1.23.4=py310h8e6c178_0
   - openmp=8.0.1=0
-  - openssl=1.1.1q=h166bdaf_1
+  - openssl=1.1.1s=h7f8727e_0
   - packaging=21.3=pyhd3eb1b0_0
-  - pandas=1.4.4=py310h6a678d5_0
+  - pandas=1.5.1=py310h1128e8f_0
   - partd=1.2.0=pyhd3eb1b0_1
   - pcre=8.45=h295c915_0
   - pillow=9.2.0=py310hace64e9_1
@@ -131,9 +139,11 @@ dependencies:
   - pluggy=1.0.0=py310h06a4308_1
   - psutil=5.9.0=py310h5eee18b_0
   - py=1.11.0=pyhd3eb1b0_0
-  - pybind11=2.9.2=py310h3c18c91_0
+  - pybind11=2.10.1=py310hdb19cb5_0
+  - pybind11-global=2.10.1=py310hdb19cb5_0
+  - pycodestyle=2.8.0=pyhd3eb1b0_0
   - pycparser=2.21=pyhd3eb1b0_0
-  - pygments=2.13.0=pyhd8ed1ab_0
+  - pygments=2.11.2=pyhd3eb1b0_0
   - pyopenssl=22.0.0=pyhd3eb1b0_0
   - pyparsing=3.0.9=py310h06a4308_0
   - pyqt=5.9.2=py310h295c915_6
@@ -143,29 +153,31 @@ dependencies:
   - python-dateutil=2.8.2=pyhd3eb1b0_0
   - python-eccodes=1.4.2=py310hde88566_0
   - python_abi=3.10=2_cp310
+  - pytorch=1.10.2=cpu_py310h6894f24_0
   - pytz=2022.1=py310h06a4308_0
   - qt=5.9.7=h5867ecd_1
-  - readline=8.1.2=h7f8727e_1
+  - readline=8.2=h5eee18b_0
   - rhash=1.4.1=h3c74f83_1
-  - scikit-build=0.15.0=pyhb871ab6_0
-  - setuptools=63.4.1=py310h06a4308_0
+  - scikit-build=0.15.0=py310h6a678d5_0
+  - setuptools=65.5.0=py310h06a4308_0
   - sip=4.19.13=py310h295c915_0
   - six=1.16.0=pyhd3eb1b0_1
   - sortedcontainers=2.4.0=pyhd3eb1b0_0
   - sqlite=3.39.3=h5082296_0
-  - sysroot_linux-64=2.12=he073ed8_15
+  - sysroot_linux-64=2.17=h57e8cba_10
   - tblib=1.7.0=pyhd3eb1b0_0
   - tk=8.6.12=h1ccaba5_0
+  - toml=0.10.2=pyhd3eb1b0_0
   - tomli=2.0.1=py310h06a4308_0
-  - toolz=0.11.2=pyhd3eb1b0_0
-  - tornado=6.1=py310h7f8727e_0
+  - toolz=0.12.0=py310h06a4308_0
+  - tornado=6.1=py310h5764c6d_3
   - tqdm=4.64.1=py310h06a4308_0
   - typing-extensions=4.3.0=py310h06a4308_0
   - typing_extensions=4.3.0=py310h06a4308_0
-  - tzdata=2022c=h04d1e81_0
-  - urllib3=1.26.11=py310h06a4308_0
+  - tzdata=2022f=h04d1e81_0
+  - urllib3=1.26.12=py310h06a4308_0
   - wheel=0.37.1=pyhd3eb1b0_0
-  - xarray=0.20.1=pyhd3eb1b0_1
+  - xarray=2022.11.0=py310h06a4308_0
   - xorg-fixesproto=5.0=h7f98852_1002
   - xorg-inputproto=2.3.2=h7f98852_1002
   - xorg-kbproto=1.0.7=h7f98852_1002
@@ -176,6 +188,7 @@ dependencies:
   - xorg-libxi=1.7.10=h7f98852_0
   - xorg-xextproto=7.3.0=h7f98852_1002
   - xorg-xproto=7.0.31=h27cfd23_1007
+  - xyzservices=2022.9.0=py310h06a4308_0
   - xz=5.2.6=h5eee18b_0
   - yaml=0.2.5=h7b6447c_0
   - zarr=2.8.1=pyhd3eb1b0_0
@@ -183,5 +196,6 @@ dependencies:
   - zlib=1.2.12=h5eee18b_3
   - zstd=1.5.2=ha4553b6_0
   - pip:
+    - expandvars==0.9.0
     - pyyaml==6.0
     - wonderwords==2.2.0
