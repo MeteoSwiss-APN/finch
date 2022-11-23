@@ -5,7 +5,13 @@ import os
 import pathlib
 import logging
 
-config = ConfigParser(os.environ, interpolation=ExtendedInterpolation())
+# load default variables from environment
+defaults = dict()
+for k, v in os.environ.items():
+    k = k.upper
+    defaults[k] = v
+
+config = ConfigParser(defaults, interpolation=ExtendedInterpolation())
 
 # built-in config (defaults)
 with open(env.proj_config) as f:
