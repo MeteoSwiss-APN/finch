@@ -117,7 +117,6 @@ python_apigen_modules = {
 }
 
 python_apigen_default_groups = [
-    ("module:.*", "Modules"),
     ("class:.*", "Classes"),
     ("data:.*", "Variables"),
     ("function:.*", "Functions"),

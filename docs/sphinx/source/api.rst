@@ -1,6 +1,11 @@
 API
 ===
 
+Input Management
+----------------
+
+.. python-apigen-group:: Input
+
 Dask Configuration
 ------------------
 
