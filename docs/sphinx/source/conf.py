@@ -34,7 +34,10 @@ release = '0.0.1-alpha'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'myst_parser'
+    "sphinx.ext.napoleon",
+    'myst_parser',
+    'sphinx_immaterial',
+    "sphinx_immaterial.apidoc.python.apigen"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -51,9 +54,76 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'pydata_sphinx_theme'
+html_theme = 'sphinx_immaterial'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# Sphinx Immaterial theme options
+html_theme_options = {
+    "icon": {
+        "repo": "fontawesome/brands/github",
+    },
+    "site_url": "https://github.com/MeteoSwiss-APN/finch",
+    "repo_url": "https://github.com/MeteoSwiss-APN/finch",
+    "repo_name": "MeteoSwiss-APN/finch",
+    "repo_type": "github",
+    "edit_uri": "",
+    "globaltoc_collapse": False,
+    "features": [
+        # "navigation.expand",
+        "navigation.tabs",
+        # "toc.integrate",
+        # "navigation.sections",
+        # "navigation.instant",
+        # "header.autohide",
+        "navigation.top",
+        "navigation.tracking",
+        "toc.follow",
+        "toc.sticky",
+        "content.tabs.link",
+    ],
+    "palette": [
+        {
+            "media": "(prefers-color-scheme: light)",
+            "scheme": "default",
+            "accent": "deep-orange",
+            "toggle": {
+                "icon": "material/weather-night",
+                "name": "Switch to dark mode",
+            },
+        },
+        {
+            "media": "(prefers-color-scheme: dark)",
+            "scheme": "slate",
+            "accent": "deep-orange",
+            "toggle": {
+                "icon": "material/weather-sunny",
+                "name": "Switch to light mode",
+            },
+        },
+    ]
+}
+
+
+# -- Sphinx Immaterial configs -------------------------------------------------
+
+python_apigen_modules = {
+      "finch": "api/finch/",
+      "zebra": "api/zebra/"
+}
+
+python_apigen_default_groups = [
+    ("class:.*", "Classes"),
+    ("data:.*", "Variables"),
+    ("function:.*", "Functions"),
+    ("method:.*", "Methods"),
+    ("classmethod:.*", "Class methods"),
+    ("property:.*", "Properties"),
+    (r"method:.*\.[A-Z][A-Za-z,_]*", "Constructors"),
+    (r"method:.*\.__[A-Za-z,_]*__", "Special methods"),
+    (r"method:.*\.__(init|new)__", "Constructors"),
+    (r"method:.*\.__(str|repr)__", "String representation"),
+]

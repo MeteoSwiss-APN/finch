@@ -1,7 +1,6 @@
 API
 ===
 
-.. autosummary::
-    :toctree: generated
+.. python-apigen-group:: Public members
 
-    finch
+.. python-apigen-group:: Classes
