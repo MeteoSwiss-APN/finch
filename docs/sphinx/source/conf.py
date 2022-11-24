@@ -112,10 +112,12 @@ html_theme_options = {
 
 python_apigen_modules = {
       "finch": "api/finch/",
-      "zebra": "api/zebra/"
+      "zebra": "api/zebra/",
+      "finch.scheduler": "api/finch/scheduler/"
 }
 
 python_apigen_default_groups = [
+    ("module:.*", "Modules"),
     ("class:.*", "Classes"),
     ("data:.*", "Variables"),
     ("function:.*", "Functions"),

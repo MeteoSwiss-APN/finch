@@ -1,6 +1,12 @@
 API
 ===
 
-.. python-apigen-group:: Public members
+Dask Configuration
+------------------
 
-.. python-apigen-group:: Classes
+.. python-apigen-group:: Dask
+
+Utility Functions and Classes
+-----------------------------
+
+.. python-apigen-group:: Util
