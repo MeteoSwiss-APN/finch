@@ -269,16 +269,13 @@ class Input():
         dim_index: dict[str, str],
     ) -> None:
         self.name = name
-        self._path = pathlib.Path(store_path).joinpath(name).absolute()
+        self._path = util.get_path(store_path, name).absolute()
         self.source = source
         self.source_version = source_version
         assert all(d in source_version.chunks for d in dim_index), "Source version must provide chunks for all dimensions."
         self.source_version.name = "source"
         self.versions = [source_version]
         self.dim_index = dim_index
-
-        # create if not exists
-        self._path.mkdir(parents=True, exist_ok=True)
 
         # load existing versions
         for v in glob("*.yml", root_dir=str(self._path)):

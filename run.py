@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     # brn experiments
 
-    brn_input = finch.brn.brn_input
+    brn_input = finch.brn.get_brn_input()
 
     if rc.run_brn:
 
