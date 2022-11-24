@@ -6,9 +6,14 @@
 Welcome to finch's documentation!
 =================================
 
+**Finch** is a Python library for setting up, running and analyzing runtime experiments for data processing operators with `dask <https://www.dask.org/>`_.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   quickstart
+   api
 
 
 
