@@ -15,6 +15,12 @@ Welcome to finch's documentation!
    quickstart
 
 .. toctree::
+   :caption: Usage
+   :hidden:
+
+   usage/config
+
+.. toctree::
    :caption: API Reference
    :hidden:
 
