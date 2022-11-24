@@ -23,7 +23,12 @@ tmp_dir = config["global"]["tmp_dir"]
 """A directory which can be used as a temporary storage"""
 
 class Format(enum.Enum):
-    """Supported file formats"""
+    """
+    Supported file formats
+
+    Group:
+        Input
+    """
     GRIB = "grib"
     NETCDF = "netcdf"
     ZARR = "zarr"
@@ -35,14 +40,12 @@ def translate_order(order: List[str] | str, index: Dict[str, str]) -> str | List
     A dimension order in compact form is a string where each letter represents a dimension (e.g. "xyz").
     A dimension order in verbose form is a list of dimension names (e.g. ["x", "y", "generalVerticalLayer"]).
 
-    Arguments:
-    ---
-    - order: The dimension order either in compact or verbose form.
-    - index: A dicitionary, mapping letter representations of the dimensions to their verbose names.
+    Args:
+        order: The dimension order either in compact or verbose form.
+        index: A dicitionary, mapping letter representations of the dimensions to their verbose names.
 
     Returns:
-    ---
-    The dimension order in compact form if `order` was given in verbose form or vice versa.
+        The dimension order in compact form if `order` was given in verbose form or vice versa.
     """
     if isinstance(order, str):
         return [index[x] for x in list(order)]
@@ -63,17 +66,16 @@ def load_array_grib(
     """
     Loads a DataArray from a given grib file.
 
-    Arguments:
-    ---
-    - path: str or list of str. The path(s) to the grib file(s) from which to load the array
-    - shortName: str. The GRIB shortName of the variable to load
-    - chunks: dict. A dictionary, indicating the chunk size per dimension to be loaded. 
-    If `None`, no chunks will be used and the data will be loaded as notmal numpy arrays instead of dask arrays.
-    - key_filters: dict. A dictionary used for filtering GRIB messages.
-    Only messages where the given key matches the according value in this dictionary will be loaded.
-    - parallel: bool. Whether to load files in parallel. Ignored if only one file is loaded.
-    - index_path: str. The path to a cfgrib index file. Ignored if multiple files are loaded.
-    - load_coords: bool. Whether to load coordinates or not.
+    Args:
+        path: The path(s) to the grib file(s) from which to load the array
+        shortName: The GRIB shortName of the variable to load
+        chunks: A dictionary, indicating the chunk size per dimension to be loaded. 
+            If `None`, no chunks will be used and the data will be loaded as notmal numpy arrays instead of dask arrays.
+        key_filters: A dictionary used for filtering GRIB messages.
+            Only messages where the given key matches the according value in this dictionary will be loaded.
+        parallel: Whether to load files in parallel. Ignored if only one file is loaded.
+        index_path: The path to a cfgrib index file. Ignored if multiple files are loaded.
+        load_coords: Whether to load coordinates or not.
     """
 
     key_filters["shortName"] = shortName
@@ -138,11 +140,10 @@ def store_netcdf(
     """
     Stores a list of `DataArray`s into a netCDF file.
 
-    Arguments:
-    ---
-    - filename: str. The name of the netCDF file.
-    - data: List[DataArray]. The `DataArray`s to be stored.
-    - names: List[str]. A list of names for the arrays to be stored.
+    Args:
+        filename: The name of the netCDF file.
+        data: The `DataArray`s to be stored.
+        names: A list of names for the arrays to be stored.
     """
     if names is None:
         names = [x.name for x in data]
@@ -154,10 +155,9 @@ def store_zarr(dirname: str, arrays: List[xr.DataArray]):
     """
     Stores a list of `DataArray`s into a zarr directory.
 
-    Arguments:
-    ---
-    - filename: str. The name of the zarr directory.
-    - data: List[DataArray]. The `DataArray`s to be stored.
+    Args:
+        filename: The name of the zarr directory.
+        data: The `DataArray`s to be stored.
     """
     dirname = util.get_absolute(dirname, zarr_dir)
     if type(arrays) is not list:
@@ -177,11 +177,10 @@ def split_cube(data: xr.DataArray, split_dim: str, splits: List[int], names: Lis
     """
     Splits a single data array hypercube into multiple individual data arrays.
     
-    Arguments:
-    ---
-    - data: The hypercube to be split.
-    - split_dim: str. The dimension along which to split the hypercube.
-    - splits: List[int]. The individual sizes of `split_dim` dimension of the returned data arrays.
+    Args:
+        data: The hypercube to be split.
+        split_dim: The dimension along which to split the hypercube.
+        splits: The individual sizes of `split_dim` dimension of the returned data arrays.
     """
     ends = np.cumsum(splits).tolist()
     starts = [0] + ends[:-1]
@@ -196,6 +195,9 @@ def split_cube(data: xr.DataArray, split_dim: str, splits: List[int], names: Lis
 class Input():
     """
     Class for managing experiment inputs on disk.
+
+    Group:
+        Input
     """
     name: str
     """The name of this input"""
@@ -290,14 +292,12 @@ class Input():
         If a version with the same properties already exists, nothing happens.
         If a version with the same name already exists, a value error will be raised.
 
-        Arguments:
-        ---
-        - version: The version properties of the new version
-        - dataset: optional. The data of the new version. If `None`, the data will be generated from a preexisting version.
+        Arguments
+            version: The version properties of the new version
+            dataset: The data of the new version. If `None`, the data will be generated from a preexisting version.
 
         Returns:
-        ---
-        The properties of the newly created version
+            The properties of the newly created version
         """
         # check whether version already exists
         vname = version.name
@@ -354,13 +354,12 @@ class Input():
         """
         Returns a version with the given properties.
 
-        Arguments:
-        ---
-        - version: The version properties
-        - create_if_not_exists: Indicates whether to create and return a new version if no such version already exists.
-        - add_if_not_exists: Indicates whether to directly add a newly created version to this input
-        - weak_compare: If true, a smaller version can also be returned.
-        The partial order between versions is defined in the Version class.
+        Args:
+            version: The version properties
+            create_if_not_exists: Indicates whether to create and return a new version if no such version already exists.
+            add_if_not_exists: Indicates whether to directly add a newly created version to this input
+            weak_compare: If true, a smaller version can also be returned.
+                The partial order between versions is defined in the Version class.
         """
         # find matching preexisting version
         target = None
