@@ -88,13 +88,18 @@ def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
     out = xr.merge([out1, hhl, hsurf])
     return out
 
-brn_input = data.Input(
-    config["data"]["input_store"],
-    name="brn",
-    source=load_input_grib,
-    source_version=grib_input_version,
-    dim_index=dim_index
-)
-"""
-Defines the input for brn functions
-"""
+def get_brn_input(input_store: str = config["data"]["input_store"]) -> data.Input:
+    """
+    Returns an input object for brn functions.
+
+    Arguments:
+    ---
+    - input_store: A path to the input store directory, where versions of this input are stored.
+    """
+    return data.Input(
+        input_store,
+        name="brn",
+        source=load_input_grib,
+        source_version=grib_input_version,
+        dim_index=dim_index
+    )
