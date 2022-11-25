@@ -7,7 +7,7 @@ import numbers
 import pathlib
 import socket
 import types
-from typing import Dict, List, Tuple, TypeVar, Any
+from typing import Dict, List, Tuple, TypeVar, Any, Union
 from collections.abc import Callable, Iterable
 import typing
 import dask.array as da
@@ -299,7 +299,7 @@ def add_missing_properties(x: T, y) -> T:
     Returns `x` as a copy, with attributes from `y` added to `x` which were not already present.
     """
     out = copy.copy(x)
-    to_update = {k: y.__dict[k] for k in y.__dict__ if k not in x.__dict__}
+    to_update = {k: y.__dict__[k] for k in y.__dict__ if k not in x.__dict__}
     out.__dict__.update(to_update)
     return out
 
@@ -527,3 +527,5 @@ def get_pyplot_grouped_bar_pos(groups: int, labels: int) -> Tuple[np.ndarray, fl
     xpos = xpos.reshape(groups, group_size).transpose()
     xpos = xpos[:-1, :] # remove empty bar
     return xpos, bar_width
+
+PathArg = Union[str, bytes, os.PathLike]

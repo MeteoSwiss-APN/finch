@@ -6,6 +6,7 @@ import xarray as xr
 import dask.array as da
 import numpy as np
 from .. import util
+from deprecated.sphinx import deprecated
 
 brn_array_names = ["P", "T", "QV", "U", "V", "HHL", "HSURF"]
 """The names of the brn input arrays"""
@@ -13,21 +14,9 @@ thetav_array_names = brn_array_names[:3]
 """The names of the thetav input arrays"""
 brn_only_array_names = brn_array_names[3:]
 """The names of the brn input arrays which are not used for the thetav computation"""
-dim_index = {
-    "x": "x",
-    "y": "y",
-    "z": "generalVerticalLayer"
-}
-"""Dictionary for translating dimension names"""
 
-inv_dim_index = util.inverse(dim_index)
-
-def translate_order(order):
-    return data.translate_order(order, dim_index)
-
+@deprecated("Use ``xarray.Dataset.transpose`` instead.", version="0.0.1a1")
 def reorder_dims(input, dims):
-    if isinstance(dims, str):
-        dims = translate_order(dims)
     return data.reorder_dims(input, dims)
 
 grib_input_version = data.Input.Version(
@@ -48,16 +37,16 @@ def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
         size = [shape[d] for d in dims]
         chunks = [version.chunks[d] if d in version.chunks else shape[d] for d in dims]
         array = da.random.random(size, chunks)
-        array = xr.DataArray(array, dims=translate_order(version.dim_order))
+        array = xr.DataArray(array, dims=dims)
         arrays: list[xr.DataArray] = [
             (array + x).rename(n) 
             for n, x 
             in zip(brn_array_names, np.arange(0, 0.1*len(brn_array_names), 0.1))
         ]
-        arrays[-1] = arrays[-1].loc[{dim_index["z"]: 0}]
+        arrays[-1] = arrays[-1].loc[{"z": 0}]
         return xr.merge(arrays)
 
-    chunks = util.map_keys(version.chunks, dim_index)
+    chunks = version.chunks
 
     # load data from first grib file
     grib_file = "lfff00000000"
@@ -86,20 +75,18 @@ def load_input_grib(version: data.Input.Version = None) -> xr.Dataset:
     hhl = hhl[:-1, :, :] # TODO shouldn't be necessary
 
     out = xr.merge([out1, hhl, hsurf])
+    out.rename({"generalVerticalLayer": "z"})
     return out
 
-def get_brn_input(input_store: str = config["data"]["input_store"]) -> data.Input:
+def get_brn_input() -> data.Input:
     """
     Returns an input object for brn functions.
 
-    Arguments:
-    ---
-    - input_store: A path to the input store directory, where versions of this input are stored.
+    Group:
+        BRN
     """
     return data.Input(
-        input_store,
         name="brn",
         source=load_input_grib,
         source_version=grib_input_version,
-        dim_index=dim_index
     )

@@ -2,15 +2,17 @@ from dataclasses import dataclass
 import enum
 from glob import glob
 import pathlib
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Union
 import xarray as xr
 import dask.array as da
 import numpy as np
 from . import config
 from . import util
+from . import version as pkg_version
 from collections.abc import Callable
 import yaml
 import copy
+from deprecated.sphinx import deprecated
 
 data_config = config["data"]
 grib_dir = data_config["grib_dir"]
@@ -34,6 +36,32 @@ class Format(enum.Enum):
     ZARR = "zarr"
     FAKE = "fake" # special format for fake data
 
+DimOrder = Union[str, list[str]]
+"""
+Type hint for dimension order
+
+Group:
+    Data
+"""
+
+def get_dim_order_list(order: DimOrder) -> list[str]:
+    """Transforms a dimension order into list form.
+
+    Args:
+        order (DimOrder): The dimension order to transform.
+
+    Returns:
+        list[str]: The dimension order as a list.
+
+    Group:
+        Data
+    """
+    if isinstance(order, str):
+        return list(str)
+    else:
+        return order
+
+@deprecated("Dimension index is deprecated.", version="0.0.1a1")
 def translate_order(order: List[str] | str, index: Dict[str, str]) -> str | List[str]:
     """
     Translates a dimension order from compact form to verbose form or vice versa.
@@ -46,6 +74,9 @@ def translate_order(order: List[str] | str, index: Dict[str, str]) -> str | List
 
     Returns:
         The dimension order in compact form if `order` was given in verbose form or vice versa.
+
+    Group:
+        Data
     """
     if isinstance(order, str):
         return [index[x] for x in list(order)]
@@ -60,7 +91,7 @@ def load_array_grib(
     key_filters: Dict[str, Any] = {},
     parallel: bool = True,
     cache: bool = True,
-    index_path: str = tmp_dir + "/grib.idx",
+    index_path: str = "",
     load_coords: bool = True,
     **kwargs) -> xr.DataArray:
     """
@@ -105,21 +136,40 @@ def load_array_grib(
             del out[c]
     return out
 
-def load_grib(grib_file, short_names: List[str], **kwargs) -> xr.Dataset:
+def load_grib(grib_file: util.PathArg | list[util.PathArg], short_names: List[str], **kwargs) -> xr.Dataset:
     """
-    Convenience function for loading multiple `DataArray`s from a grib file with `load_array_grib` and returning them as a dataset.
+    Convenience function for loading multiple ``xarray.DataArray``s from a grib file with :func:`load_array_grib` and returning them as a dataset.
+
+    Args:
+        grib_file: The location of the grib file to load
+        short_names: The names of the variables to load
+        kwargs: Additional arguments passed to :func:`load_array_grib`
+    Returns:
+        The requested variables wrapped in a ``xarray.Dataset``
+    See Also:
+        :func:`load_array_grib`
+    Group:
+        Data
     """
     arrays = [load_array_grib(grib_file, shortName=sn, **kwargs) for sn in short_names]
     return xr.merge(arrays)
 
+@deprecated("Use ``xarray.open_dataset`` instead", version="0.0.1a1")
 def load_netcdf(filename, chunks: Dict) -> List[xr.DataArray]:
     """
     Loads the content of a netCDF file into `DataArray`s.
+
+    Args:
+        filename: The location of the netcdf file to load
+        chunks: A chunk argument passed to ``xarray.open_dataset``.
+    Returns:
+        The content of the netcdf file as a list of ``xarray.DataArray``s.
     """
     filename = util.get_absolute(filename, netcdf_dir)
     ds: xr.Dataset = xr.open_dataset(filename, chunks=chunks)
     return list(ds.data_vars.values())
 
+@deprecated("Use ``xarray.open_dataset(..., engine='zarr'`` instead.", version="0.0.1a1")
 def load_zarr(filename, dim_names: List[str], chunks: List[int] = "auto", names: List[str] = None, inline_array = True) -> List[xr.DataArray]:
     """
     Loads the content of a zarr directory into `DataArray`(s).
@@ -133,6 +183,7 @@ def load_zarr(filename, dim_names: List[str], chunks: List[int] = "auto", names:
     else:
         return single_load(None)
 
+@deprecated("Use ``xarray.Dataset.to_netcdf`` instead.", version="0.0.1a1")
 def store_netcdf(
     filename: str, 
     data: List[xr.DataArray],
@@ -151,6 +202,7 @@ def store_netcdf(
     out = xr.Dataset(dict(zip(names, data)))
     out.to_netcdf(filename)
 
+@deprecated("Use ``xarray.Dataset.to_zarr`` instead.", version="0.0.1a1")
 def store_zarr(dirname: str, arrays: List[xr.DataArray]):
     """
     Stores a list of `DataArray`s into a zarr directory.
@@ -165,6 +217,7 @@ def store_zarr(dirname: str, arrays: List[xr.DataArray]):
     for a in arrays:
         da.to_zarr(a.data, dirname, a.name, overwrite=True)
 
+@deprecated("Use ``xarray.Dataset.transpose`` instead.", version="0.0.1a1")
 def reorder_dims(data: List[xr.DataArray], dim_order: List[str]) -> List[xr.DataArray]:
     """
     Returns the given list of data arrays, where the dimensions are ordered according to `dim_order`.
@@ -173,6 +226,7 @@ def reorder_dims(data: List[xr.DataArray], dim_order: List[str]) -> List[xr.Data
     data = [x.transpose(*order) for x, order in zip(data, orders)]
     return data
 
+@deprecated("Use ``xarray.DataArray.isel`` directly instead.", version="0.0.1a1")
 def split_cube(data: xr.DataArray, split_dim: str, splits: List[int], names: List[str] = None) -> List[xr.DataArray]:
     """
     Splits a single data array hypercube into multiple individual data arrays.
@@ -203,17 +257,21 @@ class Input():
     """The name of this input"""
     _path: pathlib.Path
     """The path where this input is stored"""
-    dim_index: dict[str, str]
-    """An index mapping dimension short names to dimension names"""
 
     @dataclass
     class Version(yaml.YAMLObject, util.Config):
         """A version of the input"""
         yaml_tag = "!Version"
+        """The tag to use for encoding in yaml."""
+        finch_version = pkg_version
+        """The finch version that was used to create this input version"""
         format: Format = None
         """The file format of this version"""
-        dim_order: str = None
-        """The dimension order in compact notation"""
+        dim_order: DimOrder = None
+        """
+        The dimension order.
+        The type of the dimension order (``str`` or ``list[str]``) must be the same across all versions of an input.
+        """
         chunks: dict[str, int] = None
         """The chunking as a dict, mapping dimension short names to chunk sizes"""
         name: str = None
@@ -236,14 +294,13 @@ class Input():
                 or other.chunks is None \
                 or util.can_rechunk_no_split(self.chunks, other.chunks)
 
-        def impose(self, ds: xr.Dataset, dim_index: dict[str, str]) -> xr.Dataset:
+        def impose(self, ds: xr.Dataset) -> xr.Dataset:
             """Transforms the given dataset such that it conforms to this version."""
-            if self.dim_order is not None and translate_order(ds.dims, dim_index) != self.dim_order:
-                ds = ds.transpose(*translate_order(self.dim_order, dim_index))
+            if self.dim_order is not None and ds.dims != self.dim_order:
+                ds = ds.transpose(*get_dim_order_list(self.dim_order))
             if self.chunks is not None:
-                chunks = util.map_keys(self.chunks, dim_index)
-                if not util.chunk_args_equal(chunks, ds.chunksizes, ds.sizes):
-                    ds = ds.chunk(util.map_keys(self.chunks, dim_index))
+                if not util.chunk_args_equal(self.chunks, ds.chunksizes, ds.sizes):
+                    ds = ds.chunk(self.chunks)
             if self.coords is not None and not self.coords:
                 ds = ds.drop_vars(ds.coords.keys())
             return ds
@@ -263,27 +320,49 @@ class Input():
     versions: list[Version]
     """The different versions of this input"""
 
-    def __init__(self, 
-        store_path: pathlib.Path | str, 
+    def __init__(self,
         name: str, 
         source: Callable[[Version], xr.Dataset],
         source_version: Version,
-        dim_index: dict[str, str],
+        store_path: util.PathArg | None = None
     ) -> None:
+        """Creates a new Input for the given source.
+
+        Args:
+            name (str): The name of the input
+            source (Callable[[Version], xr.Dataset]): The source of the input.
+                The dataset returned by this function must always have the same content.
+                It should match the attributes of the passed version as closely as possible, but is not required to.
+            source_version (Version): A version object describing the source.
+                This version object cannot have None fields. The chunks for all dimensions need to be explicitly specified.
+            store_path (util.PathArg | None, optional): A path to a directory which can be used to store input versions.
+                The versions will not be stored directly in this directory, but in a subdirectory according to `name`.
+                If None is passed, the configured default finch input store will be used.
+                Defaults to None.
+        """
         self.name = name
-        self._path = util.get_path(store_path, name).absolute()
         self.source = source
+        # validity check on source version
+        if any(a is None for a in util.get_class_attributes(source_version)):
+            raise ValueError("Received source version with None attribute.", source_version)
+        if any(d not in source_version.chunks for d in source_version.dim_order):
+            raise ValueError("Received source version with incomplete chunk specification.", source_version)
         self.source_version = source_version
-        assert all(d in source_version.chunks for d in dim_index), "Source version must provide chunks for all dimensions."
         self.source_version.name = "source"
         self.versions = [source_version]
-        self.dim_index = dim_index
+        if store_path is None:
+            store_path = data_config["input_store"]
+        self._path = util.get_path(store_path, name).absolute()
 
         # load existing versions
         for v in glob("*.yml", root_dir=str(self._path)):
             with open(self._path.joinpath(v)) as f:
-                version = yaml.load(f, yaml.Loader)
-                version = util.add_missing_properties(version, self.source_version) # backwards compatibility
+                version: "Input.Version" = yaml.load(f, yaml.Loader)
+                # backwards compatibility
+                if version.finch_version is None:
+                    version.finch_version = "0.0.1a1"
+                version = util.add_missing_properties(version, self.source_version)
+                # add version
                 self.versions.append(version)
 
     def add_version(self, version: Version, dataset: xr.Dataset | None = None) -> Version:
@@ -323,7 +402,7 @@ class Input():
             dataset, version = self.get_version(version, create_if_not_exists=True, add_if_not_exists=False)
 
         # add missing chunk sizes
-        for d in self.dim_index:
+        for d in self.source_version.chunks:
             if d not in version.chunks or version.chunks[d] is None or version.chunks[d] == "auto":
                 version.chunks[d] = -1
 
@@ -382,7 +461,7 @@ class Input():
                 # load source (for targeted version)
                 dataset = self.source(target)
                 # impose version
-                dataset = target.impose(dataset, self.dim_index)
+                dataset = target.impose(dataset)
 
                 # add version
                 if add_if_not_exists:
@@ -392,7 +471,7 @@ class Input():
         else:
             # load the preexisting version
             filename = str(self._path.joinpath(source_name))
-            chunks = util.map_keys(target.chunks, self.dim_index)
+            chunks = target.chunks
             if target.format == Format.NETCDF:
                 dataset = xr.open_dataset(filename+".nc", chunks=chunks)
             elif target.format == Format.ZARR:

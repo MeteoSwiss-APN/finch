@@ -23,7 +23,7 @@ copyright = '2022, Tierry Hörmann'
 author = 'Tierry Hörmann'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1-alpha'
+release = str(finch.version)
 
 
 # -- General configuration ---------------------------------------------------

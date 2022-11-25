@@ -1,9 +1,7 @@
-from math import sqrt
-from typing import Callable
 import xarray as xr
 import dask.array as da
-import dask
 import numpy as np
+import functools
 
 import zebra
 from .. import constants as const
@@ -13,6 +11,17 @@ from .. import data
 from .. import env
 
 def thetav_xr(dataset: xr.Dataset) -> xr.DataArray:
+    """
+    Basic xarray implementation of the thetav operator
+
+    Args:
+        dataset: The thetav operator input
+    Returns:
+        The thetav operator output
+
+    Group:
+        THETAV
+    """
     p, t, qv = [dataset[n] for n in input.thetav_array_names]
 
     pc_rvd = const.PC_R_V / const.PC_R_D
@@ -22,13 +31,27 @@ def thetav_xr(dataset: xr.Dataset) -> xr.DataArray:
     return (const.P0 / p) ** pc_rdocp * t * (1.+(pc_rvd_o*qv / (1.-qv)))
 
 def brn_xr(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
-    nlevels = dataset.sizes["generalVerticalLayer"]
+    """
+    Basic xarray implementation of the brn operator
+
+    Args:
+        dataset (xr.Dataset): The brn operator input
+        reps (int, optional): The amount of repeated BRN executions. Defaults to 1.
+
+    Returns:
+        xr.DataArray: The brn operator output
+
+    Group:
+        BRN
+    """
+
+    nlevels = dataset.sizes["z"]
 
     for _ in range(reps):
         thetav = thetav_xr(dataset.drop_vars(input.brn_only_array_names))
-        thetav_sum = thetav.isel(generalVerticalLayer=slice(None, None, -1)).cumsum(dim='generalVerticalLayer')
-        nlevels_xr = da.arange(nlevels, 0, -1, chunks=dataset.chunksizes["generalVerticalLayer"])
-        nlevels_xr =xr.DataArray(data=nlevels_xr, dims=["generalVerticalLayer"])
+        thetav_sum = thetav.isel(generalVerticalLayer=slice(None, None, -1)).cumsum(dim='z')
+        nlevels_xr = da.arange(nlevels, 0, -1, chunks=dataset.chunksizes["z"])
+        nlevels_xr =xr.DataArray(data=nlevels_xr, dims=["z"])
 
         u, v, hhl, hsurf = [dataset[n] for n in input.brn_only_array_names]
 
@@ -40,7 +63,7 @@ def brn_xr(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
 
     return brn
 
-def block_thetav_np(
+def __block_thetav_np(
     p: np.ndarray,
     t: np.ndarray,
     qv: np.ndarray
@@ -54,14 +77,15 @@ def block_thetav_np(
 
     return (const.P0 / p) ** pc_rdocp * t * (1.+(pc_rvd_o*qv / (1.-qv)))
 
-def block_brn_np(
+def __block_brn_np(
     p: np.ndarray, 
     t: np.ndarray, 
     qv: np.ndarray, 
     u: np.ndarray, 
     v: np.ndarray, 
     hhl: np.ndarray, 
-    hsurf: np.ndarray
+    hsurf: np.ndarray,
+    reps: int
 ) -> np.ndarray:
     """
     BRN implementation on numpy chunks.
@@ -70,36 +94,64 @@ def block_brn_np(
     nlevels = p.shape[2]
     hsurf = np.expand_dims(hsurf, axis=2)
 
-    thetav = block_thetav_np(p, t, qv)
-    thetav_sum = np.flip(thetav, 2).cumsum(axis=2)
-    nlevels_da = np.reshape(np.arange(nlevels,0,-1), (1, 1, nlevels))
+    for _ in range(reps):
+        thetav = __block_thetav_np(p, t, qv)
+        thetav_sum = np.flip(thetav, 2).cumsum(axis=2)
+        nlevels_da = np.reshape(np.arange(nlevels,0,-1), (1, 1, nlevels))
 
-    brn_1 = const.PC_G * (hhl-hsurf)*(thetav - thetav[:, :, -1:]) * nlevels_da
-    brn_2 = (thetav_sum)*(u*u + v*v)
+        brn_1 = const.PC_G * (hhl-hsurf)*(thetav - thetav[:, :, -1:]) * nlevels_da
+        brn_2 = (thetav_sum)*(u*u + v*v)
 
-    brn = brn_1 / brn_2
+        brn = brn_1 / brn_2
+        p = brn
     return brn
 
 def thetav_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
     """
-    thetav implementation using `custom_map_blocks` and numpy arrays
+    Blockwise thetav implementation on numpy arrays
+
+    Args:
+        dataset: The thetav operator input
+    Returns:
+        The thetav operator output
+
+    Group:
+        THETAV
     """
     arrays = [dataset[n] for n in input.brn_array_names[:3]]
     template = xr.DataArray(arrays[0].data, coords=arrays[0].coords, dims=arrays[0].dims)
-    return util.custom_map_blocks(block_thetav_np, *arrays, name="thetav", template=template)
+    return util.custom_map_blocks(__block_thetav_np, *arrays, name="thetav", template=template)
 
-def brn_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
+def brn_blocked_np(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
     """
-    brn implementation using `custom_map_blocks` and numpy arrays
+    Blockwise brn implementation on numpy arrays
+
+    Args:
+        dataset (xr.Dataset): The brn operator input
+        reps (int, optional): The amount of repeated BRN executions. Defaults to 1.
+
+    Returns:
+        xr.DataArray: The brn operator output
+
+    Group:
+        BRN
     """
     dataset = dataset.transpose(*data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
     arrays = [dataset[n] for n in input.brn_array_names]
     template = xr.DataArray(arrays[0].data, coords=arrays[0].coords, dims=arrays[0].dims)
-    return util.custom_map_blocks(block_brn_np, *arrays, name="brn", template=template)
+    return util.custom_map_blocks(functools.partial(__block_brn_np, reps=reps), *arrays, name="brn", template=template)
 
 def thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     """
-    thetav implementation using `custom_map_blocks` and numpy arrays with the zebra backend
+    Blockwise thetav wrapper for :func:`zebra.brn`.
+
+    Args:
+        dataset: The thetav operator input
+    Returns:
+        The thetav operator output
+
+    Group:
+        THETAV
     """
     def wrapper(p,t,qv):
         out = np.zeros_like(p)
@@ -110,7 +162,17 @@ def thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
 
 def brn_blocked_cpp(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
     """
-    brn implementation using `custom_map_blocks` and numpy arrays with the zebra backend
+    Blockwise thetav wrapper for :func:`zebra.brn`.
+
+    Args:
+        dataset (xr.Dataset): The brn operator input
+        reps (int, optional): The amount of repeated BRN executions. Defaults to 1.
+
+    Returns:
+        xr.DataArray: The brn operator output
+
+    Group:
+        BRN
     """
     dataset = dataset.transpose(*data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
     def wrapper(*arrays):

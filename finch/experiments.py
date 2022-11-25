@@ -6,7 +6,7 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 import numpy as np
 import xarray as xr
-from . import Input
+from .data import Input
 from .util import PbarArg
 from . import util
 from . import config
@@ -23,6 +23,8 @@ import random
 from contextlib import nullcontext
 
 zarr_out_path = util.get_path(config["global"]["tmp_dir"], "exp_out")
+
+Operator = Callable[[xr.Dataset], xr.DataArray]
 
 @dataclass
 class RunConfig(util.Config):
