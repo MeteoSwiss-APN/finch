@@ -18,6 +18,8 @@ Welcome to finch's documentation!
    :caption: Usage
    :hidden:
 
+   usage/custom_operator
+   usage/input
    usage/config
 
 .. toctree::
