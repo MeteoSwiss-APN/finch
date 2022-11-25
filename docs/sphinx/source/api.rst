@@ -1,8 +1,13 @@
 API
 ===
 
+Data Handling
+---------------
+
+.. python-apigen-group:: Data
+
 Input Management
-----------------
+^^^^^^^^^^^^^^^^
 
 .. python-apigen-group:: Input
 

@@ -4,7 +4,7 @@ import functools
 import pathlib
 from typing import Any, Tuple
 from collections.abc import Callable
-from . import Input
+from .data import Input
 from . import util
 from . import config
 from .experiments import RunConfig, Runtime
