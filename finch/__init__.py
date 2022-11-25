@@ -1,3 +1,9 @@
+from packaging.version import Version
+version = Version("0.0.1a1")
+"""
+The current version of this package.
+"""
+
 from . import _util
 from . import environment as env
 from .config import config, set_debug_mode, set_log_level, debug, logging_format, log_level
