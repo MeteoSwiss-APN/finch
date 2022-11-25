@@ -15,6 +15,7 @@ debug = cmd_args.debug
 os.environ["DEBUG"] = str(debug)
 
 import finch
+import finch.brn
 import xarray as xr
 
 # handle configuration

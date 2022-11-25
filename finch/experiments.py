@@ -24,6 +24,8 @@ from contextlib import nullcontext
 
 zarr_out_path = util.get_path(config["global"]["tmp_dir"], "exp_out")
 
+Operator = Callable[[xr.Dataset], xr.DataArray]
+
 @dataclass
 class RunConfig(util.Config):
     impl: Callable = None
