@@ -12,7 +12,6 @@ os.environ["GRIB_DEFINITION_PATH"] = config["data"]["grib_definition_path"]
 
 from . import util
 from . import constants as const
-from .data import Input
 from . import data
 from .scheduler import start_scheduler, start_slurm_cluster
 from .experiments import measure_runtimes, measure_operator_runtimes, measure_loading_times
