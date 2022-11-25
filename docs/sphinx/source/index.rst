@@ -28,6 +28,11 @@ Welcome to finch's documentation!
 
    api
 
+.. toctree:: 
+   :caption: Operator Reference
+   :hidden:
+
+   operators
 
 Indices and tables
 ==================
