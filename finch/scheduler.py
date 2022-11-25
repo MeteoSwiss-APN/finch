@@ -13,7 +13,18 @@ from datetime import timedelta
 from dataclasses import dataclass
 
 def parse_slurm_time(t: str) -> timedelta:
-    """Returns a timedelta from the given duration as is being passed to SLURM"""
+    """
+    Returns a timedelta from the given duration as is being passed to SLURM
+
+    Args:
+        t: The time in SLURM format
+
+    Returns:
+        A timedelta object representing the passed SLURM time.
+
+    Group:
+        Util
+    """
     has_days = "-" in t
     d = 0
     if has_days:
@@ -32,6 +43,12 @@ def parse_slurm_time(t: str) -> timedelta:
 
 @dataclass
 class ClusterConfig(util.Config):
+    """
+    A configuration class for configuring a dask SLURM cluster.
+
+    Group:
+        Dask
+    """
     workers_per_job: int = 1
     """The number of workers to spawn per SLURM job"""
     cores_per_worker: int = dask.config.get("jobqueue.slurm.cores", 1)
@@ -56,6 +73,15 @@ def start_slurm_cluster(
     """
     Starts a new SLURM cluster with the given config and returns a client for it.
     If a cluster is already running with a different config, it is shut down.
+
+    Args:
+        cfg: The configuration of the cluster to start
+    
+    Returns:
+        A client connected to the newly started SLURM cluster.
+
+    Group:
+        Dask
     """
     global client, _active_config
 
@@ -133,8 +159,16 @@ def start_slurm_cluster(
 def start_scheduler(debug: bool = debug, *cluster_args, **cluster_kwargs) -> Client | None:
     """
     Starts a new scheduler either in debug or run mode.
-    If `debug` is `False`, a new SLURM cluster will be started and a client connected to the new cluster is returned.
-    If `debug` is `True`, `None` is returned and dask is configured to run a synchronous scheduler.
+
+    Args:
+        debug: If `False`, a new SLURM cluster will be started and a client connected to the new cluster is returned.
+            If `True`, `None` is returned and dask is configured to run a synchronous scheduler.
+    
+    Returns:
+        A client connected to the new cluster / scheduler or `None`, depending on `debug`.
+
+    Group:
+        Dask
     """
     if debug:
         dask.config.set(scheduler="synchronous")
@@ -143,7 +177,14 @@ def start_scheduler(debug: bool = debug, *cluster_args, **cluster_kwargs) -> Cli
         return start_slurm_cluster(*cluster_args, **cluster_kwargs)
 
 def clear_memory():
-    """Clears the memory of the current scheduler and workers"""
+    """
+    Clears the memory of the current scheduler and workers.
+    **Attention**: This function currently raises a `NotImplementedError`, 
+    because dask currently provides no efficient way of clearning the memory of the scheduler.
+
+    Group:
+        Dask
+    """
     # Currently the only possible way to completely reset memory is via client.restart(), which won't work many times in a row on a SLURM Cluster.
     raise NotImplementedError()
 
@@ -177,12 +218,21 @@ class WorkerCountPlugin(SchedulerPlugin):
     def remove_worker(self, scheduler: Scheduler, worker: str):
         self.add_remove_worker(scheduler)
 
-def get_client():
+def get_client() -> Client | None:
+    """
+    Returns the currently registered client.
+
+    Group:
+        Dask
+    """
     return client
 
 def scale_and_wait(n: int):
     """
     Scales the current registered cluster to `n` workers and waits for them to start up.
+
+    Group:
+        Dask
     """
     if client:
         client.cluster.scale(n)
