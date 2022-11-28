@@ -358,12 +358,21 @@ def measure_loading_times(
     **kwargs
 ) -> list[float]:
     """
-    Measures the loading times of different versions of an input
+    Measures the loading times of different versions of an input.
+    .. warning::
+        This function will currently fail with a ``NotImplementedError``.
+        Due to a bug in dask's graph cloning, it is currently not possible to properly
+        measure the data loading time.
 
-    Parameters
-    ---
-    - input: The input to be loaded
-    - versions: The different versions to be measured
-    - kwargs: Arguments for `measure_runtimes`
+    Args:
+        input: The input to be loaded
+        versions: The different versions to be measured
+        kwargs: Arguments for :func:`measure_runtimes`
+
+    Returns:
+        A list of times in seconds, indicating the loading times for the given versions of the input.
+
+    Group:
+        Experiments
     """
     raise NotImplementedError("Measuring pure load times is currently impossible.")
