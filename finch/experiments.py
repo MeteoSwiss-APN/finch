@@ -359,10 +359,10 @@ def measure_loading_times(
 ) -> list[float]:
     """
     Measures the loading times of different versions of an input.
-    .. warning::
-        This function will currently fail with a ``NotImplementedError``.
-        Due to a bug in dask's graph cloning, it is currently not possible to properly
-        measure the data loading time.
+    
+    This function will currently fail with a ``NotImplementedError``.
+    Due to a bug in dask's graph cloning, it is currently not possible to properly
+    measure the data loading time.
 
     Args:
         input: The input to be loaded
