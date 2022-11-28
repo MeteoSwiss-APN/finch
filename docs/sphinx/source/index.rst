@@ -20,6 +20,7 @@ Welcome to finch's documentation!
 
    usage/custom_operator
    usage/input
+   usage/experiments
    usage/config
 
 .. toctree::
