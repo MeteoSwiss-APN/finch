@@ -21,13 +21,24 @@ import dask.distributed
 import functools
 import random
 from contextlib import nullcontext
-
-zarr_out_path = util.get_path(config["global"]["tmp_dir"], "exp_out")
+from deprecated.sphinx import deprecated
 
 Operator = Callable[[xr.Dataset], xr.DataArray]
+"""
+Default interface of operators in finch.
+
+Group:
+    Finch
+"""
 
 @dataclass
 class RunConfig(util.Config):
+    """
+    A class for configuring and setting up the environment for experiments.
+
+    Group:
+        Experiments
+    """
     impl: Callable = None
     """The implementation to run"""
     cluster_config: scheduler.ClusterConfig = scheduler.ClusterConfig()
@@ -42,38 +53,35 @@ class RunConfig(util.Config):
     """
 
     def setup(self):
+        """
+        Sets up the environment for this config.
+        """
         scheduler.start_scheduler(cfg=self.cluster_config)
         scheduler.scale_and_wait(self.workers)
 
-    @classmethod
-    def get_class_attr(cls) -> list[str]:
-        return util.get_class_attributes(cls)
-
-def list_run_configs(**kwargs) -> list[RunConfig]:
-    """
-    Returns a list of run configurations, 
-    which is the euclidean product between the given lists of individual configurations.
-    """
-    configs: list[dict[str, Any]] = []
-    for arg in kwargs:
-        vals = kwargs[arg]
-        if not isinstance(vals, list):
-            vals = [vals]
-        updates = [{arg : v} for v in vals]
-        if len(configs) == 0:
-            configs = updates
-        else:
-            configs = [c | u for c in configs for u in updates]
-    return [RunConfig(**c) for c in configs]
-
 @dataclass
 class Runtime():
+    """A class for capturing runtimes of different stages.
+    The runtimes can be cathegorized into serial for serial overheads or parallel for runtimes in parallel regions.
+
+    Group:
+        Experiments
+    """
     full: float = None
+    """The full runtime of the experiment."""
     input_prep: float = None
+    """Serial. The runtime used for preparing the input."""
     graph_construction: float = None
+    """Serial. The runtime used for constructing the dask graph."""
     graph_opt: float = None
+    """Serial. The runtime used for optimizing the dask graph."""
     graph_serial: float = None
+    """Serial. The runtime used for serializing the dask graph."""
     compute: float = None
+    """
+    Parallel (and some unmeasurable serial). The runtime used for running the final computation.
+    This includes the parallel computation as well as some serial overhead that cannot be measured separately.
+    """
 
 def _reduce_runtimes(rt: list[Runtime], reduction: Callable[[np.ndarray, int], np.ndarray]) -> Runtime:
     attr = util.get_class_attributes(Runtime)
@@ -97,37 +105,38 @@ def measure_runtimes(
 ) -> list[list[Runtime]] | list[Runtime] | Runtime:
     """
     Measures the runtimes of multiple functions, each accepting the same inputs.
-    Parameters
-    ---
-    - funcs: The functions to be benchmarked
-    - inputs: The inputs to the functions to be benchmarked. These can be passed in different forms:
-        - `None`: Default. Can be passed if the functions do not accept any arguments.
-        - `list[list]`: A list of concrete arguments to the functions
-        - `list[Callable[[], list]]`: A list of argument generating functions.
-        These will be run to collect the arguments for the functions to be benchmarked.
-        - `Callable[[], list]`: A single argumnent generating function 
-        if the same should be used for every function to be benchmarked.
-    The preparation of the input is timed and included in the full runtime.
-    - iterations: int, optional. The number of times to repeat a run (including input preparation).
-    - run_prep: Callable[[], Any], optional. 
-    If given, this function is run directly before starting a runtime measurement.
-    Can be used to make preparations for the implmentation to be benchmarked.
-    - impl_runner: Callable. The function responsible for running 
-    the impl argument of a run configuration for the given list of arguments.
-    The first argument of impl_runner is the current run configuration while the remaining arguments are the arguments passed to `impl` of the run configuration.
-    The execution of `impl_runner` will be timed and reported.
-    A runtime can be returned if the implementation runner supports fine-grained runtime repoting.
-    Defaults to directly running the passed function on the passed arguments.
-    - reduction: Callable, default: `np.nanmean`. 
-    The function to be used to combine the results of the iterations.
-    This is a reduction function which is able to reduce a specific dimenion (kwarg axis) of a numpy array.
-    - warmup: bool, default: `False`. If `True`, runs the function once before measuring.
-    - pbar: PbarArg, default: `True`. Progressbar argument
 
-    Returns
-    ---
-    The runtimes as a list of lists, or a flat list, or a float, 
-    depending on whether a single function or a single version (None or Callable) were passed.
+    Args:
+        run_config (list[RunConfig] | RunConfig): The functions to be benchmarked
+        inputs: The inputs to the functions to be benchmarked. These can be passed in different forms:
+
+            - ``None``: Default. Can be passed if the functions do not accept any arguments.
+            - ``list[list]``: A list of concrete arguments to the functions
+            - ``list[Callable[[], list]]``: A list of argument generating functions.
+                These will be run to collect the arguments for the functions to be benchmarked.
+            - ``Callable[[], list]``: A single argument generating function if the same should be used for every function to be benchmarked.
+        
+            The preparation of the input is timed and included in the full runtime.
+        iterations (int, optional): The number of times to repeat a run (including input preparation).
+        impl_runner (Callable): The function responsible for running 
+            the impl argument of a run configuration for the given list of arguments.
+            The first argument of impl_runner is the current run configuration while the remaining arguments are the arguments passed to `impl` of the run configuration.
+            The execution of `impl_runner` will be timed and reported.
+            A runtime can be returned if the implementation runner supports fine-grained runtime repoting.
+            Defaults to directly running the passed function on the passed arguments.
+        reduction (Callable):
+            The function to be used to combine the results of the iterations.
+            This is a reduction function which is able to reduce a specific dimenion (kwarg axis) of a numpy array.
+        warmup (bool): If ``True``, runs the function once before measuring.
+        pbar (PbarArg): Progressbar argument
+        dask_report (bool): Whether or not to produce a dask report for the experiment.
+            The location of the report is configured via finch's configuration.
+
+    Returns:
+        The runtimes as a list of lists, or a flat list, or a float, depending on whether a single function or a single version (None or Callable) were passed.
+
+    Group:
+        Experiments
     """
     # prepare run config
     singleton_rc = isinstance(run_config, RunConfig)
@@ -199,6 +208,14 @@ def measure_runtimes(
         out = out[0]
     return out
 
+output_dir = util.get_path(config["global"]["tmp_dir"], "exp_out")
+"""
+The output directory of the experiments
+
+Group:
+    Experiments
+"""
+
 def xr_run_prep_template(remove_existing_output: bool, clear_scheduler: bool) -> dict[str, Any]:
     impl_runner_args = dict()
     if remove_existing_output:
@@ -210,26 +227,37 @@ def xr_run_prep_template(remove_existing_output: bool, clear_scheduler: bool) ->
 
 def get_xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool = False) -> Callable[[], dict[str, Any]]:
     """
-    Returns a run preparation for xarray operators, which can used in the run config.
+    Returns a run preparation for standard xarray operators, which can used in the run config.
 
-    Arguments:
-    ---
-    - remove_existing_output: bool. Whether to remove preexisting outputs.
-    - clear_scheduler: bool. Whether to clear the scheduler.
+    Args:
+        remove_existing_output (bool): Whether to remove preexisting outputs.
+        clear_scheduler (bool): Whether to clear the scheduler.
+
+    Returns:
+        The requested run preparation.
+
+    Group:
+        Experiments
     """
     return functools.partial(xr_run_prep_template, remove_existing_output, clear_scheduler)
     
 
 def xr_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, output_exists: bool = True, **kwargs) -> Runtime:
     """
-    Implementation runner for xarray operators.
+    Implementation runner for standard xarray operators.
 
-    Arguments:
-    ---
-    - impl: The operator implementation to be run
-    - ds: The input for the implementation
-    - overwrite_output: Whether an output already exists at the output path and should be overwritten.
-    - kwargs: Additional arguments to be ignored
+    Args:
+        impl: The operator implementation to be run
+        ds: The input for the implementation
+        output_exists: Whether an output already exists at the output path and should be overwritten.
+        kwargs: Additional arguments, which will be ignored
+    
+    Returns:
+        The runtimes of the individual stages of the computation.
+
+    Group:
+        Experiments
+    
     """
     runtime = Runtime()
     # construct the dask graph
@@ -238,7 +266,7 @@ def xr_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, o
     out = impl(ds)
     # clone the graph to ensure that the scheduler does not use results computed in an earlier round
     # cloned: da.Array = dask.graph_manipulation.clone(out.data)
-    stored = out.data.to_zarr(str(zarr_out_path), overwrite=output_exists, compute=False)
+    stored = out.data.to_zarr(str(output_dir), overwrite=output_exists, compute=False)
     end = perf_counter()
     runtime.graph_construction = end-start
     # optimize the graph
@@ -265,10 +293,27 @@ def xr_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, o
     return runtime
 
 def clear_output():
-    """Clears the experiment output directory"""
-    util.clear_dir(zarr_out_path)
+    """
+    Clears the experiment output directory
+
+    Group:
+        Experiments
+    """
+    util.clear_dir(output_dir)
 
 def xr_input_prep(input: Input, version: Input.Version) -> list[xr.Dataset]:
+    """Input preparation for standard xarray operators.
+
+    Args:
+        input (Input): The input to be used for this operator
+        version (Input.Version): The version which should be used for this experiment
+
+    Returns:
+        list[xr.Dataset]: The input of the operator
+
+    Group:
+        Experiments
+    """
     out, _ = input.get_version(version)
     return [out]
 
@@ -280,14 +325,22 @@ def measure_operator_runtimes(
     **kwargs
 ) -> list[list[float]] | list[float] | float:
     """
-    Measures the runtimes of different implementations of an operator against different input versions.
+    Measures the runtimes of different implementations of a standard xarray operator against different input versions.
 
-    Parameters
-    ---
-    - run_config: The runtime configurations
-    - input: The input object for the operator
-    - versions: The different input versions to be benchmarked
-    - kwargs: Arguments for `measure_runtimes`
+    Args:
+        run_config: The runtime configurations
+        input: The input object for the operator
+        versions: The different input versions to be benchmarked
+        kwargs: Arguments for :func:`measure_runtimes`
+
+    Returns:
+        The runtimes as returned by :func:`measure_runtimes`
+
+    See Also:
+        :func:`measure_runtimes`
+
+    Group:
+        Experiments
     """
     single_version = False
     if isinstance(versions, Input.Version):
@@ -298,6 +351,7 @@ def measure_operator_runtimes(
         preps = preps[0]
     return measure_runtimes(run_config, preps, impl_runner=xr_impl_runner, **kwargs)
 
+@deprecated("Replaced by the :class:`Runtime` class.", version="0.0.1a1")
 def measure_loading_times(
     input: Input,
     versions: list[Input.Version],
@@ -312,6 +366,4 @@ def measure_loading_times(
     - versions: The different versions to be measured
     - kwargs: Arguments for `measure_runtimes`
     """
-    funcs = [lambda v=v : input.get_version(v) for v in versions]
-    run_config = list_run_configs(impl=funcs)
-    return measure_runtimes(run_config, None, **kwargs)
+    raise NotImplementedError("Measuring pure load times is currently impossible.")
