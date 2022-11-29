@@ -33,7 +33,7 @@ brn_evaluation = True
 # input management
 ######################################################
 
-brn_add_input_version: finch.Input.Version = None
+brn_add_input_version: finch.data.Input.Version = None
 """New brn input version to add"""
 brn_input_management_cluster = finch.scheduler.ClusterConfig(
     workers_per_job=1,
@@ -55,9 +55,9 @@ brn_input_management_workers = 1
 
 brn_exp_name = "all"
 """The name of the runtime experiment"""
-brn_input_versions = finch.brn.brn_input.list_versions()
+brn_input_versions = finch.brn.get_brn_input().list_versions()
 """The input versions for the runtime experiment"""
-run_configs = finch.experiments.RunConfig.list_configs(
+run_configs = finch.DaskRunConfig.list_configs(
     workers=1,
     impl=finch.brn.list_brn_implementations(),
     cluster_config=finch.scheduler.ClusterConfig.list_configs(

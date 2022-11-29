@@ -1,10 +1,9 @@
 import functools
-import inspect
 from collections.abc import Callable
 import xarray as xr
 from . import impl
 from .. import util
-from .. import Operator
+from .. import DefaultOperator as Operator
 
 brn = impl.brn_blocked_cpp
 """
@@ -70,7 +69,7 @@ def get_repeated_brn(n: int, base: Callable[[xr.Dataset, int], xr.DataArray]=imp
     return functools.partial(base, reps=n)
 
 
-def get_repeated_brn_name(impl: Operator) -> str:
+def get_repeated_brn_name(impl: functools.partial) -> str:
     """Returns a descriptive name of a repeated BRN operator.
 
     Args:

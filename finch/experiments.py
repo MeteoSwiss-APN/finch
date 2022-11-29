@@ -23,7 +23,7 @@ import random
 from contextlib import nullcontext
 from deprecated.sphinx import deprecated
 
-Operator = Callable[[xr.Dataset], xr.DataArray]
+DefaultOperator = Callable[[xr.Dataset], xr.DataArray]
 """
 Default interface of operators in finch.
 
@@ -31,20 +31,15 @@ Group:
     Finch
 """
 
-@dataclass
 class RunConfig(util.Config):
     """
-    A class for configuring and setting up the environment for experiments.
+    Abstract class for configuring and setting up the environment for experiments.
 
     Group:
         Experiments
     """
     impl: Callable = None
-    """The implementation to run"""
-    cluster_config: scheduler.ClusterConfig = scheduler.ClusterConfig()
-    """The cluster configuration to use"""
-    workers: int = 1
-    """The number of dask workers to spawn"""
+    """The operator implementation to run"""
     prep: Callable[[], dict] = None
     """
     A function with preparations to be made before running the implementation.
@@ -55,6 +50,25 @@ class RunConfig(util.Config):
     def setup(self):
         """
         Sets up the environment for this config.
+        """
+        pass
+
+@dataclass
+class DaskRunConfig(RunConfig):
+    """
+    A run configuration class for running operators on a dask cluster.
+
+    Group:
+        Experiments
+    """
+    cluster_config: scheduler.ClusterConfig = scheduler.ClusterConfig()
+    """The cluster configuration to use"""
+    workers: int = 1
+    """The number of dask workers to spawn"""
+
+    def setup(self):
+        """
+        Start the scheduler and wait for the workers.
         """
         scheduler.start_scheduler(cfg=self.cluster_config)
         scheduler.scale_and_wait(self.workers)
