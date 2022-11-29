@@ -16,10 +16,20 @@ Input Management
 
 .. python-apigen-group:: Input
 
-Running Experiments
+Experiments
 -----------
 
 .. python-apigen-group:: Experiments
+
+Evaluation
+----------
+
+.. python-apigen-group:: Evaluation
+
+Plotting
+^^^^^^^^
+
+.. python-apigen-group:: Plot
 
 Dask Configuration
 ------------------

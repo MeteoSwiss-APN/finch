@@ -116,6 +116,7 @@ python_apigen_modules = {
       "finch.scheduler": "api/finch/scheduler/",
       "finch.data": "api/finch/data/",
       "finch.brn": "api/finch/brn/",
+      "finch.evaluation": "api/finch/eval/"
 }
 
 python_apigen_default_groups = [
