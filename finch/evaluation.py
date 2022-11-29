@@ -341,7 +341,7 @@ def create_plots(
             If a list is passed, the first entry will be used.
             A relative runtime plot is often more practical for comparing results, instead of the raw data.
             If the main_dim has only one entry, no normalization will happen.
-        scaling dims (list[str]): Dimensions which are used for scalability plots.
+        scaling_dims (list[str]): Dimensions which are used for scalability plots.
             For those dimensions, a plot of the speedup will be created in addition to the usual runtime plot.
         estimate_serial (bool): Whether to estimate the serial overhead.
         plot_scaling_fits (bool):
