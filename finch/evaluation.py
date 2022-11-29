@@ -16,11 +16,14 @@ import matplotlib.pyplot as plt
 from copy import deepcopy
 import warnings
 import yaml
-
+from deprecated.sphinx import deprecated
 
 def print_version_results(results: list[Any], versions: list[Input.Version]):
     """
     Prints the results of an experiment for different input versions.
+
+    Group:
+        Evaluation
     """
     for r, v in zip(results, versions):
         print(f"{v}\n    {r}")
@@ -28,6 +31,9 @@ def print_version_results(results: list[Any], versions: list[Input.Version]):
 def print_results(results: list[list[Any]], run_configs: list[RunConfig], versions: list[Input.Version]):
     """
     Prints the results of an experiment for different run configurations and input versions.
+
+    Group:
+        Evaluation
     """
     for rc, r in zip(run_configs, results):
         print(rc)
@@ -50,6 +56,9 @@ def create_result_dataset(
     The array entries in the dataset are the different runtimes which were recorded
     This result dataset can then be used as an input for different evaluation functions.
     The result dataset will contain NaN for every combination of version and run config attributes, which is not listed in `versions`.
+
+    Group:
+        Evaluation
     """
     # prepare arguments
     if not isinstance(run_configs, list):
@@ -125,12 +134,17 @@ def create_cores_dimension(
     The number of cores are calculated by the product of the coordinates of the individual dimensions.
     The resulting dimension is sorted in increasing core order.
 
-    Arguments:
-    ---
-    - results: The results array
-    - contributors: List of dimension names which contribute to the total core count
-    - cores_dim: The dimension name of the new 'cores' dimension
-    - reduction: How runtimes should be combined which have the same amount of cores
+    Args:
+        results: The results array
+        contributors: List of dimension names which contribute to the total core count
+        cores_dim: The dimension name of the new 'cores' dimension
+        reduction: How runtimes should be combined which have the same amount of cores
+
+    Returns:
+        The results dataset with merged cores dimensions.
+
+    Group:
+        Evaluation
     """
     out = results.stack({cores_dim: contributors})
     coords = out[cores_dim] # this is now a multiindex
@@ -151,13 +165,18 @@ def rename_labels(results: xr.Dataset, renames: dict[str, dict[Any, Any] | list[
     """
     Rename labels for some dimensions. This changes the coordinates in the results dataset
 
-    Arguments:
-    ---
-    - results: The results dataset
-    - renames: A dictionary mapping dimension names to rename instructions.
-    Rename instructions can be either in the form of a dictionary, 
-    mapping old values to new values, or in the form of a list, replacing the old values.
-    - kwargs: The renames argument as kwargs. If neither `renames` or `kwargs` are given, 
+    Args:
+        results: The results dataset
+        renames: A dictionary mapping dimension names to rename instructions.
+            Rename instructions can be either in the form of a dictionary, 
+            mapping old values to new values, or in the form of a list, replacing the old values.
+        kwargs: The renames argument as kwargs. If neither `renames` or `kwargs` are given, nothing happens
+
+    Returns:
+        The results dataset with renamed labels
+
+    Group:
+        Evaluation
     """
     if renames is None:
         renames = kwargs
@@ -172,6 +191,9 @@ def rename_labels(results: xr.Dataset, renames: dict[str, dict[Any, Any] | list[
 def remove_labels(results: xr.Dataset, labels: list[str], main_dim: str) -> xr.Dataset:
     """
     Removes the given labels in the given main dimension from the results array.
+
+    Group:
+        Evaluation
     """
     return results.drop_sel({main_dim: labels})
 
@@ -179,15 +201,20 @@ def speedup(runtimes: np.ndarray, axis: int = -1, base: np.ndarray = None) -> np
     """
     Calculates the speedup for an array of runtimes.
 
-    Arguments:
-    ---
-    - runtimes: np.ndarray. The array of runtimes to convert to speedups
-    - axis: int. The axis which defines a series of runtimes.
-    Only relevant if `base` is not given.
-    Defaults to the last dimension.
-    - base: np.ndarray. An array of runtimes indicating a speedup of 1.
-    Should have one dimension less than runtimes.
-    By default, the base will be determined from the first element in the runtime series.
+    Args:
+        runtimes: np.ndarray. The array of runtimes to convert to speedups
+        axis: int. The axis which defines a series of runtimes.
+            Only relevant if `base` is not given.
+            Defaults to the last dimension.
+        base: np.ndarray. The base runtimes from which to compute the speedup.
+            Should have one dimension less than runtimes.
+            By default, the base will be determined from the first element in the runtime series.
+
+    Returns:
+        An array of speedups with the same shape as ``runtimes``.
+
+    Group:
+        Evaluation
     """
     if base is None:
         first_index = [slice(x) for x in runtimes.shape]
@@ -196,12 +223,16 @@ def speedup(runtimes: np.ndarray, axis: int = -1, base: np.ndarray = None) -> np
     base = np.expand_dims(base, axis)
     return base / runtimes
 
+@deprecated("Serial overhead analysis should be used instead.", version="0.0.1a1")
 def find_scaling(scale: np.ndarray, speedup: np.ndarray, axis: int = None) -> Tuple[np.ndarray, np.ndarray]:
     """
     Returns the scaling factor and scaling rate for a series of speedups.
     This is done via regression on functions of the type $y = \alpha * x^\beta$.
     $\alpha$ indicates the scaling factor and $\beta$ the scaling rate.
     This assumes that the speedup for scale = 1 is 1.
+
+    Group:
+        Evaluation
     """
     alpha, beta = util.simple_lin_reg(np.log(scale), np.log(speedup), axis=axis)
     alpha = np.exp(alpha)
@@ -210,6 +241,16 @@ def find_scaling(scale: np.ndarray, speedup: np.ndarray, axis: int = None) -> Tu
 def amdahl_speedup(f: np.ndarray, c: np.ndarray) -> np.ndarray:
     """
     Returns the speedups for a serial runtime fractions and a selection of core counts.
+
+    Args:
+        f (np.ndarray): A numpy array of serial runtime fractions. These must be between 0 and 1.
+        c (np.ndarray): A numpy array of core counts. This must have the same shape as ``f`` or must be broadcastable.
+
+    Returns:
+        A numpy array of speedups for the given serial fractions. Has the same shape as ``f``.
+
+    Group:
+        Evaluation
     """
     return 1 / (f + (1-f)/c)
 
@@ -218,14 +259,20 @@ def serial_overhead_analysis(
     t1: np.ndarray = None, c1: np.ndarray = None,
 ) -> np.ndarray:
     """
-    Estimates the serial fraction of the total runtime
+    Estimates the serial fraction of the total runtime.
+    This is done via the closed-form solution of least squares regression with Amdahl's law.
 
-    Arguments:
-    ---
-    - t: shape: (n_implementations, n_core_selections). The runtime measurements
-    - c: shape: (n_implementations, n_core_selections). The core selections
-    - t1: shape: n_implementations. The runtime baseline. If None, the first column of `t` will be used.
-    - c1: shape: n_implementations. The core counts for the runtime baselines. If None, the first column of `c` will be used.
+    Args:
+        t: shape: ``(n_implementations, n_core_selections)``. The runtime measurements
+        c: shape: ``(n_implementations, n_core_selections)``. The core selections
+        t1: shape: ``n_implementations``. The runtime baseline. If None, the first column of `t` will be used.
+        c1: shape: ``n_implementations``. The core counts for the runtime baselines. If None, the first column of `c` will be used.
+
+    Returns:
+        A 1-D numpy array of length ``n_implementations`` of estimated serial fractions. 
+
+    Group:
+        Evaluation
     """
     # prepare arguments
     if t1 is None:
@@ -249,6 +296,9 @@ def serial_overhead_analysis(
 def get_plots_dir(results: xr.Dataset) -> pathlib.Path:
     """
     Returns the path to the directory where plots should be stored for a specific results dataset.
+
+    Group:
+        Plot
     """
     base = config["evaluation"]["plot_dir"]
     args = [base, results.attrs["name"]]
@@ -282,24 +332,26 @@ def create_plots(
     If the coordinates of a dimension have type `str`, a bar plot will be generated. Otherwise a standard line plot will be saved.
     The plots will be stored in config's `plot_dir` in a directory according to the experiment name.
 
-    Arguments
-    ---
-    - results: xr.DataArray. The result array
-    - reduction: Callable. The reduction function. (See `xarray.DataArray.reduce`)
-    - relative_rt_dims: list[str] | dict[str, Any]. Dimensions for which a relative runtime plot will be produced.
-    If a dictionary is passed, the keys will be used to identify the dimensions for which to plot a relative runtime 
-    and the values will be used to identify which entry of the main dimension should be used as a reference (identified by label / coordinate value).
-    If a list is passed, the first entry will be used.
-    A relative runtime plot is often more practical for comparing results, instead of the raw data.
-    If the main_dim has only one entry, no normalization will happen.
-    - scaling dims: list[str]. Dimensions which are used for scalability plots.
-    For those dimensions, a plot of the speedup will be created in addition to the usual runtime plot.
-    - estimate_serial: bool. Whether to estimate the serial overhead.
-    - plot_scaling_fits: bool. 
-    Whether to plot the functions which are being fitted for calculating the scaling factor and rate.
-    - plot_scaling_baseline: bool.
-    Whether to plot a baseline for scaling dimensions.
-    - runtime_selection: list[str]. The runtime types to plot. Defaults to all recorded runtimes.
+    Args:
+        results (xr.DataArray): The result array
+        reduction (Callable): The reduction function. (See `xarray.DataArray.reduce`)
+        relative_rt_dims (list[str] | dict[str, Any]): Dimensions for which a relative runtime plot will be produced.
+            If a dictionary is passed, the keys will be used to identify the dimensions for which to plot a relative runtime 
+            and the values will be used to identify which entry of the main dimension should be used as a reference (identified by label / coordinate value).
+            If a list is passed, the first entry will be used.
+            A relative runtime plot is often more practical for comparing results, instead of the raw data.
+            If the main_dim has only one entry, no normalization will happen.
+        scaling dims (list[str]): Dimensions which are used for scalability plots.
+            For those dimensions, a plot of the speedup will be created in addition to the usual runtime plot.
+        estimate_serial (bool): Whether to estimate the serial overhead.
+        plot_scaling_fits (bool):
+            Whether to plot the functions which are being fitted for calculating the scaling factor and rate.
+        plot_scaling_baseline (bool):
+            Whether to plot a baseline for scaling dimensions.
+        runtime_selection (list[str]): The runtime types to plot. Defaults to all recorded runtimes.
+
+    Group:
+        Plot
     """
 
     plt.set_loglevel("warning") # disable debug logs from matplotlib
@@ -415,12 +467,13 @@ def plot_runtime_parts(
     """
     Plots how the full runtimes are split up.
 
-    Arguments:
-    ---
-    - results: The results dataset
-    - first_dims: The dimensions to prioritize in the order in which they are plotted.
-    The first entry will be interpreted as the main dimension.
+    Args:
+        results: The results dataset
+        first_dims: The dimensions to prioritize in the order in which they are plotted.
+            The first entry will be interpreted as the main dimension.
 
+    Group:
+        Plot
     """
     # drop full runtimes
     results = results.drop_vars("full")
@@ -473,6 +526,9 @@ def store_config(results: xr.Dataset):
     """
     Stores the configuration of the runtime experiment as a yaml.
     The configuration are the coordinate values of the results array.
+
+    Group:
+        Evaluation
     """
     path = util.get_path(config["evaluation"]["config_dir"], results.attrs["name"], "config.yaml")
     # create config dict

@@ -16,7 +16,6 @@ from . import data
 from .scheduler import start_scheduler, start_slurm_cluster
 from .experiments import measure_runtimes, measure_operator_runtimes, measure_loading_times
 from .experiments import Operator, xr_impl_runner, get_xr_run_prep, xr_input_prep
-from .evaluation import print_version_results, print_results
 from . import evaluation as eval
 
 from . import brn
