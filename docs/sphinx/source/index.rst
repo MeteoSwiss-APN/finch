@@ -20,6 +20,8 @@ Welcome to finch's documentation!
 
    usage/custom_operator
    usage/input
+   usage/experiments
+   usage/evaluation
    usage/config
 
 .. toctree::
@@ -28,6 +30,11 @@ Welcome to finch's documentation!
 
    api
 
+.. toctree:: 
+   :caption: Operator Reference
+   :hidden:
+
+   operators
 
 Indices and tables
 ==================

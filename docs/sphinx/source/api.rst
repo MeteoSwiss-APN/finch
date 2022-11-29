@@ -1,10 +1,35 @@
 API
 ===
 
+General
+-------
+
+.. python-apigen-group:: Finch
+
+Data Handling
+---------------
+
+.. python-apigen-group:: Data
+
 Input Management
-----------------
+^^^^^^^^^^^^^^^^
 
 .. python-apigen-group:: Input
+
+Experiments
+-----------
+
+.. python-apigen-group:: Experiments
+
+Evaluation
+----------
+
+.. python-apigen-group:: Evaluation
+
+Plotting
+^^^^^^^^
+
+.. python-apigen-group:: Plot
 
 Dask Configuration
 ------------------

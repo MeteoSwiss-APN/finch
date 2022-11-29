@@ -262,9 +262,9 @@ class Input():
     class Version(yaml.YAMLObject, util.Config):
         """A version of the input"""
         yaml_tag = "!Version"
-        """The tag to use for encoding in yaml."""
+        """The tag to use for encoding in yaml. DO NOT MODIFY"""
         finch_version = pkg_version
-        """The finch version that was used to create this input version"""
+        """The finch version that was used to create this input version. DO NOT MODIFY"""
         format: Format = None
         """The file format of this version"""
         dim_order: DimOrder = None
