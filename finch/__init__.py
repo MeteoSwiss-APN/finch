@@ -17,6 +17,7 @@ from . import scheduler
 from .experiments import measure_runtimes, measure_operator_runtimes, measure_loading_times
 from .experiments import RunConfig, DaskRunConfig
 from .experiments import xr_impl_runner, get_xr_run_prep, xr_input_prep
+from .experiments import DefaultOperator
 from . import evaluation as eval
 
 from . import brn
