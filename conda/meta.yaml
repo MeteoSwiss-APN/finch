@@ -11,3 +11,14 @@ source:
 requirements:
   host:
     - python
+  run:
+    - dask >= 2022.11.0
+    - distributed >= 2022.11.0
+    - dask-jobqueue
+    - xarray >= 2022.11.0
+
+about:
+  home: {{ project.get('urls').get('Homepage') }}
+  license: {{ project.get('license') }}
+  license_file: LICENSE
+  summary: {{ project.get('description') }}
