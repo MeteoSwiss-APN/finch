@@ -1,0 +1,13 @@
+{% set pyproject = load_file_data('pyproject.toml') %}
+{% set project = pyproject.get('project') %}
+
+package:
+  name: {{ project.get('name') }}
+  version: {{ project.get('version') }}
+
+source:
+  path: ..
+
+requirements:
+  host:
+    - python
