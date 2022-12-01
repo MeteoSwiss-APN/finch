@@ -11,7 +11,9 @@ It is deisgned as an experimental library plus a run script, which runs configur
 
 # Installation
 
-## pip
+## setuptools
+
+Requires at least CMake 3.14 as well as a C++-Compiler with C++-20 (concepts) support.
 
 ```
 pip install -e .
@@ -23,28 +25,12 @@ conda build -c conda-forge conda
 conda install -c ${CONDA_PREFIX}/conda-bld/  -c conda-forge finch_mch
 ```
 
-# Setup
-
-## Conda
-
-An `environments.yml` is provided to setup a conda environment with all required dependencies.
-```
-conda env create -f environment.yml
-conda activate finch
-```
-
-The zebra package (C++ implementations) needs to be installed separately:
-```
-cd zebra
-python setup.py install
-```
-
-## Run experiments
+# Run experiments
 ```
 python run.py
 ```
 
-## Run tests
+# Run tests
 ```
 pytest
 ```
