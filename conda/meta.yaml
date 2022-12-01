@@ -1,4 +1,4 @@
-{% set pyproject = load_file_data('pyproject.toml') %}
+{% set pyproject = load_file_data('../pyproject.toml', from_recipe_dir=True, recipe_dir="conda") %}
 {% set project = pyproject.get('project') %}
 
 package:
@@ -6,19 +6,29 @@ package:
   version: {{ project.get('version') }}
 
 source:
-  path: ..
+  path: ../
+
+build:
+  number: 1
+  string: finch
+  preserve_egg_dir: True
 
 requirements:
   host:
     - python
   run:
-    - dask >= 2022.11.0
-    - distributed >= 2022.11.0
+    - python >=3.10.0
+    - dask >=2022.11.0
+    - distributed >=2022.11.0
     - dask-jobqueue
-    - xarray >= 2022.11.0
+    - xarray >=2022.11.0
+    - pyyaml
+    - cfgrib
+    - tqdm
+    - deprecated
+    - matplotx
 
 about:
   home: {{ project.get('urls').get('Homepage') }}
-  license: {{ project.get('license') }}
-  license_file: LICENSE
+  license_file: ../LICENSE
   summary: {{ project.get('description') }}
