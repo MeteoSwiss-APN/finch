@@ -16,7 +16,6 @@ authors = [
 description = "Library for running experiments on parallel dataprocessing operators"
 readme = "README.md"
 requires-python = ">=3.10"
-license = "MIT"
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Operating System :: POSIX",
