@@ -9,6 +9,20 @@ Image distributed through Creative Commons License from https://commons.wikimedi
 Finch provides parallelized prototypes for ICON data processing operators for a distributed infrastructure with SLURM.
 It is deisgned as an experimental library plus a run script, which runs configurable experiments.
 
+# Installation
+
+## pip
+
+```
+pip install -e .
+```
+
+## conda
+```
+conda build -c conda-forge conda
+conda install -c ${CONDA_PREFIX}/conda-bld/  -c conda-forge finch_mch
+```
+
 # Setup
 
 ## Conda
