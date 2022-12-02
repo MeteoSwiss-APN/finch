@@ -11,6 +11,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install sphinx sphinx_immaterial
+          pip install scikit-build
           python setup.py egg_info
           pip install -r *.egg-info/requires.txt
       - name: Sphinx build
