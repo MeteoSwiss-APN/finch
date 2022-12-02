@@ -1,1 +1,1 @@
-pip install -e .
+$PYTHON setup.py install
