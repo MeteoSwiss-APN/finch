@@ -9,28 +9,28 @@ Image distributed through Creative Commons License from https://commons.wikimedi
 Finch provides parallelized prototypes for ICON data processing operators for a distributed infrastructure with SLURM.
 It is deisgned as an experimental library plus a run script, which runs configurable experiments.
 
-# Setup
+# Installation
 
-## Conda
+## setuptools
 
-An `environments.yml` is provided to setup a conda environment with all required dependencies.
-```
-conda env create -f environment.yml
-conda activate finch
-```
+Requires at least CMake 3.14 as well as a C++-Compiler with C++-20 (concepts) support.
 
-The zebra package (C++ implementations) needs to be installed separately:
 ```
-cd zebra
-python setup.py install
+pip install -e .
 ```
 
-## Run experiments
+## conda
+```
+conda build -c conda-forge conda
+conda install -c ${CONDA_PREFIX}/conda-bld/  -c conda-forge finch_mch
+```
+
+# Run experiments
 ```
 python run.py
 ```
 
-## Run tests
+# Run tests
 ```
 pytest
 ```

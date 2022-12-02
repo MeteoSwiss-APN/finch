@@ -1,0 +1,42 @@
+{% set pyproject = load_file_data('../pyproject.toml', from_recipe_dir=True, recipe_dir="conda") %}
+{% set project = pyproject.get('project') %}
+
+package:
+  name: {{ project.get('name') }}
+  version: {{ project.get('version') }}
+
+source:
+  path: ../
+
+build:
+  number: 1
+  string: finch
+  preserve_egg_dir: True
+  run_exports:
+    - openmp
+    - python >=3.10.0
+
+requirements:
+  build:
+    - scikit-build
+    - cmake >=3.14
+    - {{ compiler('cxx') }}
+    - pybind11
+  host:
+    - python >=3.10.0
+    - openmp
+  run:
+    - dask >=2022.11.0
+    - distributed >=2022.11.0
+    - dask-jobqueue
+    - xarray >=2022.11.0
+    - pyyaml
+    - cfgrib
+    - tqdm
+    - deprecated
+    - matplotx
+
+about:
+  home: {{ project.get('urls').get('Homepage') }}
+  license_file: ../LICENSE
+  summary: {{ project.get('description') }}
