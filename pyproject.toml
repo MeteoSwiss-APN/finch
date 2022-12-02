@@ -23,5 +23,5 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/MeteoSwiss-APN/finch"
+"Homepage" = "https://meteoswiss-apn.github.io/finch/"
 "Bug Tracker" = "https://github.com/MeteoSwiss-APN/finch/issues"
