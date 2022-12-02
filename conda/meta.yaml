@@ -12,12 +12,20 @@ build:
   number: 1
   string: finch
   preserve_egg_dir: True
+  run_exports:
+    - openmp
+    - python >=3.10.0
 
 requirements:
+  build:
+    - scikit-build
+    - cmake >=3.14
+    - {{ compiler('cxx') }}
+    - pybind11
   host:
-    - python
-  run:
     - python >=3.10.0
+    - openmp
+  run:
     - dask >=2022.11.0
     - distributed >=2022.11.0
     - dask-jobqueue
