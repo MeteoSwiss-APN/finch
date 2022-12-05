@@ -16,6 +16,7 @@ It is deisgned as an experimental library plus a run script, which runs configur
 Requires at least CMake 3.14 as well as a C++-Compiler with C++-20 (concepts) support.
 
 ```
+pip install scikit-build pybind11
 python setup.py install
 ```
 

@@ -34,5 +34,5 @@ jobs:
           platform: x64
       - name: Installing Package
         run: |
-          pip install scikit-build
+          pip install scikit-build pybind11
           python setup.py install
