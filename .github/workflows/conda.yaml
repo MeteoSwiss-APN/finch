@@ -14,7 +14,7 @@ jobs:
           conda install conda-build
       - name: Build Package
         run: |
-          conda build -c conda-forge finch/conda
+          conda build -c conda-forge conda
       - name: Installing Package
         run: |
           conda install -c ${CONDA_PREFIX}/conda-bld/  -c conda-forge finch_mch
