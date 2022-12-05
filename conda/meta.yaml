@@ -19,14 +19,13 @@ build:
 requirements:
   build:
     - cmake >=3.14
-    - {{ compiler('cxx') }}
-    - pybind11
   host:
     - python =3.10
     - openmp
     - scikit-build
+    - pybind11
+    - {{ compiler('cxx') }}
   run:
-    - python =3.10
     - dask >=2022.11.0
     - distributed >=2022.11.0
     - dask-jobqueue
