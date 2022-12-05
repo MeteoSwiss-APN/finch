@@ -11,7 +11,7 @@ jobs:
       - uses: s-weigand/setup-conda@v1
       - name: Installing Conda Build
         run: |
-          conda install conda-build
+          conda install conda-build -c conda-forge
       - name: Build Package
         run: |
           conda build -c conda-forge conda
@@ -32,7 +32,9 @@ jobs:
         with:
           version: 11
           platform: x64
+      - name: Installing Build Dependencies
+        run: |
+          pip install scikit-build "pybind11[global]"
       - name: Installing Package
         run: |
-          pip install scikit-build pybind11
           python setup.py install
