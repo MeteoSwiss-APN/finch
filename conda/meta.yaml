@@ -26,6 +26,7 @@ requirements:
     - openmp
     - scikit-build
   run:
+    - python =3.10
     - dask >=2022.11.0
     - distributed >=2022.11.0
     - dask-jobqueue
