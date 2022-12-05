@@ -12,7 +12,7 @@ jobs:
       - name: Create Conda Environment
         run: |
           conda create -n finch python=3.10
-          conda activate finch
+          source activate finch
       - name: Installing Conda Build
         run: |
           conda install conda-build -c conda-forge
