@@ -14,10 +14,10 @@ jobs:
           environment-file: conda/environment.yml
       - name: Activating Environment
         run: |
+          eval "$(micromamba shell hook --shell=bash)"
           micromamba activate finch
       - name: Build Package
         run: |
-          micromamba shell hook --shell=bash
           conda mambabuild -c conda-forge conda
       - name: Installing Package
         run: |
