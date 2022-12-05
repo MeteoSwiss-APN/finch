@@ -1,7 +1,7 @@
-name: Conda Packaging
+name: Packaging
 on: [push]
 jobs:
-  docs:
+  conda:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -18,3 +18,13 @@ jobs:
       - name: Installing Package
         run: |
           conda install -c ${CONDA_PREFIX}/conda-bld/  -c conda-forge finch_mch
+  setuptools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Installing Package
+        run: |
+          pip install -e .
