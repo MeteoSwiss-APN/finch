@@ -17,7 +17,7 @@ jobs:
           micromamba activate finch
       - name: Build Package
         run: |
-          eval "$(micromamba shell hook --shell=bash)"
+          micromamba shell hook --shell=bash
           conda mambabuild -c conda-forge conda
       - name: Installing Package
         run: |
