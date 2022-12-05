@@ -34,4 +34,5 @@ jobs:
           platform: x64
       - name: Installing Package
         run: |
+          pip install scikit-build
           python setup.py install
