@@ -1,0 +1,8 @@
+name: finch
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - conda-build>=3.20
+  - python=3.10
+  - boa
