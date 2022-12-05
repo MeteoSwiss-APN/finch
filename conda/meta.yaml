@@ -14,17 +14,17 @@ build:
   preserve_egg_dir: True
   run_exports:
     - openmp
-    - python >=3.10.0
+    - python >=3.10.0,<3.11.0
 
 requirements:
   build:
-    - scikit-build
     - cmake >=3.14
     - {{ compiler('cxx') }}
     - pybind11
   host:
-    - python >=3.10.0
+    - python >=3.10.0,<3.11.0
     - openmp
+    - scikit-build
   run:
     - dask >=2022.11.0
     - distributed >=2022.11.0
