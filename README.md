@@ -31,6 +31,12 @@ conda build -c conda-forge conda
 conda install -c ${CONDA_PREFIX}/conda-bld/  -c conda-forge finch_mch
 ```
 
+A few dependecies are only provided via PyPI. You can install them with `pip`.
+
+```
+pip install wonderwords expandvars
+```
+
 # Run experiments
 ```
 python run.py

@@ -21,11 +21,11 @@ requirements:
     - cmake >=3.14
     - python =3.10
     - {{ compiler('cxx') }}
+  host:
+    - python =3.10
     - pybind11
     - scikit-build
     - openmp
-  host:
-    - python =3.10
   run:
     - dask >=2022.11.0
     - distributed >=2022.11.0
