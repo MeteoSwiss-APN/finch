@@ -20,7 +20,11 @@ pip install -e .
 ```
 
 ## conda
+
+You can install finch with `conda-build` inside your conda environment.
+
 ```
+conda install conda-build
 conda build -c conda-forge conda
 conda install -c ${CONDA_PREFIX}/conda-bld/  -c conda-forge finch_mch
 ```
