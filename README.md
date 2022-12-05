@@ -16,13 +16,14 @@ It is deisgned as an experimental library plus a run script, which runs configur
 Requires at least CMake 3.14 as well as a C++-Compiler with C++-20 (concepts) support.
 
 ```
-pip install scikit-build pybind11
+pip install scikit-build "pybind11[global]"
 python setup.py install
 ```
 
 ## conda
 
 You can install finch with `conda-build` inside your conda environment.
+Make sure you use Python 3.10.
 
 ```
 conda install conda-build
