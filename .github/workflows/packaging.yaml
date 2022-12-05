@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: "3.10"
       - name: Installing CMake 3.14
-        uses: lukka/get-cmake@v3.14.0
+        uses: lukka/get-cmake@latest
       - name: Set up GCC
         uses: egor-tensin/setup-gcc@v1
         with:
