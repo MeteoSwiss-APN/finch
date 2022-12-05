@@ -12,6 +12,9 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: conda/environment.yml
+      - name: Activating Environment
+        run: |
+          mamba activate finch
       - name: Build Package
         run: |
           conda mambabuild -c conda-forge conda
