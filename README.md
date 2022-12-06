@@ -20,18 +20,21 @@ pip install scikit-build "pybind11[global]"
 python setup.py install
 ```
 
-## conda
+## conda / mamba
 
-You can install finch with `conda-build` inside your conda environment.
-Make sure you use Python 3.10.
+A conda recipe is provided which can be built and installed using `conda-build`.
+A faster alternative to conda is `mamba`, which can be used together with [boa](https://github.com/mamba-org/boa) for building the recipe.
+Make sure your environment uses Python 3.10.
 
 ```
-conda install conda-build
-conda build -c conda-forge conda
-conda install -c ${CONDA_PREFIX}/conda-bld/  -c conda-forge finch_mch
+conda install mamba -c conda-forge
+mamba install conda-build boa -c conda-forge
+conda mambabuild -c conda-forge conda
+mamba install -c local  -c conda-forge finch_mch
 ```
+If you prefer to use `conda` instead of `mamba`, you can just skip the first line from above, replace the `mamba` commands with the same `conda` commands and use `conda build` instead of `conda mambabuild`.
 
-A few dependecies are only provided via PyPI. You can install them with `pip`.
+A few dependecies are only provided via PyPI. You can install them manually with `pip`.
 
 ```
 pip install wonderwords expandvars
