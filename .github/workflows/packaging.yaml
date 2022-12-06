@@ -23,7 +23,7 @@ jobs:
           conda mambabuild -c conda-forge conda
       - name: Installing Package
         run: |
-          mamba install -c ${CONDA_PREFIX}/conda-bld/  -c conda-forge finch_mch
+          conda install -c ${CONDA_PREFIX}/conda-bld/  -c conda-forge finch_mch
   setuptools:
     runs-on: ubuntu-latest
     steps:
