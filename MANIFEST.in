@@ -1,2 +1,4 @@
 include config/*.ini
 exclude config/custom.ini
+
+include pyproject.toml

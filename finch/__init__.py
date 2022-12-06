@@ -1,12 +1,15 @@
+from . import _util
+from . import environment as env
+
+# retrieve package version from pyproject.toml
+import toml
 from packaging.version import Version
-import importlib.metadata
-__version__ = Version("0.0.1a2")
+__toml_data = toml.load(env.proj_toml)
+__version__ = Version(__toml_data["project"]["version"])
 """
 The current version of this package.
 """
 
-from . import _util
-from . import environment as env
 from .config import config, set_debug_mode, set_log_level, debug, logging_format, log_level
 import os
 os.environ["GRIB_DEFINITION_PATH"] = config["data"]["grib_definition_path"]
