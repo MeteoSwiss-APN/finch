@@ -8,7 +8,7 @@ import dask.array as da
 import numpy as np
 from . import config
 from . import util
-from . import version as pkg_version
+from . import __version__ as pkg_version
 from collections.abc import Callable
 import yaml
 import copy

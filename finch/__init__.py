@@ -1,7 +1,6 @@
 from packaging.version import Version
 import importlib.metadata
-version = Version("0.0.1a1")
-# __version__ = Version(importlib.metadata.version("finch_mch")) # use this for the future
+__version__ = Version("0.0.1a2")
 """
 The current version of this package.
 """
