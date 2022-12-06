@@ -9,6 +9,7 @@ proj_config = os.path.join(proj_root, "config", "finch.ini")
 """The location of the project configuration file"""
 
 proj_toml = os.path.join(proj_root, "pyproject.toml")
+"""The location of the pyproject.toml file"""
 
 default_custom_config = os.path.join(proj_root, "config", "custom.ini")
 """The default location for a custom configuration file"""
