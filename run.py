@@ -3,10 +3,17 @@ import sys
 import argparse
 import os
 import matplotx
+import importlib.util
+import yaml
+import pathlib
 
 # command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--debug", action="store_true")
+
+parser.add_argument("-d", "--debug", action="store_true", help="Run finch in debug mode")
+parser.add_argument("-c", "--config", help="Specify the location of a config file.")
+parser.add_argument("-p", "--debug-config", help="Specify the location of a debug config file.")
+
 cmd_args = parser.parse_args(sys.argv[1:])
 
 # debug arguments must be set before importing finch
@@ -17,15 +24,6 @@ os.environ["DEBUG"] = str(debug)
 import finch
 import finch.brn
 import xarray as xr
-
-# handle configuration
-import run_config as rc
-import debug_config as dc
-try:
-    import custom_config
-except ImportError:
-    pass
-
 
 # script
 
@@ -39,70 +37,150 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.DEBUG)
         finch.set_log_level(logging.DEBUG)
 
+    # prepare yaml parsing
+    # create config cunstructor to handle config objects
+    def config_constructor(loader: yaml.Loader, tag_suffix: str, node: yaml.Node) -> list[finch.util.Config] | finch.util.Config:
+        if isinstance(node, yaml.MappingNode):
+            """Handles a single config node"""
+            mapping = loader.construct_mapping(node)
+            if tag_suffix == "Run":
+                if "prep" in mapping:
+                    prep = mapping["prep"]
+                    if isinstance(prep, str):
+                        prep = [prep]
+                    mapping["prep"] = [getattr(finch, p) for p in prep]
+                if "impl" in mapping:
+                    impl = mapping["impl"]
+                    if isinstance(impl, str):
+                        if "." in impl:
+                            impl = [impl]
+                    if isinstance(impl, str):
+                        # this must be a module-only string now
+                        module = globals()["finch."+impl]
+                        impl = module.list_implementations()
+                    else:
+                        _impl = []
+                        for i in impl:
+                            i = i.split(".")
+                            module = globals()["finch."+i[0]]
+                            _impl.append(getattr(module, "impl."+i[1]))
+                        impl = _impl
+                    mapping["impl"] = impl
+                cfg_lister = finch.DaskRunConfig.list_configs
+            elif tag_suffix == "Cluster":
+                cfg_lister = finch.scheduler.ClusterConfig.list_configs
+            elif tag_suffix == "Version":
+                if "format" in mapping and isinstance(mapping["format"], str):
+                    mapping["format"] = finch.data.Format(mapping["format"])
+                cfg_lister = finch.data.Input.Version.list_configs
+            out = cfg_lister(**mapping)
+            if len(out) == 1:
+                return out[0]
+            else:
+                return out
+        elif isinstance(node, yaml.SequenceNode):
+            out = loader.construct_sequence(node)
+            out = finch.util.flat_list(out)
+            if len(out) == 1:
+                return out[0]
+            else:
+                return out
+        else:
+            raise yaml.YAMLError(node)
+        
+
+    yaml.add_multi_constructor("!config:", config_constructor)
+
+    # load configurations
+    default_config_path = pathlib.Path("config", "run.yaml")
+    with open(default_config_path) as f:
+        rc: dict = yaml.safe_load(f)
+    custom_config_path = pathlib.Path(cmd_args.config or finch.config["run"]["config_path"])
+    if custom_config_path.exists:
+        with open(custom_config_path) as f:
+            custom_config: dict = yaml.safe_load(f)
+            rc = finch.util.recursive_update(rc, custom_config)
+    if debug:
+        debug_config_path = pathlib.Path("config", "debug.yaml")
+        with open(debug_config_path) as f:
+            dbg_config: dict = yaml.safe_load(f)
+            rc = finch.util.recursive_update(rc, dbg_config)
+        custom_debug_config_path = pathlib.Path(cmd_args.debug_config or finch.config["run"]["debug_config_path"])
+        if custom_debug_config_path.exists:
+            with open(custom_debug_config_path) as f:
+                dbg_config: dict = yaml.safe_load(f)
+                rc = finch.util.recursive_update(rc, dbg_config)
+                
+    rc = finch.util.RecursiveNamespace(**rc)
+
     # brn experiments
 
     brn_input = finch.brn.get_brn_input()
 
-    if rc.run_brn:
+    if rc.brn.run:
 
         measure_cfg = dict(
-            iterations = dc.iterations if debug else rc.iterations,
-            warmup = dc.warmup if debug else rc.warmup,
-            pbar = rc.pbar
+            iterations = rc.general.iterations,
+            warmup = rc.general.warmup,
+            pbar = rc.general.pbar
         )
 
-        if rc.brn_manage_input:
+        rcc = rc.brn.input_management
+        if rcc.run:
             logging.info("Adding new input version")
-            if rc.brn_add_input_version:
-                finch.scheduler.start_scheduler(debug, rc.brn_input_management_cluster)
-                finch.scheduler.scale_and_wait(rc.brn_input_management_workers)
-                brn_input.add_version(rc.brn_add_input_version)
+            if rcc.add_version:
+                finch.scheduler.start_scheduler(debug, rcc.cluster)
+                finch.scheduler.scale_and_wait(rcc.workers)
+                brn_input.add_version(rcc.add_version)
 
-        if rc.brn_load_experiment:
+        rcc = rc.brn.loadtime_measurement
+        if rcc.run:
             logging.info("Measuring brn input load times")
             times = finch.measure_loading_times(
                 brn_input, 
                 brn_input.versions,
                 **measure_cfg
             )
-            finch.print_version_results(times, brn_input.versions)
+            print(times)
             print()
         
-        if rc.brn_measure_runtimes:
+        rcc = rc.brn.runtime_measurement
+        if rcc.run:
             logging.info(f"Measuring runtimes of brn implementations")
             times = finch.measure_operator_runtimes(
-                rc.run_configs, 
+                rcc.run_config, 
                 brn_input, 
-                rc.brn_input_versions, 
-                dask_report = rc.brn_dask_report, 
+                rcc.input_versions, 
+                dask_report = rcc.dask_report, 
                 **measure_cfg
             )
             results = finch.eval.create_result_dataset(times, rc.run_configs, rc.brn_input_versions, finch.brn.brn_input, "brn_"+rc.brn_exp_name)
             results.to_netcdf(rc.results_file)
 
-        if rc.brn_evaluation:
+        rcc = rc.brn.evaluation
+        if rcc.run:
             logging.info(f"Evaluating experiment results")
-            if not rc.brn_eval_plot_dark_mode:
+            if not rcc.plot_dark_mode:
                 finch.eval.plot_style = matplotx.styles.dufte
-            if rc.brn_eval_exp_name is None:
+            if rcc.exp_name is None:
                 results = xr.open_dataset(rc.results_file)
                 results.to_netcdf(finch.util.get_path(finch.config["evaluation"]["results_dir"], results.attrs["name"], "results.nc"))
             else:
-                results = xr.open_dataset(finch.util.get_path(finch.config["evaluation"]["results_dir"], rc.brn_eval_exp_name, "results.nc"))
+                results = xr.open_dataset(finch.util.get_path(finch.config["evaluation"]["results_dir"], rcc.exp_name, "results.nc"))
             results = finch.eval.create_cores_dimension(results)
-            if rc.brn_eval_rename_labels:
-                brn_eval_rename_labels = {rc.brn_eval_main_dim :rc. brn_eval_rename_labels}
+            if rcc.rename_labels:
+                brn_eval_rename_labels = {rcc.main_dim : rcc.rename_labels}
                 results = finch.eval.rename_labels(results, brn_eval_rename_labels)
-            if rc.brn_eval_ignore_labels:
-                results = finch.eval.remove_labels(results, rc.brn_eval_ignore_labels, rc.brn_eval_main_dim)
+            if rcc.ignore_labels:
+                results = finch.eval.remove_labels(results, rcc.ignore_labels, rcc.main_dim)
             finch.eval.create_plots(results, 
-                main_dim=rc.brn_eval_main_dim, 
-                scaling_dims=rc.brn_eval_speedup_dims, 
-                relative_rt_dims=rc.brn_eval_reference_labels, 
-                runtime_selection=rc.brn_eval_runtimes_plot, 
-                estimate_serial=rc.brn_eval_estimate_serial, 
-                plot_scaling_fits=rc.brn_eval_plot_fits
+                main_dim=rcc.main_dim, 
+                scaling_dims=rcc.speedup_dims, 
+                relative_rt_dims=rcc.reference_labels, 
+                runtime_selection=rcc.runtimes_plot, 
+                estimate_serial=rcc.estimate_serial, 
+                plot_scaling_fits=rcc.plot_fit
             )
             if len(results.data_vars) > 1:
-                finch.eval.plot_runtime_parts(results, first_dims=rc.brn_eval_rt_parts_order)
+                finch.eval.plot_runtime_parts(results, first_dims=rcc.rt_parts_order)
             finch.eval.store_config(results)

@@ -13,6 +13,7 @@ from collections.abc import Callable
 import yaml
 import copy
 from deprecated.sphinx import deprecated
+import types
 
 data_config = config["data"]
 grib_dir = data_config["grib_dir"]
@@ -266,7 +267,10 @@ class Input():
         finch_version = pkg_version
         """The finch version that was used to create this input version. DO NOT MODIFY"""
         format: Format = None
-        """The file format of this version"""
+        """
+        The file format of this version.
+        This can be passed as a ``Format`` object or as a string representation of a ``Format`` item during initialization.
+        """
         dim_order: DimOrder = None
         """
         The dimension order.
@@ -278,6 +282,11 @@ class Input():
         """The name of this version"""
         coords: bool = None
         """Whether this version holds coordinates"""
+
+        def __post_init__(self):
+            # allow passing the string representation of format.
+            if isinstance(self.format, str):
+                self.format = Format(self.format)
 
         def __le__(self, other):
             """Self is less or equal to other, if other can be constructed from self 

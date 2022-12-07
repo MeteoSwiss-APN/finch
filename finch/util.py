@@ -529,3 +529,76 @@ def get_pyplot_grouped_bar_pos(groups: int, labels: int) -> Tuple[np.ndarray, fl
     return xpos, bar_width
 
 PathArg = Union[str, bytes, os.PathLike]
+
+def recursive_update(d: dict, updates: dict) -> dict:
+    """Returns a copy of ``d`` with its content replaced by ``updates`` wherever specified.
+    Nested dictionaries won't be replaced, but updated recursively as specified by ``updates``.
+
+    Args:
+        d (dict): The dictionary to update
+        updates (dict): The updates to perform recursively
+
+    Returns:
+        dict: The updated dictionary
+
+    Group:
+        Util
+    """
+    out = dict()
+    for k, v in d.items():
+        if k not in updates:
+            out[k] = v
+        elif isinstance(v, dict) and isinstance(updates[k], dict):
+            out[k] = recursive_update(v, updates[k])
+        else:
+            out[k] = updates[k]
+    for k, v in updates.items():
+        if k not in d:
+            out[k] = v
+    return out
+
+class RecursiveNamespace:
+    """
+    A simple namespace class which can handle nested dictionaries.
+
+    Group:
+        Util
+    """
+
+    @staticmethod
+    def map_entry(entry):
+        if isinstance(entry, dict):
+            return RecursiveNamespace(**entry)
+        return entry
+
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            if isinstance(val, dict):
+                setattr(self, key, RecursiveNamespace(**val))
+            elif isinstance(val, list):
+                setattr(self, key, list(map(self.map_entry, val)))
+            else:
+                setattr(self, key, val)
+
+    def as_dict(self):
+        return {
+            k: v.as_dict() if isinstance(v, RecursiveNamespace) else v 
+            for k, v in self.__dict__.items()
+        }
+
+def flat_list(arg) -> list:
+    """Creates a flat list from the argument.
+    The argument can be any object.
+    If it is not a list, a single-element list is returned.
+    If it is a list, a flattened version of this list will be returned.
+
+    Args:
+        arg: The argument to flatten
+
+    Returns:
+        list: The flattened argument
+    """
+    if isinstance(arg, list):
+        return [aa for a in arg for aa in flat_list(a)]
+    else:
+        return [arg]
