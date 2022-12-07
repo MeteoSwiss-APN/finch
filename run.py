@@ -3,9 +3,9 @@ import sys
 import argparse
 import os
 import matplotx
-import importlib.util
 import yaml
 import pathlib
+import functools
 
 # command line arguments
 parser = argparse.ArgumentParser()
@@ -46,9 +46,26 @@ if __name__ == "__main__":
             if tag_suffix == "Run":
                 if "prep" in mapping:
                     prep = mapping["prep"]
-                    if isinstance(prep, str):
+                    if not isinstance(prep, list):
                         prep = [prep]
-                    mapping["prep"] = [getattr(finch, p) for p in prep]
+                    _prep = []
+                    for p in prep:
+                        if isinstance(p, dict):
+                            fname = list(p.keys())[0]
+                            args = p[fname]
+                        elif isinstance(p, str):
+                            fname = p
+                            args = None
+                        else:
+                            raise yaml.YAMLError("Invalid prep specification")
+                        func = getattr(finch, fname)
+                        if args:
+                            if isinstance(args, dict):
+                                func = functools.partial(func, **args)
+                            else:
+                                func = functools.partial(func, *args)
+                        _prep.append(func)
+                    mapping["prep"] = _prep
                 if "impl" in mapping:
                     impl = mapping["impl"]
                     if isinstance(impl, str):
@@ -148,13 +165,13 @@ if __name__ == "__main__":
         if rcc.run:
             logging.info(f"Measuring runtimes of brn implementations")
             times = finch.measure_operator_runtimes(
-                rcc.run_config, 
+                rcc.run_configs, 
                 brn_input, 
                 rcc.input_versions, 
                 dask_report = rcc.dask_report, 
                 **measure_cfg
             )
-            results = finch.eval.create_result_dataset(times, rc.run_configs, rc.brn_input_versions, finch.brn.brn_input, "brn_"+rc.brn_exp_name)
+            results = finch.eval.create_result_dataset(times, rcc.run_configs, rcc.input_versions, finch.brn.brn_input, "brn_"+rcc.exp_name)
             results.to_netcdf(rc.results_file)
 
         rcc = rc.brn.evaluation

@@ -12,6 +12,12 @@
 #   where <module_name> is the name of the experiment module (e.g. "brn") and <impl_name> is the name of the function.
 #   It is also possible to only use <module_name>, in which case all implementations of the experiment module will be used.
 #   You can specify the preparation ("prep" attribute) by its function name from the preparations available in finch.
+#   Alternatively, if your run preparation supports arguments, you can use a single-entry dictionary with the function name mapping to the arguments.
+#   The arguments can be specified as a list or a dictionary.
+#   For example, the following would indicate a run preparation "prep(arg1=1, arg2='foo'":
+#   prep:
+#     arg1: 1
+#     arg2: foo
 # For cluster configurations (finch.scheduler.ClusterConfig), use the !config:Cluster tag.
 # For version configurations (finch.data.Input.Version), use the !config:Version tag.
 #   You can specify the format attribute by its string representation (e.g. "grib").
@@ -70,7 +76,7 @@ brn:
     # Null represents all available input versions
     input_versions: null
     # The run configuration(s)
-    run_config: !config:Run
+    run_configs: !config:Run
       workers: 1
       impl: null
       cluster_config: !config:Cluster
