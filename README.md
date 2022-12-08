@@ -42,7 +42,7 @@ pip install wonderwords expandvars
 
 # Run experiments
 ```
-python run.py
+finch
 ```
 
 # Run tests

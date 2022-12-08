@@ -42,11 +42,12 @@ if __name__ == "__main__":
     # prepare yaml parsing
     # create config cunstructor to handle config objects
     def config_constructor(loader: yaml.Loader, tag_suffix: str, node: yaml.Node) -> list[finch.util.Config] | finch.util.Config:
+        node_line = node.start_mark.line
         if isinstance(node, yaml.MappingNode):
             """Handles a single config node"""
             mapping = loader.construct_mapping(node)
             if tag_suffix == "Run":
-                if "prep" in mapping:
+                if "prep" in mapping and mapping["prep"]:
                     prep = mapping["prep"]
                     if not isinstance(prep, list):
                         prep = [prep]
@@ -59,7 +60,7 @@ if __name__ == "__main__":
                             fname = p
                             args = None
                         else:
-                            raise yaml.YAMLError("Invalid prep specification")
+                            raise yaml.YAMLError(f"Invalid specification of 'prep' attribute in Run config at line {node_line}")
                         func = getattr(finch, fname)
                         if args:
                             if isinstance(args, dict):
@@ -68,7 +69,7 @@ if __name__ == "__main__":
                                 func = functools.partial(func, *args)
                         _prep.append(func)
                     mapping["prep"] = _prep
-                if "impl" in mapping:
+                if "impl" in mapping and mapping["impl"]:
                     impl = mapping["impl"]
                     if isinstance(impl, str):
                         if "." in impl:
@@ -85,6 +86,8 @@ if __name__ == "__main__":
                             _impl.append(getattr(module, "impl."+i[1]))
                         impl = _impl
                     mapping["impl"] = impl
+                else:
+                    raise yaml.YAMLError(f"'impl' attribute must be specified in Run config at line {node_line}")
                 cfg_lister = finch.DaskRunConfig.list_configs
             elif tag_suffix == "Cluster":
                 cfg_lister = finch.scheduler.ClusterConfig.list_configs
@@ -92,6 +95,8 @@ if __name__ == "__main__":
                 if "format" in mapping and isinstance(mapping["format"], str):
                     mapping["format"] = finch.data.Format(mapping["format"])
                 cfg_lister = finch.data.Input.Version.list_configs
+            else:
+                raise yaml.YAMLError(f"Unsupported config '{tag_suffix}' at line {node_line}")
             out = cfg_lister(**mapping)
             if len(out) == 1:
                 return out[0]
@@ -105,10 +110,10 @@ if __name__ == "__main__":
             else:
                 return out
         else:
-            raise yaml.YAMLError(node)
+            raise yaml.YAMLError(f"!config: tag is only supported for mappings and lists. Error at line {node_line}")
         
 
-    yaml.add_multi_constructor("!config:", config_constructor)
+    yaml.add_multi_constructor("!config:", config_constructor, Loader=yaml.SafeLoader)
 
     # load configurations
     default_config_path = pathlib.Path("config", "run.yaml")
