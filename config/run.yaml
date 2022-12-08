@@ -78,7 +78,7 @@ brn:
     # The run configuration(s)
     run_configs: !config:Run
       workers: 1
-      impl: null
+      impl: "brn"
       cluster_config: !config:Cluster
         cores_per_worker: 1
         omp_parallelism: false
