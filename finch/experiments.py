@@ -31,6 +31,7 @@ Group:
     Finch
 """
 
+@dataclass
 class RunConfig(util.Config):
     """
     Abstract class for configuring and setting up the environment for experiments.

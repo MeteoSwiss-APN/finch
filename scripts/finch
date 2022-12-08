@@ -83,7 +83,8 @@ if __name__ == "__main__":
                         for i in impl:
                             i = i.split(".")
                             module = getattr(globals()["finch"], i[0])
-                            _impl.append(getattr(module, "impl."+i[1]))
+                            module = getattr(module, "impl")
+                            _impl.append(getattr(module, i[1]))
                         impl = _impl
                     mapping["impl"] = impl
                 else:
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     with open(default_config_path) as f:
         rc: dict = yaml.safe_load(f)
     custom_config_path = pathlib.Path(cmd_args.config or finch.config["run"]["config_path"])
-    if custom_config_path.exists:
+    if custom_config_path.exists():
         with open(custom_config_path) as f:
             custom_config: dict = yaml.safe_load(f)
             rc = finch.util.recursive_update(rc, custom_config)
@@ -130,7 +131,7 @@ if __name__ == "__main__":
             dbg_config: dict = yaml.safe_load(f)
             rc = finch.util.recursive_update(rc, dbg_config)
         custom_debug_config_path = pathlib.Path(cmd_args.debug_config or finch.config["run"]["debug_config_path"])
-        if custom_debug_config_path.exists:
+        if custom_debug_config_path.exists():
             with open(custom_debug_config_path) as f:
                 dbg_config: dict = yaml.safe_load(f)
                 rc = finch.util.recursive_update(rc, dbg_config)
