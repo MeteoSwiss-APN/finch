@@ -76,13 +76,13 @@ if __name__ == "__main__":
                             impl = [impl]
                     if isinstance(impl, str):
                         # this must be a module-only string now
-                        module = globals()["finch."+impl]
+                        module = getattr(globals()["finch"], impl)
                         impl = module.list_implementations()
                     else:
                         _impl = []
                         for i in impl:
                             i = i.split(".")
-                            module = globals()["finch."+i[0]]
+                            module = getattr(globals()["finch"], i[0])
                             _impl.append(getattr(module, "impl."+i[1]))
                         impl = _impl
                     mapping["impl"] = impl
