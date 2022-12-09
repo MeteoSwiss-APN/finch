@@ -37,7 +37,7 @@ If you prefer to use `conda` instead of `mamba`, you can just skip the first lin
 A few dependecies are only provided via PyPI. You can install them manually with `pip`.
 
 ```
-pip install wonderwords expandvars
+pip install wonderwords
 ```
 
 # Run experiments

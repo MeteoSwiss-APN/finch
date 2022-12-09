@@ -36,6 +36,7 @@ requirements:
     - tqdm
     - deprecated
     - matplotx
+    - expandvars
 
 about:
   home: {{ project.get('urls').get('Homepage') }}
