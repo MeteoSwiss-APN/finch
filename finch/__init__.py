@@ -2,10 +2,16 @@ from . import _util
 from . import environment as env
 
 # retrieve package version from pyproject.toml
-import toml
 from packaging.version import Version
-__toml_data = toml.load(env.__proj_toml)
-__version__ = Version(__toml_data["project"]["version"])
+import importlib.util
+if importlib.util.find_spec('finch') is not None:
+    import importlib.metadata
+    __version__ = Version(importlib.metadata.version('finch'))
+else:
+    # read the toml if finch is not installed
+    import toml
+    __toml_data = toml.load(env.__proj_toml)
+    __version__ = Version(__toml_data["project"]["version"])
 """
 The current version of this package.
 """
