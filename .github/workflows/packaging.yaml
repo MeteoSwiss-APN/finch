@@ -1,5 +1,5 @@
 name: Packaging
-on: [push]
+on: [push, pull_request]
 jobs:
   conda:
     runs-on: ubuntu-latest

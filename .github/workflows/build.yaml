@@ -1,0 +1,19 @@
+name: Build
+on: [push, pull_request]
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: |
+          pip install sphinx sphinx_immaterial myst-parser
+          pip install scikit-build
+          python setup.py egg_info
+          pip install -r *.egg-info/requires.txt
+      - name: Sphinx build
+        run: |
+          sphinx-build docs/sphinx/source docs/sphinx/build
