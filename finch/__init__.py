@@ -4,7 +4,7 @@ from . import environment as env
 # retrieve package version from pyproject.toml
 import toml
 from packaging.version import Version
-__toml_data = toml.load(env.proj_toml)
+__toml_data = toml.load(env.__proj_toml)
 __version__ = Version(__toml_data["project"]["version"])
 """
 The current version of this package.

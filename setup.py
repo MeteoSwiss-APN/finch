@@ -6,7 +6,7 @@ def exclude_static_libraries(cmake_manifest: list[str]):
 setup(
     packages = [
         "finch",
-        "finch.brn",
+        "finch.brn"
     ],
     include_package_data=True,
     scripts = [
