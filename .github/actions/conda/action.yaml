@@ -20,14 +20,21 @@ runs:
         with:
           path: ${{ env.CONDA_PREFIX }}
           key: conda-${{ steps.conda_hash.outputs.hash }}
+        id: cache
 
       # setup conda environment if we need to create a new cache
       - name: Install conda-build and boa
         run: |
           mamba install conda-build boa -c conda-forge
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        shell: bash
       - name: Build Package
         run: |
           conda mambabuild -c conda-forge conda
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        shell: bash
       - name: Installing Package
         run: |
           mamba install -c local -c conda-forge finch_mch
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        shell: bash
