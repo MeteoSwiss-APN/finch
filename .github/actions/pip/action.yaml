@@ -25,6 +25,7 @@ runs:
     - name: Installing Build Dependencies
       run: |
         pip install scikit-build "pybind11[global]"
+        pip install sphinx sphinx_immaterial myst-parser
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
       shell: bash
     - name: Installing Package

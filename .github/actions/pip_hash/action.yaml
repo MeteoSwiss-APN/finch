@@ -8,5 +8,5 @@ runs:
   using: "composite"
   steps:
     - id: hash
-      run: echo "hash=${{ hashFiles('finch/*', 'zebra/*', 'scripts/*', 'MANIFEST.in', 'LICENSE', 'pyproject.toml', 'setup.cfg', 'setup.py') }}" >> $GITHUB_OUTPUT
+      run: echo "hash=${{ hashFiles('finch/**', 'zebra/**', 'scripts/**', 'MANIFEST.in', 'LICENSE', 'pyproject.toml', 'setup.cfg', 'setup.py') }}" >> $GITHUB_OUTPUT
       shell: bash

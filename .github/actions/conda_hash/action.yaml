@@ -9,6 +9,6 @@ runs:
   steps:
     - uses: ./.github/actions/pip_hash
       id: pip
-    - run: echo "hash=$(${{ steps.pip.outputs.hash }}-${{ hashFiles('conda/*') }} | sha256sum)" >> $GITHUB_OUTPUT
+    - run: echo "hash=$(echo ${{ steps.pip.outputs.hash }}-${{ hashFiles('conda/**') }} | sha256sum)" >> $GITHUB_OUTPUT
       id: hash
       shell: bash
