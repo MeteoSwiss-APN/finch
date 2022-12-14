@@ -18,7 +18,7 @@ runs:
         id: conda_hash
       - uses: actions/cache@v3
         with:
-          path: ${{ env.CONDA_PREFIX }}
+          path: /usr/share/miniconda3/envs/finch
           key: conda-${{ steps.conda_hash.outputs.hash }}
         id: cache
 
