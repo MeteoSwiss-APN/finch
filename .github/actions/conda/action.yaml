@@ -14,7 +14,7 @@ runs:
           use-mamba: true
 
       # load cache
-      - uses: ./.github/actions/conda_hash.yaml
+      - uses: ./.github/actions/conda_hash
         id: conda_hash
       - uses: actions/cache@v3
         with:

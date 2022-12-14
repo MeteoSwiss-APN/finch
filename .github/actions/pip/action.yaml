@@ -4,7 +4,7 @@ runs:
   using: "composite"
   steps:
     # load cache
-    - uses: ./.github/actions/pip_hash.yaml
+    - uses: ./.github/actions/pip_hash
       id: pip_hash
     - uses: actions/cache@v3
       with:
@@ -12,7 +12,7 @@ runs:
         key: pip-${{ steps.pip_hash.outputs.hash }}
       id: cache
 
-    # create cache if needed
+    # create environment if there is no cache
     - name: Installing CMake
       uses: lukka/get-cmake@latest
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
