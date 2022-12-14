@@ -1,0 +1,13 @@
+name: "Conda Environment Hash"
+
+outputs:
+  hash:
+    value: ${{ steps.hash.outputs.hash }}
+
+runs:
+  using: "composite"
+  steps:
+    - using: ./.github/actions/pip_hash.yaml
+      id: pip
+    - run: echo "hash=$(${{ steps.pip.outputs.hash }}-${{ hashFiles('conda/*') }} | sha256sum)" >> $GITHUB_OUTPUT
+      id: hash

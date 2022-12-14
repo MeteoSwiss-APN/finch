@@ -1,0 +1,32 @@
+name: "Load Pip Environment"
+
+runs:
+  using: "composite"
+  steps:
+    # load cache
+    - uses: ./.github/actions/pip_hash.yaml
+      id: pip_hash
+    - uses: actions/cache@v3
+      with:
+        path: ${{ env.pythonLocation }}
+        key: pip-${{ steps.pip_hash.outputs.hash }}
+      id: cache
+
+    # create cache if needed
+    - name: Installing CMake
+      uses: lukka/get-cmake@latest
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+    - name: Set up GCC
+      uses: egor-tensin/setup-gcc@v1
+      with:
+        version: 11
+        platform: x64
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+    - name: Installing Build Dependencies
+      run: |
+        pip install scikit-build "pybind11[global]"
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+    - name: Installing Package
+      run: |
+        python setup.py install
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
