@@ -49,13 +49,13 @@ def brn_xr(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
 
     for _ in range(reps):
         thetav = thetav_xr(dataset.drop_vars(input.brn_only_array_names))
-        thetav_sum = thetav.isel(generalVerticalLayer=slice(None, None, -1)).cumsum(dim='z')
+        thetav_sum = thetav.isel(z=slice(None, None, -1)).cumsum(dim='z')
         nlevels_xr = da.arange(nlevels, 0, -1, chunks=dataset.chunksizes["z"])
         nlevels_xr =xr.DataArray(data=nlevels_xr, dims=["z"])
 
         u, v, hhl, hsurf = [dataset[n] for n in input.brn_only_array_names]
 
-        brn_1 = const.PC_G * (hhl-hsurf)*(thetav - thetav.isel(generalVerticalLayer=-1)) * nlevels_xr
+        brn_1 = const.PC_G * (hhl-hsurf)*(thetav - thetav.isel(z=-1)) * nlevels_xr
         brn_2 = (thetav_sum)*(u*u + v*v)
 
         brn = brn_1 / brn_2
@@ -136,7 +136,7 @@ def brn_blocked_np(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
     Group:
         BRN
     """
-    dataset = dataset.transpose(*data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
+    dataset = dataset.transpose(*"xyz") # ensure correct dimension order
     arrays = [dataset[n] for n in input.brn_array_names]
     template = xr.DataArray(arrays[0].data, coords=arrays[0].coords, dims=arrays[0].dims)
     return util.custom_map_blocks(functools.partial(__block_brn_np, reps=reps), *arrays, name="brn", template=template)
@@ -174,7 +174,7 @@ def brn_blocked_cpp(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
     Group:
         BRN
     """
-    dataset = dataset.transpose(*data.translate_order("xyz", input.dim_index)) # ensure correct dimension order
+    dataset = dataset.transpose(*"xyz") # ensure correct dimension order
     def wrapper(*arrays):
         arrays = list(arrays)
         out = np.empty_like(arrays[0])
