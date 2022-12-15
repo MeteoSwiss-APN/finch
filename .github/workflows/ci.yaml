@@ -35,6 +35,7 @@ jobs:
 
   build_docs:
     runs-on: ubuntu-latest
+    needs: package_pip
     outputs:
       cache: ${{ steps.cacheid.outputs.cacheid }}
     steps:
