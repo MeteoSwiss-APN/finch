@@ -1,6 +1,7 @@
 import os
 import pathlib
 from . import _util
+from packaging.version import Version
 
 package_root = str(pathlib.Path(__file__).parent)
 """
@@ -28,10 +29,12 @@ Group:
     Finch
 """
 
-__proj_toml = os.path.join(__proj_root, "pyproject.toml")
+version_file = os.path.join(data_dir, "VERSION")
 """
-The location of the pyproject.toml file.
-This might be the incorrect location when ``finch`` was installed with ``pip``
+The location of the file specifying the version of the ``finch`` package.
+
+Group:
+    Finch
 """
 
 default_custom_config = os.path.join(data_dir, "config", "custom.ini")
@@ -41,6 +44,13 @@ custom_config_env_var = "CONFIG"
 """The name of the environment variable specifying the location of a custom configuration file."""
 
 node_name_env_var = "SLURMD_NODENAME"
+
+def get_version() -> Version:
+    """
+    Returns the current version of the ``finch`` package.
+    """
+    with open(version_file) as f:
+        return Version(f.readline().strip())
 
 class WorkerEnvironment():
     """

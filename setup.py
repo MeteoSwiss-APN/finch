@@ -3,7 +3,12 @@ from skbuild import setup
 def exclude_static_libraries(cmake_manifest: list[str]):
     return list(filter(lambda name: not (name.endswith(".a")), cmake_manifest))
 
+def get_version() -> str:
+    with open("finch/data/VERSION") as f:
+        return f.readline().strip()
+
 setup(
+    version = get_version(),
     packages = [
         "finch",
         "finch.brn"

@@ -1,4 +1,5 @@
 include finch/data/config/*.ini
 exclude finch/data/config/custom.ini
+include finch/data/VERSION
 
 include scripts/*
