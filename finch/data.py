@@ -39,7 +39,9 @@ class Format(enum.Enum):
 
 DimOrder = Union[str, list[str]]
 """
-Type hint for dimension order
+Type hint for dimension order.
+If the dimension order is a string, the dimensions are specified by individual characters ('x', 'y', etc.).
+With a list of strings, it is possible to give more descriptive names to individual dimensions.
 
 Group:
     Data
