@@ -137,7 +137,7 @@ def measure_runtimes(
             the impl argument of a run configuration for the given list of arguments.
             The first argument of impl_runner is the current run configuration while the remaining arguments are the arguments passed to `impl` of the run configuration.
             The execution of `impl_runner` will be timed and reported.
-            A runtime can be returned if the implementation runner supports fine-grained runtime repoting.
+            A runtime can be returned if the implementation runner supports fine-grained runtime reporting.
             Defaults to directly running the passed function on the passed arguments.
         reduction (Callable):
             The function to be used to combine the results of the iterations.
@@ -199,7 +199,7 @@ def measure_runtimes(
                     if c.prep is not None:
                         ir_args = c.prep()
                     start = perf_counter()
-                    runtime = impl_runner(c.impl, *args, **ir_args)
+                    runtime = impl_runner(c, *args, **ir_args)
                     end = perf_counter()
                     if runtime is None:
                         runtime = Runtime()
@@ -254,7 +254,7 @@ def xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool = Fal
         scheduler.clear_memory()
     return impl_runner_args
 
-def xr_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, output_exists: bool = True, **kwargs) -> Runtime:
+def xr_impl_runner(cfg: DaskRunConfig, ds: xr.Dataset, output_exists: bool = True, **kwargs) -> Runtime:
     """
     Implementation runner for standard xarray operators.
 
@@ -275,7 +275,7 @@ def xr_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, o
     # construct the dask graph
     start = perf_counter()
     ds = ds + xr.full_like(ds, random.random()) # instead of clone. See https://github.com/dask/dask/issues/9621
-    out = impl(ds)
+    out = cfg.impl(ds)
     # clone the graph to ensure that the scheduler does not use results computed in an earlier round
     # cloned: da.Array = dask.graph_manipulation.clone(out.data)
     stored = out.data.to_zarr(str(output_dir), overwrite=output_exists, compute=False)
