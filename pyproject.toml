@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "finch_mch"
-version = "0.0.1a2"
+dynamic = ["version"]
 authors = [
     { name="Tierry Hörmann", email="Tierry.Hoermann@meteoswiss.ch" },
 ]
@@ -26,3 +26,6 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://meteoswiss-apn.github.io/finch/"
 "Bug Tracker" = "https://github.com/MeteoSwiss-APN/finch/issues"
+
+[tool.setuptools.dynamic]
+version = {file = "finch/data/VERSION"}
