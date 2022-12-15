@@ -54,3 +54,19 @@ jobs:
         with:
           path: docs/sphinx/build
           key: ${{ steps.cacheid.outputs.cacheid }}
+
+  test:
+    runs-on: ubuntu-latest
+    needs: package_pip
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - uses: ./.github/actions/pip
+      - name: Install pytest
+        run: |
+          pip install pytest
+      - name: Run Unit Tests
+        run: |
+          pytest
