@@ -49,6 +49,8 @@ def list_brn_implementations() -> list[Operator]:
     """
     return util.list_funcs_matching(impl, BRN_REGEX, Operator)
 
+list_implementations = list_brn_implementations
+
 
 def get_repeated_brn(n: int, base: Callable[[xr.Dataset, int], xr.DataArray]=impl.brn_blocked_cpp) -> Operator:
     """Returns a repeated version of a BRN implementation.

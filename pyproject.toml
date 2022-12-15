@@ -3,13 +3,14 @@ requires = [
   "setuptools>=42",
   "scikit-build",
   "cmake>=3.14",
+  "pybind11",
   "ninja; platform_system!='Windows'"
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "finch_mch"
-version = "0.0.1a2"
+dynamic = ["version"]
 authors = [
     { name="Tierry Hörmann", email="Tierry.Hoermann@meteoswiss.ch" },
 ]
@@ -23,5 +24,8 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/MeteoSwiss-APN/finch"
+"Homepage" = "https://meteoswiss-apn.github.io/finch/"
 "Bug Tracker" = "https://github.com/MeteoSwiss-APN/finch/issues"
+
+[tool.setuptools.dynamic]
+version = {file = "finch/data/VERSION"}

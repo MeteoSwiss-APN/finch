@@ -3,14 +3,14 @@ import xarray as xr
 import dask.array as da
 import numpy as np
 import finch
-from finch import brn
+import finch.brn as brn
 
-finch.start_scheduler(debug=True)
+finch.scheduler.start_scheduler(debug=True)
 
 class TestBRN:
     shape = [2, 2, 8]
     chunks = {"x" : 1}
-    dims = finch.brn.input.translate_order("xyz")
+    dims = list("xyz")
 
     def get_thetav_test_data(self) -> Tuple[xr.Dataset, xr.DataArray]:
         p = 1023.4

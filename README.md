@@ -16,18 +16,33 @@ It is deisgned as an experimental library plus a run script, which runs configur
 Requires at least CMake 3.14 as well as a C++-Compiler with C++-20 (concepts) support.
 
 ```
-pip install -e .
+pip install scikit-build "pybind11[global]"
+python setup.py install
 ```
 
-## conda
+## conda / mamba
+
+A conda recipe is provided which can be built and installed using `conda-build`.
+A faster alternative to conda is `mamba`, which can be used together with [boa](https://github.com/mamba-org/boa) for building the recipe.
+Make sure your environment uses Python 3.10.
+
 ```
-conda build -c conda-forge conda
-conda install -c ${CONDA_PREFIX}/conda-bld/  -c conda-forge finch_mch
+conda install mamba -c conda-forge
+mamba install conda-build boa -c conda-forge
+conda mambabuild -c conda-forge conda
+mamba install -c local  -c conda-forge finch_mch
+```
+If you prefer to use `conda` instead of `mamba`, you can just skip the first line from above, replace the `mamba` commands with the same `conda` commands and use `conda build` instead of `conda mambabuild`.
+
+A few dependecies are only provided via PyPI. You can install them manually with `pip`.
+
+```
+pip install wonderwords
 ```
 
 # Run experiments
 ```
-python run.py
+finch
 ```
 
 # Run tests

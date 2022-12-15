@@ -14,16 +14,17 @@ build:
   preserve_egg_dir: True
   run_exports:
     - openmp
-    - python >=3.10.0
+    - python =3.10
 
 requirements:
   build:
-    - scikit-build
     - cmake >=3.14
+    - python =3.10
     - {{ compiler('cxx') }}
-    - pybind11
   host:
-    - python >=3.10.0
+    - python =3.10
+    - pybind11
+    - scikit-build
     - openmp
   run:
     - dask >=2022.11.0
@@ -35,6 +36,7 @@ requirements:
     - tqdm
     - deprecated
     - matplotx
+    - expandvars
 
 about:
   home: {{ project.get('urls').get('Homepage') }}

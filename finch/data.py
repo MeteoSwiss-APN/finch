@@ -8,11 +8,12 @@ import dask.array as da
 import numpy as np
 from . import config
 from . import util
-from . import version as pkg_version
+from . import __version__ as pkg_version
 from collections.abc import Callable
 import yaml
 import copy
 from deprecated.sphinx import deprecated
+import types
 
 data_config = config["data"]
 grib_dir = data_config["grib_dir"]
@@ -38,7 +39,9 @@ class Format(enum.Enum):
 
 DimOrder = Union[str, list[str]]
 """
-Type hint for dimension order
+Type hint for dimension order.
+If the dimension order is a string, the dimensions are specified by individual characters ('x', 'y', etc.).
+With a list of strings, it is possible to give more descriptive names to individual dimensions.
 
 Group:
     Data
@@ -266,7 +269,10 @@ class Input():
         finch_version = pkg_version
         """The finch version that was used to create this input version. DO NOT MODIFY"""
         format: Format = None
-        """The file format of this version"""
+        """
+        The file format of this version.
+        This can be passed as a ``Format`` object or as a string representation of a ``Format`` item during initialization.
+        """
         dim_order: DimOrder = None
         """
         The dimension order.
@@ -278,6 +284,11 @@ class Input():
         """The name of this version"""
         coords: bool = None
         """Whether this version holds coordinates"""
+
+        def __post_init__(self):
+            # allow passing the string representation of format.
+            if isinstance(self.format, str):
+                self.format = Format(self.format)
 
         def __le__(self, other):
             """Self is less or equal to other, if other can be constructed from self 

@@ -1,0 +1,126 @@
+# This file provides the default configuration for the run script.
+# It can be used as a reference for the configurable options of the run script.
+#
+# For parsing this yaml file, we use the SafeLoader from pyyaml.
+# Hence it is not possible to load any objects or functions directly.
+# However, we implement custom tags for creating objects for configuration classes available within finch.
+# The properties of a configuration can be specified with either single values or lists (in which case multiple configurations will be created).
+# Note that not all properties allow a list of configuration objects.
+#
+# For run configurations (finch.DaskRunConfig), use the !config:Run tag.
+#   You can specify an implementation ("impl" attribute) as a string following the syntax "<module_name>.<impl_name>", 
+#   where <module_name> is the name of the experiment module (e.g. "brn") and <impl_name> is the name of the function.
+#   It is also possible to only use <module_name>, in which case all implementations of the experiment module will be used.
+#   You can specify the preparation ("prep" attribute) by its function name from the preparations available in finch.
+#   Alternatively, if your run preparation supports arguments, you can use a single-entry dictionary with the function name mapping to the arguments.
+#   The arguments can be specified as a list or a dictionary.
+#   For example, the following would indicate a run preparation "prep(arg1=1, arg2='foo'":
+#   prep:
+#     arg1: 1
+#     arg2: foo
+# For cluster configurations (finch.scheduler.ClusterConfig), use the !config:Cluster tag.
+# For version configurations (finch.data.Input.Version), use the !config:Version tag.
+#   You can specify the format attribute by its string representation (e.g. "grib").
+
+
+
+# general configurations
+general:
+  # The number of iterations when measuring runtime
+  iterations: 10
+  # Whether to perform a warmup before measuring the runtimes
+  warmup: true
+  # Whether to print a progress bar
+  pbar: true
+  # The file where runtime results are temporarily stored.
+  # Null delegates this to finch's configuration
+  results_file: null
+
+# brn configurations
+brn:
+  # Whether to run brn experiments
+  run: true
+  # Whether to measure the different input loading times
+  load_experiment: false
+  # Wether to measure brn runtimes
+  measure_runtime: true
+  # Whether or not to run evaluation
+  evaluation: true
+
+  input_management:
+    # Whether to alter the brn input versions
+    run: false
+    # The (single) cluster configuration used for input management
+    cluster: !config:Cluster
+      workers_per_job: 1
+      cores_per_worker: 1
+      omp_parallelism: false
+      exclusive_jobs: false
+    # The number of workers used for input management
+    workers: 1
+    # New brn input version to add
+    # If null, no new version will be added
+    add_version: null
+
+  loadtime_measurement:
+  # Whether to measure loading times
+    run: false
+
+  runtime_measurement:
+    # Wether to measure brn runtimes
+    run: true
+    # The name of the runtime experiment
+    exp_name: "all"
+    # List of input versions for the runtime experiment
+    # Must be an object or a list of objects of type finch.data.Input.Version
+    # Null represents all available input versions
+    input_versions: null
+    # The run configuration(s)
+    run_configs: !config:Run
+      workers: 1
+      impl: "brn"
+      cluster_config: !config:Cluster
+        cores_per_worker: 1
+        omp_parallelism: false
+        exclusive_jobs: false
+    # Whether to write a dask performance report
+    dask_report: false
+
+  evaluation:
+    # Whether to run evaluation or not
+    run: true
+    # If not null, this variable is used to locate the results file.
+    # Otherwise the (temporary) results file will be used.
+    exp_name: null
+    # The runtimes to plot
+    runtimes_plot:
+      - "full"
+    # The dimension in the results dataset to choose as the main dimension for comparison
+    main_dim: &main_dim "impl"
+    # The dimensions for which to plot the speedups
+    speedup_dims:
+      - "cores"
+    # Whether to estimate the serial overhead for the runtime results
+    estimate_serial: true
+    # Whether to plot the fitted scaling models
+    plot_fit: true
+    # Whether to use dark or light mode for plotting
+    plot_dark_mode: true
+    # Will be used to rename the labels of the main dimension, if specified.
+    # This is a list of pairs, mapping the original labels to its target labels.
+    rename_labels:
+      brn_xr: "xarray"
+      brn_blocked_cpp: "C++"
+      brn_blocked_np: "NumPy"
+    # The keys of this dictionary indicate the plots for which to plot a relative runtime. 
+    # The values indicate the label in the main dimension to use as reference runtimes.
+    reference_labels:
+      cores: "NumPy"
+    # The order of dimension (must not be complete) for plotting the runtime parts
+    rt_parts_order:
+      - *main_dim
+      - "cores"
+    # A list of labels of the main dimension to ignore during evaluation
+    ignore_labels: null
+
+  

@@ -31,6 +31,7 @@ Group:
     Finch
 """
 
+@dataclass
 class RunConfig(util.Config):
     """
     Abstract class for configuring and setting up the environment for experiments.
@@ -230,7 +231,21 @@ Group:
     Experiments
 """
 
-def xr_run_prep_template(remove_existing_output: bool, clear_scheduler: bool) -> dict[str, Any]:
+def xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool = False) -> dict[str, Any]:
+    """
+    A run preparation for standard xarray operators, which can be used in a run config.
+    The parameters are provided for customizations via ``functools.partial``.
+
+    Args:
+        remove_existing_output (bool, optional): Whether to remove preexisting outputs. Defaults to True.
+        clear_scheduler (bool, optional): Whether to clear the scheduler. Defaults to False.
+
+    Returns:
+        dict[str, Any]: The arguments for the xarray implementation runner.
+
+    Group:
+        Experiments
+    """
     impl_runner_args = dict()
     if remove_existing_output:
         clear_output()
@@ -238,23 +253,6 @@ def xr_run_prep_template(remove_existing_output: bool, clear_scheduler: bool) ->
     if clear_scheduler:
         scheduler.clear_memory()
     return impl_runner_args
-
-def get_xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool = False) -> Callable[[], dict[str, Any]]:
-    """
-    Returns a run preparation for standard xarray operators, which can used in the run config.
-
-    Args:
-        remove_existing_output (bool): Whether to remove preexisting outputs.
-        clear_scheduler (bool): Whether to clear the scheduler.
-
-    Returns:
-        The requested run preparation.
-
-    Group:
-        Experiments
-    """
-    return functools.partial(xr_run_prep_template, remove_existing_output, clear_scheduler)
-    
 
 def xr_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, output_exists: bool = True, **kwargs) -> Runtime:
     """

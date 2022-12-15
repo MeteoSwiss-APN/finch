@@ -8,6 +8,10 @@ setup(
         "finch",
         "finch.brn"
     ],
+    include_package_data=True,
+    scripts = [
+        "scripts/finch"
+    ],
     cmake_source_dir = "zebra",
     cmake_process_manifest_hook = exclude_static_libraries,
     cmake_minimum_required_version="3.14",

@@ -1,20 +1,56 @@
 import os
 import pathlib
 from . import _util
+from packaging.version import Version
 
-proj_root = str(pathlib.Path(__file__).parent.parent.absolute())
-"""The root directory of the project"""
+package_root = str(pathlib.Path(__file__).parent)
+"""
+The root directory of the finch package.
 
-proj_config = os.path.join(proj_root, "config", "finch.ini")
-"""The location of the project configuration file"""
+Group:
+    Finch
+"""
 
-default_custom_config = os.path.join(proj_root, "config", "custom.ini")
+__proj_root = str(pathlib.Path(__file__).parent.parent.absolute())
+"""
+The root directory of the project.
+"""
+
+data_dir = os.path.join(package_root, "data")
+"""
+The directory of the data files.
+"""
+
+proj_config = os.path.join(data_dir, "config", "finch.ini")
+"""
+The location of the project configuration file.
+
+Group:
+    Finch
+"""
+
+version_file = os.path.join(data_dir, "VERSION")
+"""
+The location of the file specifying the version of the ``finch`` package.
+
+Group:
+    Finch
+"""
+
+default_custom_config = os.path.join(data_dir, "config", "custom.ini")
 """The default location for a custom configuration file"""
 
 custom_config_env_var = "CONFIG"
 """The name of the environment variable specifying the location of a custom configuration file."""
 
 node_name_env_var = "SLURMD_NODENAME"
+
+def get_version() -> Version:
+    """
+    Returns the current version of the ``finch`` package.
+    """
+    with open(version_file) as f:
+        return Version(f.readline().strip())
 
 class WorkerEnvironment():
     """
