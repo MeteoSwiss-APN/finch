@@ -58,6 +58,6 @@ def legate_impl_runner(cfg: LegateRunConfig, ds: xr.Dataset):
         cmd += ["--fbmem", str(cfg.fbmem)]
 
     module = cfg.impl.__module__
-    file = os.path.join(env.package_root, "legate", module)
+    file = os.path.join(env.package_root, "legate", module + ".py")
     fname = cfg.impl.__name__
     cmd += [file, fname] # TODO: Provide input
