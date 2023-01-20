@@ -5,10 +5,6 @@ First, clone the repository
 ::
     git clone https://github.com/MeteoSwiss-APN/finch.git
 
-Install and activate the conda environment
-::
-
-
 Development setup
 -----------------
 
