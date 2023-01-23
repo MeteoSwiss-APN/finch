@@ -28,6 +28,12 @@ dependencies:
   # docs build dependencies
   - sphinx
   - myst-parser
+  # development tools
+  - mypy
+  - black
+  - pre-commit
+  - esbonio
+  - pytest
   - pip:
     - wonderwords
     - sphinx-immaterial
