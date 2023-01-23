@@ -14,14 +14,14 @@ Instead, it is advised to install finch in development mode.
 A conda environment is provided, containing all the build and run dependencies of finch.
 You can install and activate it as follows:
 
-.. code-block:: bash
+.. code-block:: text
 
     conda env create -f environment.yml
     conda activate finch
 
 Next, you can install finch in development mode with conda develop
 
-.. code-block:: bash
+.. code-block:: text
 
     conda-develop finch
 
@@ -40,6 +40,7 @@ Finch provides a script for running experiments, located at ``scripts/finch``.
 You can run it with
 
 ::
+    
     python scripts/finch
 
 Configuration options are documented in :ref:`Run and Debug Configuration`.
@@ -50,6 +51,7 @@ Running tests
 Finch uses `pytest` for testing.
 
 ::
+
     srun pytest
 
 Installation
@@ -65,7 +67,7 @@ A conda recipe is provided which can be built and installed using ``conda-build`
 A faster alternative to conda is ``mamba``, which can be used together with `boa <https://github.com/mamba-org/boa>`_ for building the recipe.
 Make sure your environment uses Python 3.10.
 
-.. code-block:: bash
+.. code-block:: text
 
     conda install mamba -c conda-forge
     mamba install conda-build boa -c conda-forge
@@ -76,7 +78,7 @@ If you prefer to use ``conda`` instead of ``mamba``, you can skip the first line
 
 A few dependecies are only provided via PyPI. You can install them manually with ``pip``.
 
-.. code-block:: bash
+.. code-block:: text
 
     pip install wonderwords
 
@@ -86,7 +88,7 @@ setuptools (pip)
 
 Requires at least CMake 3.14 as well as a C++-Compiler with C++-20 (concepts) support.
 
-.. code-block:: bash
+.. code-block:: text
 
     pip install scikit-build "pybind11[global]"
     python setup.py install
