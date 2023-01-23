@@ -18,6 +18,12 @@ Finch provides parallelized prototypes for ICON data processing operators for a 
 It is designed as a library for setting up experiments plus a run script, which runs configurable experiments.
 The documentation of finch is available on `github pages <https://meteoswiss-apn.github.io/finch/>`_.
 
+.. TODO
+.. The following commented documentation is outdated documentation from the old README.md.
+.. It should be integrated into the current documentation at some point.
+
+......................................................................
+
 .. Usage
 
 .. ## Start a distributed scheduler on the cluster
