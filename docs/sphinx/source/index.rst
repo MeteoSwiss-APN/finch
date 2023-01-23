@@ -15,7 +15,6 @@
    usage/experiments
    usage/evaluation
    usage/config
-   usage/test
 
 .. toctree::
    :caption: API Reference
