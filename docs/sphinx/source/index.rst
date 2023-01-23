@@ -1,16 +1,4 @@
-.. finch documentation master file, created by
-   sphinx-quickstart on Tue Nov 22 18:07:58 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to finch's documentation!
-=================================
-
-**Finch** is a Python library for setting up, running and analyzing runtime experiments for data processing operators with `dask <https://www.dask.org/>`_.
-
-.. warning::
-   Finch is currently in development.
-   The documentation might at some places be outdated or incomplete.
+.. include:: ../../../README.rst
 
 .. toctree::
    :caption: Getting Started
@@ -39,10 +27,3 @@ Welcome to finch's documentation!
    :hidden:
 
    operators
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

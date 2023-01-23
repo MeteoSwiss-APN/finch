@@ -12,15 +12,16 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../..'))
+
+sys.path.insert(0, os.path.abspath("../../.."))
 
 import finch
 
 # -- Project information -----------------------------------------------------
 
-project = 'finch'
-copyright = '2022, Tierry Hörmann'
-author = 'Tierry Hörmann'
+project = "finch"
+copyright = "2022, Tierry Hörmann"
+author = "Tierry Hörmann"
 
 # The full version, including alpha/beta/rc tags
 release = str(finch.__version__)
@@ -32,21 +33,21 @@ release = str(finch.__version__)
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
-    'myst_parser',
-    'sphinx_immaterial',
-    "sphinx_immaterial.apidoc.python.apigen"
+    "myst_parser",
+    "sphinx_immaterial",
+    "sphinx_immaterial.apidoc.python.apigen",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path: list[str] = []
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns: list[str] = []
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -54,12 +55,12 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_immaterial'
+html_theme = "sphinx_immaterial"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path: list[str] = []
 
 # Sphinx Immaterial theme options
 html_theme_options = {
@@ -75,10 +76,8 @@ html_theme_options = {
     "features": [
         # "navigation.expand",
         "navigation.tabs",
-        # "toc.integrate",
-        # "navigation.sections",
-        # "navigation.instant",
-        # "header.autohide",
+        "navigation.sections",
+        "header.autohide",
         "navigation.top",
         "navigation.tracking",
         "toc.follow",
@@ -104,19 +103,19 @@ html_theme_options = {
                 "name": "Switch to light mode",
             },
         },
-    ]
+    ],
 }
 
 
 # -- Sphinx Immaterial configs -------------------------------------------------
 
 python_apigen_modules = {
-      "finch": "api/finch/",
-      "zebra": "api/zebra/",
-      "finch.scheduler": "api/finch/scheduler/",
-      "finch.data": "api/finch/data/",
-      "finch.brn": "api/finch/brn/",
-      "finch.evaluation": "api/finch/eval/"
+    "finch": "api/finch/",
+    "zebra": "api/zebra/",
+    "finch.scheduler": "api/finch/scheduler/",
+    "finch.data": "api/finch/data/",
+    "finch.brn": "api/finch/brn/",
+    "finch.evaluation": "api/finch/eval/",
 }
 
 python_apigen_default_groups = [

@@ -1,0 +1,39 @@
+name: finch
+channels:
+  - conda-forge
+dependencies:
+  # run dependencies
+  - python=3.10
+  - dask >=2022.11.0
+  - distributed >=2022.11.0
+  - dask-jobqueue
+  - xarray >=2022.11.0
+  - pyyaml
+  - cfgrib
+  - tqdm
+  - deprecated
+  - matplotx
+  - expandvars
+  # conda build dependencies
+  - conda-build
+  - boa
+  # setuptools dependencies
+  - pip
+  - scikit-build
+  # zebra build dependencies
+  - pybind11
+  - cmake>=3.14
+  - gxx>=10.2
+  - openmp
+  # docs build dependencies
+  - sphinx
+  - myst-parser
+  # development tools
+  - mypy
+  - black
+  - pre-commit
+  - esbonio
+  - pytest
+  - pip:
+    - wonderwords
+    - sphinx-immaterial
