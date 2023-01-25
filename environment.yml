@@ -30,6 +30,7 @@ dependencies:
   - myst-parser
   # development tools
   - mypy
+  - types-deprecated
   - black
   - pre-commit
   - esbonio
