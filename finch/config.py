@@ -1,29 +1,41 @@
-from configparser import ConfigParser, ExtendedInterpolation
-from . import env
-from . import _util
-import os
 import logging
+import os
 import pathlib
+from configparser import ConfigParser, ExtendedInterpolation
 from io import StringIO
-from expandvars import expand
+
+from expandvars import expand  # type: ignore
+
+from . import env
 
 config = ConfigParser(interpolation=ExtendedInterpolation())
+"""
+This variable contains the configuration of the finch core library.
+It is initialized from finch's config files when importing finch.
+
+Group:
+    Config
+"""
+
 
 def read_config(cfg_path: str, optional: bool = False):
     """
     Reads a config file.
 
-    Arguments:
-    ---
-    - cfg_path: The path to the config file
-    - optional: If True, nothing happens if the file does not exist.
-    If False, an error will be raised.
+    Args:
+        cfg_path (str): The path to the config file
+        optional (str): If True, nothing happens if the file does not exist.
+            If False, an error will be raised.
+
+    Group:
+        Config
     """
     if optional and not pathlib.Path(cfg_path).exists():
         return
     with open(cfg_path) as f:
         cfg_txt = expand(f.read(), var_symbol="%")
         config.readfp(StringIO(cfg_txt))
+
 
 # built-in config (defaults)
 read_config(env.proj_config)
@@ -37,16 +49,22 @@ if env.custom_config_env_var in os.environ:
 
 # logging
 
-log_level = logging.INFO
-"""The current log level"""
+__log_level: logging._Level | None = None
+if "log_level" in config["global"]:
+    __log_level = config["global"]["log_level"]
 
-logging_format = '[%(levelname)s]: %(message)s'
-"""The format used for logging outputs"""
 
-def set_log_level(level):
-    global log_level
-    log_level = level
-    logging.basicConfig(format=logging_format, level=log_level)
+def set_log_level(level: logging._Level):
+    """Overwrite the current logging level.
+
+    Group:
+        Config
+    """
+    global __log_level
+    __log_level = level
+    config["global"]["log_level"] = logging.getLevelName(level)
+    logging.basicConfig(format=config["global"]["log_format"], level=level)
+
 
 # debugging
 
@@ -54,14 +72,25 @@ debug = False
 """Debug mode toggle"""
 
 if "debug_mode" in config["global"] and config["global"]["debug_mode"] != "":
-    debug = _util.parse_bool(config["global"]["debug_mode"])
+    debug = config.getboolean("global", "debug_mode")
+
 
 def set_debug_mode(dbg: bool):
-    global debug, log_level
+    """
+    Toggles the debug mode.
+    If True, debug mode is enabled.
+    If False, it is disabled.
+    If the log level was not set explicitely,
+    it will be set to INFO if debug is disabled and to DEBUG if it is enabled.
+
+    Group:
+        Config
+    """
+    global debug, __log_level
     debug = dbg
-    set_log_level(logging.DEBUG if debug else logging.INFO)
+    config["global"]["debug_mode"] = str(debug)
+    if __log_level is None:
+        set_log_level(logging.DEBUG if debug else logging.INFO)
+
 
 set_debug_mode(debug)
-
-def get_debug_mode() -> bool:
-    return debug
