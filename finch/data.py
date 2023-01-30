@@ -4,7 +4,7 @@ import pathlib
 from collections.abc import Callable, Hashable, Iterable, Mapping
 from dataclasses import dataclass
 from glob import glob
-from typing import Any, Dict, List, Literal, Tuple, Union
+from typing import Any, Dict, List, Literal, Union
 
 import numpy as np
 import xarray as xr
