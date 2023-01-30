@@ -31,10 +31,13 @@ dependencies:
   # development tools
   - mypy
   - types-deprecated
+  - types-pyyaml
   - black
   - pre-commit
   - esbonio
   - pytest
+  # pip only
   - pip:
     - wonderwords
     - sphinx-immaterial
+    - types-tqdm
