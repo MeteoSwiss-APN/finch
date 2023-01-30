@@ -49,12 +49,12 @@ if env.custom_config_env_var in os.environ:
 
 # logging
 
-__log_level: logging._Level | None = None
+__log_level: str | int | None = None
 if "log_level" in config["global"]:
     __log_level = config["global"]["log_level"]
 
 
-def set_log_level(level: logging._Level):
+def set_log_level(level: str | int):
     """Overwrite the current logging level.
 
     Group:
