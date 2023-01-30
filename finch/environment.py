@@ -1,7 +1,9 @@
 import os
 import pathlib
-from . import _util
+
 from packaging.version import Version
+
+from . import _util
 
 package_root = str(pathlib.Path(__file__).parent)
 """
@@ -19,6 +21,9 @@ The root directory of the project.
 data_dir = os.path.join(package_root, "data")
 """
 The directory of the data files.
+
+Group:
+    Finch
 """
 
 proj_config = os.path.join(data_dir, "config", "finch.ini")
@@ -38,31 +43,53 @@ Group:
 """
 
 default_custom_config = os.path.join(data_dir, "config", "custom.ini")
-"""The default location for a custom configuration file"""
+"""
+The default location for a custom configuration file
+
+Group:
+    Finch
+"""
 
 custom_config_env_var = "CONFIG"
-"""The name of the environment variable specifying the location of a custom configuration file."""
+"""
+The name of the environment variable specifying the location of a custom configuration file.
+
+Group:
+    Finch
+"""
 
 node_name_env_var = "SLURMD_NODENAME"
+"""
+The name of the environment variable holding the name of the current SLURM node.
+
+Group:
+    Finch
+"""
+
 
 def get_version() -> Version:
     """
     Returns the current version of the ``finch`` package.
+
+    Group:
+        Finch
     """
     with open(version_file) as f:
         return Version(f.readline().strip())
 
-class WorkerEnvironment():
+
+class WorkerEnvironment:
     """
     This class manages environments for dask workers.
+
+    Group:
+        Finch
     """
 
     omp_threads: int = 1
     """The number of threads available to openmp"""
 
-    env_var_map = {
-        "omp_threads": ["OMP_NUM_THREADS", "OMP_THREAD_LIMIT"]
-    }
+    env_var_map: dict[str, str | list[str]] = {"omp_threads": ["OMP_NUM_THREADS", "OMP_THREAD_LIMIT"]}
     """Maps attributes of this class to environment variables"""
 
     @classmethod
@@ -78,7 +105,7 @@ class WorkerEnvironment():
     @property
     def _env_vars(self) -> dict[str, str]:
         """This worker environment as a dictionary mapping environment variable names to values"""
-        return {e : str(self.__dict__[v]) for v, es in self.env_var_map.items() for e in _util.arg2list(es)}
+        return {e: str(self.__dict__[v]) for v, es in self.env_var_map.items() for e in _util.arg2list(es)}
 
     def set(self):
         """Sets environment variables according to this worker environment"""
