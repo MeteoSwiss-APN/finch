@@ -210,21 +210,27 @@ def equals_not_none(x, y) -> bool:
     return all(xd[v] is not None and yd[v] is not None and xd[v] != yd[v] for v in vs)
 
 
-def has_attributes(x, y) -> bool:
+def has_attributes(x: object, y: object, excludes: typing.Iterable[str] = []) -> bool:
     """
     Return true if y has the same not-None attributes as x.
+
+    Args:
+        excludes (Iterable[str], optional):
+            Attributes to exclude from the comparison.
+            Defaults to no exclusions.
 
     Group:
         Util
     """
     xd = x.__dict__
     yd = y.__dict__
-    return all(xd[v] is None or (v in yd and xd[v] == yd[v]) for v in xd)
+    excl_set = set(excludes)
+    return all(xd[v] is None or (v in yd and xd[v] == yd[v]) for v in xd if v not in excl_set)
 
 
-def get_class_attributes(cls: type, excludes: list[str] = []) -> list[str]:
+def get_class_attribute_names(cls: type, excludes: list[str] = []) -> list[str]:
     """
-    Returns the attribute names of a class.
+    Return the attribute names of a class.
 
     Args:
         cls (type): The class to extract the attribute names from
@@ -239,6 +245,16 @@ def get_class_attributes(cls: type, excludes: list[str] = []) -> list[str]:
     return [
         a for a in str_attr if a not in dummy and not (a.startswith("__") and a.endswith("__")) and a not in excludes
     ]
+
+
+def get_class_attriubtes(obj: object) -> dict[str, Any]:
+    """Return the class attributes of an object as a dictionary.
+
+    Group:
+        Util
+    """
+    names = set(get_class_attribute_names(obj.__class__))
+    return {k: v for k, v in obj.__dict__.items() if k in names}
 
 
 def sig_matches_hint(sig: inspect.Signature, hint: Any) -> bool:  # TODO: Adjust type of hint, if possible

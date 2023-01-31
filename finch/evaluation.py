@@ -1,22 +1,42 @@
-from cProfile import label
-from ensurepip import version
-import functools
 import pathlib
-from typing import Any, Tuple
-from collections.abc import Callable
-from .data import Input
-from . import util
-from . import config
-from .experiments import RunConfig, Runtime
-import xarray as xr
-import numpy as np
-import pandas as pd
-import matplotx
-import matplotlib.pyplot as plt
-from copy import deepcopy
 import warnings
+from collections.abc import Callable
+from copy import deepcopy
+from typing import Any, Tuple, overload
+
+import matplotlib.pyplot as plt
+import matplotx
+import numpy as np
+import xarray as xr
 import yaml
 from deprecated.sphinx import deprecated
+
+from . import config, util
+from .data import Input
+from .experiments import RunConfig, Runtime
+
+
+def get_pyplot_grouped_bar_pos(groups: int, labels: int) -> Tuple[np.ndarray, float]:
+    """
+    Returns an array of bar positions when trying to create a grouped bar plot for pyplot,
+    along with the width of an individual bar.
+    A row in the returned array contains the bar positions for a label,
+    while a column contains the bar positions for a group.
+
+    Args:
+        groups (int): The number of groups in the bar plot
+        labels (int): The number of labels in the bar plot
+
+    Group:
+        Evaluation
+    """
+    group_size = labels + 1
+    bar_width = 1 / group_size
+    xpos = np.arange(0, groups, bar_width) - (1 - 2 * bar_width) / 2
+    xpos = xpos.reshape(groups, group_size).transpose()
+    xpos = xpos[:-1, :]  # remove empty bar
+    return xpos, bar_width
+
 
 def print_version_results(results: list[Any], versions: list[Input.Version]):
     """
@@ -27,6 +47,7 @@ def print_version_results(results: list[Any], versions: list[Input.Version]):
     """
     for r, v in zip(results, versions):
         print(f"{v}\n    {r}")
+
 
 def print_results(results: list[list[Any]], run_configs: list[RunConfig], versions: list[Input.Version]):
     """
@@ -41,13 +62,62 @@ def print_results(results: list[list[Any]], run_configs: list[RunConfig], versio
         print_version_results(r, versions)
         print()
 
+
+@overload
 def create_result_dataset(
-    results: list[list[Runtime]] | list[Runtime] | Runtime, 
-    run_configs: list[RunConfig] | RunConfig, 
-    versions: list[Input.Version] | Input.Version, 
+    results: Runtime,
+    run_configs: RunConfig,
+    versions: Input.Version,
     input: Input,
-    experiment_name: str = None, 
-    impl_names: list[str] | Callable[[Callable], str] | None = None
+    experiment_name: str | None = None,
+    impl_names: list[str] | Callable[[Callable], str] | None = None,
+) -> xr.Dataset:
+    ...
+
+
+@overload
+def create_result_dataset(
+    results: list[Runtime],
+    run_configs: list[RunConfig],
+    versions: Input.Version,
+    input: Input,
+    experiment_name: str | None = None,
+    impl_names: list[str] | Callable[[Callable], str] | None = None,
+) -> xr.Dataset:
+    ...
+
+
+@overload
+def create_result_dataset(
+    results: list[Runtime],
+    run_configs: RunConfig,
+    versions: list[Input.Version],
+    input: Input,
+    experiment_name: str | None = None,
+    impl_names: list[str] | Callable[[Callable], str] | None = None,
+) -> xr.Dataset:
+    ...
+
+
+@overload
+def create_result_dataset(
+    results: list[list[Runtime]],
+    run_configs: list[RunConfig],
+    versions: list[Input.Version],
+    input: Input,
+    experiment_name: str | None = None,
+    impl_names: list[str] | Callable[[Callable], str] | None = None,
+) -> xr.Dataset:
+    ...
+
+
+def create_result_dataset(
+    results: list[list[Runtime]] | list[Runtime] | Runtime,
+    run_configs: list[RunConfig] | RunConfig,
+    versions: list[Input.Version] | Input.Version,
+    input: Input,
+    experiment_name: str | None = None,
+    impl_names: list[str] | Callable[[Callable], str] | None = None,
 ) -> xr.Dataset:
     """
     Constructs a dataset from the results of an experiment.
@@ -66,6 +136,7 @@ def create_result_dataset(
         results = [results]
     if not isinstance(versions, list):
         versions = [versions]
+        assert isinstance(results, list)
         results = [[r] for r in results]
 
     # make sure that all versions have the same chunking dimensions
@@ -90,14 +161,8 @@ def create_result_dataset(
             for a, rc in zip(rc_attrs, run_configs):
                 a["impl"] = impl_names(rc.impl)
     # construct coordinates
-    coords = {
-        a : list(set(va[a] for va in version_attrs))
-        for a in va_keys
-    }
-    coords.update({
-        a : list(set(ra[a] for ra in rc_attrs))
-        for a in rca_keys
-    })
+    coords = {a: list(set(va[a] for va in version_attrs)) for a in va_keys}
+    coords.update({a: list(set(ra[a] for ra in rc_attrs)) for a in rca_keys})
 
     dim_sizes = [len(coords[a]) for a in coords]
 
@@ -108,26 +173,24 @@ def create_result_dataset(
         data = np.full(dim_sizes, np.nan, dtype=float)
 
         array = xr.DataArray(data, coords, name=attr)
-        has_entries = False # indicates whether the current runtime attribute has entries
+        has_entries = False  # indicates whether the current runtime attribute has entries
         for result, rca in zip(results, rc_attrs):
             for r, va in zip(result, version_attrs):
-                entry = r.__dict__[attr] # get the runtime entry
+                entry = r.__dict__[attr]  # get the runtime entry
                 if entry is not None:
                     has_entries = True
                 array.loc[va | rca] = entry
-        if has_entries: # only add runtimes which were actually recorded
+        if has_entries:  # only add runtimes which were actually recorded
             ds[attr] = array
     ds.attrs["name"] = experiment_name
     return ds
 
+
 def create_cores_dimension(
-    results: xr.Dataset, 
-    contributors: list[str] = [
-        "workers",
-        "cluster_config_cores_per_worker"
-    ],
-    cores_dim = "cores",
-    reduction: Callable = np.min
+    results: xr.Dataset,
+    contributors: list[str] = ["workers", "cluster_config_cores_per_worker"],
+    cores_dim="cores",
+    reduction: Callable = np.min,
 ) -> xr.Dataset:
     """
     Merges the dimensions in the results array which contribute to the total amount of cores into a single 'cores' dimension.
@@ -147,19 +210,22 @@ def create_cores_dimension(
         Evaluation
     """
     out = results.stack({cores_dim: contributors})
-    coords = out[cores_dim] # this is now a multiindex
-    coords = [np.prod(x) for x in coords.data] # calculate the number of cores
+    coords = out[cores_dim]  # this is now a multiindex
+    coords = [np.prod(x) for x in coords.data]  # calculate the number of cores
     out = out.drop_vars([cores_dim] + contributors)
     out[cores_dim] = coords
     # reduce cores_dim to have unique values
-    coords = np.unique(coords) # output is sorted
-    out_cols = [out.loc[{cores_dim : c}] for c in coords] # collect columns according to core size
-    out_cols = [col if cores_dim in col.dims else col.expand_dims(cores_dim) for col in out_cols] # make sure there is cores_dim
+    coords = np.unique(coords)  # output is sorted
+    out_cols = [out.loc[{cores_dim: c}] for c in coords]  # collect columns according to core size
+    out_cols = [
+        col if cores_dim in col.dims else col.expand_dims(cores_dim) for col in out_cols
+    ]  # make sure there is cores_dim
     out_cols = [col.reduce(reduction, cores_dim) for col in out_cols]
     out = xr.concat(out_cols, cores_dim)
     out[cores_dim] = coords
     out.attrs = results.attrs
     return out
+
 
 def rename_labels(results: xr.Dataset, renames: dict[str, dict[Any, Any] | list[Any]] = None, **kwargs) -> xr.Dataset:
     """
@@ -168,7 +234,7 @@ def rename_labels(results: xr.Dataset, renames: dict[str, dict[Any, Any] | list[
     Args:
         results: The results dataset
         renames: A dictionary mapping dimension names to rename instructions.
-            Rename instructions can be either in the form of a dictionary, 
+            Rename instructions can be either in the form of a dictionary,
             mapping old values to new values, or in the form of a list, replacing the old values.
         kwargs: The renames argument as kwargs. If neither `renames` or `kwargs` are given, nothing happens
 
@@ -188,6 +254,7 @@ def rename_labels(results: xr.Dataset, renames: dict[str, dict[Any, Any] | list[
             out[k] = xr.apply_ufunc(lambda x: v[x] if x in v else x, out[k], vectorize=True)
     return out
 
+
 def remove_labels(results: xr.Dataset, labels: list[str], main_dim: str) -> xr.Dataset:
     """
     Removes the given labels in the given main dimension from the results array.
@@ -196,6 +263,47 @@ def remove_labels(results: xr.Dataset, labels: list[str], main_dim: str) -> xr.D
         Evaluation
     """
     return results.drop_sel({main_dim: labels})
+
+
+def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int | None = None) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Performs simple linear regression along the given axis.
+
+    Simple linear regression minimizes the mean squared error for a 2D linear model.
+
+    .. math::
+
+        y = \alpha + \betax
+
+
+    Args:
+        x (np.ndarray):
+            The input values
+        y (np.ndarray):
+            The (measured) output values
+        axis (int | None, optional):
+            The axis along which a measurement series is stored.
+            If None (default), x and y will be flattened.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]:
+            :math:`\alpha` and :math:`\beta` which minimize the mean squared error of the 2D linear model.
+
+    Group:
+        Evaluation
+    """
+    xm = x.mean(axis=axis)
+    ym = y.mean(axis=axis)
+    if axis is not None:
+        xd = x - np.expand_dims(xm, axis)
+        yd = y - np.expand_dims(ym, axis)
+    else:
+        xd = x - xm
+        yd = y - ym
+    beta = np.sum(xd * yd, axis=axis) / np.sum(xd * xd, axis=axis)
+    alpha = ym - beta * xm
+    return alpha, beta
+
 
 def speedup(runtimes: np.ndarray, axis: int = -1, base: np.ndarray = None) -> np.ndarray:
     """
@@ -223,6 +331,7 @@ def speedup(runtimes: np.ndarray, axis: int = -1, base: np.ndarray = None) -> np
     base = np.expand_dims(base, axis)
     return base / runtimes
 
+
 @deprecated("Serial overhead analysis should be used instead.", version="0.0.1a1")
 def find_scaling(scale: np.ndarray, speedup: np.ndarray, axis: int = None) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -238,6 +347,7 @@ def find_scaling(scale: np.ndarray, speedup: np.ndarray, axis: int = None) -> Tu
     alpha = np.exp(alpha)
     return alpha, beta
 
+
 def amdahl_speedup(f: np.ndarray, c: np.ndarray) -> np.ndarray:
     """
     Returns the speedups for a serial runtime fractions and a selection of core counts.
@@ -252,11 +362,14 @@ def amdahl_speedup(f: np.ndarray, c: np.ndarray) -> np.ndarray:
     Group:
         Evaluation
     """
-    return 1 / (f + (1-f)/c)
+    return 1 / (f + (1 - f) / c)
+
 
 def serial_overhead_analysis(
-    t: np.ndarray, c: np.ndarray, 
-    t1: np.ndarray = None, c1: np.ndarray = None,
+    t: np.ndarray,
+    c: np.ndarray,
+    t1: np.ndarray = None,
+    c1: np.ndarray = None,
 ) -> np.ndarray:
     """
     Estimates the serial fraction of the total runtime.
@@ -269,7 +382,7 @@ def serial_overhead_analysis(
         c1: shape: ``n_implementations``. The core counts for the runtime baselines. If None, the first column of `c` will be used.
 
     Returns:
-        A 1-D numpy array of length ``n_implementations`` of estimated serial fractions. 
+        A 1-D numpy array of length ``n_implementations`` of estimated serial fractions.
 
     Group:
         Evaluation
@@ -283,15 +396,16 @@ def serial_overhead_analysis(
     c1 = c1[:, np.newaxis]
     c = c / c1
 
-    cf = (c-1)/c
-    f1 = (t - t1/c) * cf
+    cf = (c - 1) / c
+    f1 = (t - t1 / c) * cf
     f1 = np.sum(f1, axis=1)
-    f2 = cf*cf
+    f2 = cf * cf
     f2 = t1.reshape(-1) * np.sum(f2, axis=1)
     f = f1 / f2
     f = f.flatten()
 
     return f
+
 
 def get_plots_dir(results: xr.Dataset) -> pathlib.Path:
     """
@@ -311,15 +425,15 @@ plot_style = matplotx.styles.duftify(matplotx.styles.dracula)
 
 
 def create_plots(
-    results: xr.Dataset, 
-    reduction: Callable = np.nanmin, 
+    results: xr.Dataset,
+    reduction: Callable = np.nanmin,
     main_dim: str = "impl",
     relative_rt_dims: list[str] | dict[str, Any] = [],
     scaling_dims: list[str] = [],
     estimate_serial: bool = True,
     plot_scaling_fits: bool = False,
     plot_scaling_baseline: bool = True,
-    runtime_selection: list[str] = None
+    runtime_selection: list[str] = None,
 ):
     """
     Creates a series of plots for the results array.
@@ -336,7 +450,7 @@ def create_plots(
         results (xr.DataArray): The result array
         reduction (Callable): The reduction function. (See `xarray.DataArray.reduce`)
         relative_rt_dims (list[str] | dict[str, Any]): Dimensions for which a relative runtime plot will be produced.
-            If a dictionary is passed, the keys will be used to identify the dimensions for which to plot a relative runtime 
+            If a dictionary is passed, the keys will be used to identify the dimensions for which to plot a relative runtime
             and the values will be used to identify which entry of the main dimension should be used as a reference (identified by label / coordinate value).
             If a list is passed, the first entry will be used.
             A relative runtime plot is often more practical for comparing results, instead of the raw data.
@@ -354,9 +468,10 @@ def create_plots(
         Plot
     """
 
-    plt.set_loglevel("warning") # disable debug logs from matplotlib
+    plt.set_loglevel("warning")  # disable debug logs from matplotlib
 
     path = get_plots_dir(results)
+
     def save_plot(dim: str, runtime_type: str, extra: str = None, format: str = "png"):
         name = dim + "_" + runtime_type
         if extra is not None:
@@ -382,8 +497,12 @@ def create_plots(
             # reorder dimensions
             to_plot = to_plot.transpose(main_dim, d)
             for runtime_type, runtime_data in to_plot.data_vars.items():
-                if runtime_selection is not None and runtime_type not in runtime_selection or \
-                    d in scaling_dims and runtime_type not in ["full", "compute"]:
+                if (
+                    runtime_selection is not None
+                    and runtime_type not in runtime_selection
+                    or d in scaling_dims
+                    and runtime_type not in ["full", "compute"]
+                ):
                     continue
                 if np.isnan(runtime_data).any():
                     # only create plots where all runtime data is provided
@@ -417,10 +536,7 @@ def create_plots(
                             if estimate_serial:
                                 cs = np.tile(ticks, (runtime_data.shape[0], 1))
                                 fs = serial_overhead_analysis(runtime_data, cs)
-                                spd_labels = [
-                                    l + r", $f=" + "%.2f"%(f*100) + r"$%" 
-                                    for l, f in zip(labels, fs)
-                                ]
+                                spd_labels = [l + r", $f=" + "%.2f" % (f * 100) + r"$%" for l, f in zip(labels, fs)]
                             # plot fitted scaling functions
                             if plot_scaling_fits and estimate_serial:
                                 cycler = plt.rcParams["axes.prop_cycle"]
@@ -453,17 +569,15 @@ def create_plots(
                         for l, rt in zip(labels, runtime_data):
                             plt.plot(ticks, rt, label=l)
                         plt.xlabel(d)
-                        #plt.xticks(ticks)
+                        # plt.xticks(ticks)
                         matplotx.ylabel_top(ylabel)
                         matplotx.line_labels()
                         plt.margins(y=0.05)
                     # save plot
                     save_plot(d, runtime_type)
 
-def plot_runtime_parts(
-    results: xr.Dataset,
-    first_dims: list[str] = []
-):
+
+def plot_runtime_parts(results: xr.Dataset, first_dims: list[str] = []):
     """
     Plots how the full runtimes are split up.
 
@@ -532,7 +646,7 @@ def store_config(results: xr.Dataset):
     """
     path = util.get_path(config["evaluation"]["config_dir"], results.attrs["name"], "config.yaml")
     # create config dict
-    res_config = {c : a.data.tolist() for c, a in results.coords.items()}
-    res_config = {k : a[0] if len(a) == 1 else a for k, a in res_config.items()}
+    res_config = {c: a.data.tolist() for c, a in results.coords.items()}
+    res_config = {k: a[0] if len(a) == 1 else a for k, a in res_config.items()}
     with open(path, mode="w") as f:
         yaml.dump(res_config, f)
