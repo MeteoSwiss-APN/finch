@@ -32,6 +32,7 @@ dependencies:
   - mypy
   - types-deprecated
   - types-pyyaml
+  - data-science-types
   - black
   - pre-commit
   - esbonio

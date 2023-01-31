@@ -12,7 +12,7 @@ import types
 import typing
 from collections.abc import Callable
 from contextlib import closing
-from typing import Any, TypeVar
+from typing import Any, Literal, Type, TypeGuard, TypeVar
 
 import tqdm
 from wonderwords import RandomWord  # type: ignore
@@ -247,7 +247,7 @@ def get_class_attribute_names(cls: type, excludes: list[str] = []) -> list[str]:
     ]
 
 
-def get_class_attriubtes(obj: object) -> dict[str, Any]:
+def get_class_attributes(obj: object) -> dict[str, Any]:
     """Return the class attributes of an object as a dictionary.
 
     Group:
@@ -488,6 +488,30 @@ class RecursiveNamespace(types.SimpleNamespace):
 
 
 ###############################
+# Typing utilities
+###############################
+
+
+def is_list_of(val: list[Any], typ: Type[T]) -> TypeGuard[list[T]]:
+    """
+    Type guard for checking lists.
+
+    Group:
+        Util
+    """
+    return all(isinstance(v, typ) for v in val)
+
+
+def is_2d_list_of(val: list[list[Any]], typ: Type[T]) -> TypeGuard[list[list[T]]]:
+    """Type guard for checking lists of lists.
+
+    Group:
+        Util
+    """
+    return all(all(isinstance(vv, typ) for vv in v) for v in val)
+
+
+###############################
 # Miscellaneous utilities
 ###############################
 
@@ -523,3 +547,12 @@ def funcs_from_args(f: Callable, args: list[dict]) -> list[Callable]:
         Util
     """
     return [functools.partial(f, **a) for a in args]
+
+
+ImgSuffix = Literal["eps", "jpeg", "jpg", "pdf", "pgf", "png", "ps", "raw", "rgba", "svg", "svgz", "tif", "tiff"]
+"""
+A literal for image file suffixes.
+
+Group:
+    Util
+"""

@@ -1,27 +1,26 @@
+import functools
+import pathlib
+import random
+import warnings
+from collections.abc import Callable
+from contextlib import nullcontext
 from copy import copy
 from dataclasses import dataclass
-import pathlib
 from time import perf_counter, time
-from collections.abc import Callable
 from typing import Any, TypeVar
+
+import dask
+import dask.array as da
+import dask.distributed
+import dask.graph_manipulation
 import numpy as np
 import xarray as xr
+from dask.distributed import performance_report
+from deprecated.sphinx import deprecated
+
+from . import config, env, scheduler, util
 from .data import Input
 from .util import PbarArg
-from . import util
-from . import config
-from . import env
-from . import scheduler
-import dask.graph_manipulation
-import dask.array as da
-import dask
-from dask.distributed import performance_report
-import warnings
-import dask.distributed
-import functools
-import random
-from contextlib import nullcontext
-from deprecated.sphinx import deprecated
 
 DefaultOperator = Callable[[xr.Dataset], xr.DataArray]
 """
@@ -31,6 +30,7 @@ Group:
     Finch
 """
 
+
 @dataclass
 class RunConfig(util.Config):
     """
@@ -39,6 +39,7 @@ class RunConfig(util.Config):
     Group:
         Experiments
     """
+
     impl: Callable = None
     """The operator implementation to run"""
     prep: Callable[[], dict] = None
@@ -54,6 +55,7 @@ class RunConfig(util.Config):
         """
         pass
 
+
 @dataclass
 class DaskRunConfig(RunConfig):
     """
@@ -62,6 +64,7 @@ class DaskRunConfig(RunConfig):
     Group:
         Experiments
     """
+
     cluster_config: scheduler.ClusterConfig = scheduler.ClusterConfig()
     """The cluster configuration to use"""
     workers: int = 1
@@ -74,14 +77,16 @@ class DaskRunConfig(RunConfig):
         scheduler.start_scheduler(cfg=self.cluster_config)
         scheduler.scale_and_wait(self.workers)
 
+
 @dataclass
-class Runtime():
+class Runtime:
     """A class for capturing runtimes of different stages.
     The runtimes can be cathegorized into serial for serial overheads or parallel for runtimes in parallel regions.
 
     Group:
         Experiments
     """
+
     full: float = None
     """The full runtime of the experiment."""
     input_prep: float = None
@@ -98,18 +103,23 @@ class Runtime():
     This includes the parallel computation as well as some serial overhead that cannot be measured separately.
     """
 
+
 def _reduce_runtimes(rt: list[Runtime], reduction: Callable[[np.ndarray, int], np.ndarray]) -> Runtime:
     attr = util.get_class_attributes(Runtime)
     array = [[r.__dict__[a] for a in attr] for r in rt]
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         out = reduction(np.array(array, dtype=float), axis=0)
-    out = {k : o for k, o in zip(attr, out) if o is not float("NaN")}
+    out = {k: o for k, o in zip(attr, out) if o is not float("NaN")}
     return Runtime(**out)
 
+
+_RTList = list[list[Runtime]]
+
+
 def measure_runtimes(
-    run_config: list[RunConfig] | RunConfig, 
-    inputs: list[Callable[[], list]] | Callable[[], list] | list[list] | None = None, 
+    run_config: list[RunConfig] | RunConfig,
+    inputs: list[Callable[[], list]] | Callable[[], list] | list[list] | None = None,
     iterations: int = 1,
     impl_runner: Callable[..., Runtime | None] = None,
     reduction: Callable[[np.ndarray, int], np.ndarray] = np.nanmean,
@@ -117,7 +127,7 @@ def measure_runtimes(
     pbar: PbarArg = True,
     dask_report: bool = False,
     **kwargs
-) -> list[list[Runtime]] | list[Runtime] | Runtime:
+) -> _RTList:
     """
     Measures the runtimes of multiple functions, each accepting the same inputs.
 
@@ -130,10 +140,10 @@ def measure_runtimes(
             - ``list[Callable[[], list]]``: A list of argument generating functions.
                 These will be run to collect the arguments for the functions to be benchmarked.
             - ``Callable[[], list]``: A single argument generating function if the same should be used for every function to be benchmarked.
-        
+
             The preparation of the input is timed and included in the full runtime.
         iterations (int, optional): The number of times to repeat a run (including input preparation).
-        impl_runner (Callable): The function responsible for running 
+        impl_runner (Callable): The function responsible for running
             the impl argument of a run configuration for the given list of arguments.
             The first argument of impl_runner is the current run configuration while the remaining arguments are the arguments passed to `impl` of the run configuration.
             The execution of `impl_runner` will be timed and reported.
@@ -170,7 +180,7 @@ def measure_runtimes(
         inputs = [inputs]
         singleton_input = True
     if isinstance(inputs[0], list):
-        inputs = [lambda : i for i in inputs]
+        inputs = [lambda: i for i in inputs]
 
     # prepare impl_runner
     if impl_runner is None:
@@ -194,7 +204,7 @@ def measure_runtimes(
                     start = perf_counter()
                     args = in_prep()
                     end = perf_counter()
-                    in_prep_rt = end-start
+                    in_prep_rt = end - start
                     ir_args = dict()
                     if c.prep is not None:
                         ir_args = c.prep()
@@ -204,7 +214,7 @@ def measure_runtimes(
                     if runtime is None:
                         runtime = Runtime()
                     if runtime.full is None:
-                        runtime.full = end-start + in_prep_rt
+                        runtime.full = end - start + in_prep_rt
                     runtime.input_prep = in_prep_rt
                     cur_times.append(runtime)
                     pbar.update()
@@ -213,7 +223,7 @@ def measure_runtimes(
                 f_times.append(_reduce_runtimes(cur_times, reduction))
             times.append(f_times)
     # reorder according to original run config order
-    out = [0]*len(times)
+    out = [0] * len(times)
     for i, t in zip(rc_order, times):
         out[i] = t
     # adjust output form
@@ -223,6 +233,7 @@ def measure_runtimes(
         out = out[0]
     return out
 
+
 output_dir = util.get_path(config["global"]["tmp_dir"], "exp_out")
 """
 The output directory of the experiments
@@ -230,6 +241,7 @@ The output directory of the experiments
 Group:
     Experiments
 """
+
 
 def xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool = False) -> dict[str, Any]:
     """
@@ -254,7 +266,10 @@ def xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool = Fal
         scheduler.clear_memory()
     return impl_runner_args
 
-def xr_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, output_exists: bool = True, **kwargs) -> Runtime:
+
+def xr_impl_runner(
+    impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, output_exists: bool = True, **kwargs
+) -> Runtime:
     """
     Implementation runner for standard xarray operators.
 
@@ -263,46 +278,47 @@ def xr_impl_runner(impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, o
         ds: The input for the implementation
         output_exists: Whether an output already exists at the output path and should be overwritten.
         kwargs: Additional arguments, which will be ignored
-    
+
     Returns:
         The runtimes of the individual stages of the computation.
 
     Group:
         Experiments
-    
+
     """
     runtime = Runtime()
     # construct the dask graph
     start = perf_counter()
-    ds = ds + xr.full_like(ds, random.random()) # instead of clone. See https://github.com/dask/dask/issues/9621
+    ds = ds + xr.full_like(ds, random.random())  # instead of clone. See https://github.com/dask/dask/issues/9621
     out = impl(ds)
     # clone the graph to ensure that the scheduler does not use results computed in an earlier round
     # cloned: da.Array = dask.graph_manipulation.clone(out.data)
     stored = out.data.to_zarr(str(output_dir), overwrite=output_exists, compute=False)
     end = perf_counter()
-    runtime.graph_construction = end-start
+    runtime.graph_construction = end - start
     # optimize the graph
     start = perf_counter()
     optimized: da.Array = dask.optimize(stored)[0]
     end = perf_counter()
-    runtime.graph_opt = end-start
+    runtime.graph_opt = end - start
     # compute
     client = scheduler.get_client()
     if client is not None:
         start = perf_counter()
         fut: da.Array = client.persist(optimized)
         end = perf_counter()
-        runtime.graph_serial = end-start
+        runtime.graph_serial = end - start
         start = perf_counter()
         dask.distributed.wait(fut)
         end = perf_counter()
-        runtime.compute = end-start
+        runtime.compute = end - start
     else:
         start = perf_counter()
         optimized.compute()
         end = perf_counter()
-        runtime.compute = end-start
+        runtime.compute = end - start
     return runtime
+
 
 def clear_output():
     """
@@ -312,6 +328,7 @@ def clear_output():
         Experiments
     """
     util.clear_dir(output_dir)
+
 
 def xr_input_prep(input: Input, version: Input.Version) -> list[xr.Dataset]:
     """Input preparation for standard xarray operators.
@@ -331,11 +348,8 @@ def xr_input_prep(input: Input, version: Input.Version) -> list[xr.Dataset]:
 
 
 def measure_operator_runtimes(
-    run_config: list[RunConfig] | RunConfig, 
-    input: Input,
-    versions: list[Input.Version] | Input.Version,
-    **kwargs
-) -> list[list[float]] | list[float] | float:
+    run_config: list[RunConfig] | RunConfig, input: Input, versions: list[Input.Version] | Input.Version, **kwargs
+) -> _RTList:
     """
     Measures the runtimes of different implementations of a standard xarray operator against different input versions.
 
@@ -363,15 +377,12 @@ def measure_operator_runtimes(
         preps = preps[0]
     return measure_runtimes(run_config, preps, impl_runner=xr_impl_runner, **kwargs)
 
+
 @deprecated("Replaced by the :class:`Runtime` class.", version="0.0.1a1")
-def measure_loading_times(
-    input: Input,
-    versions: list[Input.Version],
-    **kwargs
-) -> list[float]:
+def measure_loading_times(input: Input, versions: list[Input.Version], **kwargs) -> list[float]:
     """
     Measures the loading times of different versions of an input.
-    
+
     This function will currently fail with a ``NotImplementedError``.
     Due to a bug in dask's graph cloning, it is currently not possible to properly
     measure the data loading time.

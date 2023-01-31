@@ -448,7 +448,7 @@ class Input:
         self.name = name
         self.source = source
         # validity check on source version
-        if any(a is None for a in util.get_class_attriubtes(source_version)):
+        if any(a is None for a in util.get_class_attributes(source_version)):
             raise ValueError("Received source version with None attribute.", source_version)
         # this assertion is only for type checking (which doesn't understand the above if statement)
         assert source_version.dim_order is not None
@@ -483,7 +483,7 @@ class Input:
             dataset: The data of the new version. If `None`, the data will be generated from a preexisting version.
 
         Returns:
-             The actual newly created version
+            The actual newly created version
         """
         # check whether version already exists
         if self.has_version(version):
