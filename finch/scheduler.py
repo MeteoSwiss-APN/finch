@@ -1,16 +1,18 @@
+import asyncio
 import logging
 import os
-import asyncio
-import dask
-from dask.distributed import Client, Scheduler, SchedulerPlugin
-from dask_jobqueue import SLURMCluster
-import dask.utils
-import dask.config
-from . import util
-from . import env
-from . import config, debug
-from datetime import timedelta
 from dataclasses import dataclass
+from datetime import timedelta
+
+import dask
+import dask.config
+import dask.utils
+from dask.distributed import Client, Scheduler, SchedulerPlugin
+from dask_jobqueue import SLURMCluster  # type: ignore
+
+from . import cfg as finch_cfg
+from . import debug, env, util
+
 
 def parse_slurm_time(t: str) -> timedelta:
     """
@@ -26,20 +28,20 @@ def parse_slurm_time(t: str) -> timedelta:
         Util
     """
     has_days = "-" in t
-    d = 0
+    d = "0"
     if has_days:
         d, t = t.split("-")
-        d = int(d)
-        t = t.split(":")
-        h, m, s = t + ["0"]*(3-len(t))
+        tl = t.split(":")
+        h, m, s = tl + ["0"] * (3 - len(tl))
     else:
-        t = t.split(":")
-        if len(t) == 1:
-            t = ["0", *t, "0"]
-        elif len(t) == 2:
-            t = ["0", *t]
-        h, m, s = t
+        tl = t.split(":")
+        if len(tl) == 1:
+            tl = ["0", *t, "0"]
+        elif len(tl) == 2:
+            tl = ["0", *tl]
+        h, m, s = tl
     return timedelta(days=int(d), hours=int(h), minutes=int(m), seconds=int(s))
+
 
 @dataclass
 class ClusterConfig(util.Config):
@@ -49,6 +51,7 @@ class ClusterConfig(util.Config):
     Group:
         Dask
     """
+
     workers_per_job: int = 1
     """The number of workers to spawn per SLURM job"""
     cores_per_worker: int = dask.config.get("jobqueue.slurm.cores", 1)
@@ -64,19 +67,25 @@ class ClusterConfig(util.Config):
     queuing: bool = False
     """If True, queuing will be used by dask. If False, it will be disabled."""
 
-client: Client = None
-_active_config: ClusterConfig = None
 
-def start_slurm_cluster(
-    cfg: ClusterConfig = ClusterConfig()
-) -> Client:
+client: Client | None = None
+"""
+The currently active dask client.
+
+Group:
+    Dask
+"""
+_active_config: ClusterConfig | None = None
+
+
+def start_slurm_cluster(cfg: ClusterConfig = ClusterConfig()) -> Client:
     """
     Starts a new SLURM cluster with the given config and returns a client for it.
     If a cluster is already running with a different config, it is shut down.
 
     Args:
         cfg: The configuration of the cluster to start
-    
+
     Returns:
         A client connected to the newly started SLURM cluster.
 
@@ -86,6 +95,7 @@ def start_slurm_cluster(
     global client, _active_config
 
     if cfg == _active_config:
+        assert client is not None
         return client
 
     if client is not None:
@@ -105,12 +115,14 @@ def start_slurm_cluster(
     jobs_per_node = node_cores // job_cpu
     job_mem = dask.utils.format_bytes(node_memory_bytes // jobs_per_node)
 
-    cores = job_cpu if not cfg.omp_parallelism else cfg.workers_per_job # the number of cores dask believes it has available per job
+    cores = (
+        job_cpu if not cfg.omp_parallelism else cfg.workers_per_job
+    )  # the number of cores dask believes it has available per job
     worker_env.omp_threads = 1 if not cfg.omp_parallelism else cfg.cores_per_worker
 
     walltime_delta = parse_slurm_time(walltime)
-    worker_lifetime = walltime_delta - timedelta(minutes=3)
-    worker_lifetime = int(worker_lifetime.total_seconds())
+    worker_lifetime_td = walltime_delta - timedelta(minutes=3)
+    worker_lifetime = int(worker_lifetime_td.total_seconds())
 
     dashboard_address = ":8877"
 
@@ -118,7 +130,7 @@ def start_slurm_cluster(
         dask.config.set({"distributed.scheduler.worker-saturation": 1.0})
     else:
         dask.config.set({"distributed.scheduler.worker-saturation": "inf"})
-    
+
     cluster = SLURMCluster(
         # resources
         walltime=walltime,
@@ -131,18 +143,14 @@ def start_slurm_cluster(
         scheduler_options={
             "dashboard_address": dashboard_address,
         },
-        # worker_extra_args=[
-        #     "--lifetime", f"{worker_lifetime}s", 
-        #     "--lifetime-stagger", "2m",
-        #     "--lifetime-restart"
-        # ],
+        worker_extra_args=["--lifetime", f"{worker_lifetime}s", "--lifetime-stagger", "2m", "--lifetime-restart"],
         # filesystem config
-        local_directory=config["global"]["scratch_dir"],
-        shared_temp_directory=config["global"]["tmp_dir"],
-        log_directory=config["global"]["log_dir"],
+        local_directory=finch_cfg["global"]["scratch_dir"],
+        shared_temp_directory=finch_cfg["global"]["tmp_dir"],
+        log_directory=finch_cfg["global"]["log_dir"],
         # other
         job_script_prologue=worker_env.get_job_script_prologue(),
-        nanny=True
+        nanny=True,
     )
 
     client = Client(cluster)
@@ -156,14 +164,18 @@ def start_slurm_cluster(
     logging.debug(cluster.job_script())
     return client
 
+
 def start_scheduler(debug: bool = debug, *cluster_args, **cluster_kwargs) -> Client | None:
     """
     Starts a new scheduler either in debug or run mode.
 
     Args:
-        debug: If `False`, a new SLURM cluster will be started and a client connected to the new cluster is returned.
+        debug (bool):
+            If `False`, a new SLURM cluster will be started and a client connected to the new cluster is returned.
             If `True`, `None` is returned and dask is configured to run a synchronous scheduler.
-    
+        cluster_args: The positional arguments passed to :py:func:`finch.start_slurm_cluster`
+        cluster_kwargs: The keyword arguments passed to :py:func:`finch.start_slurm_cluster`
+
     Returns:
         A client connected to the new cluster / scheduler or `None`, depending on `debug`.
 
@@ -176,17 +188,20 @@ def start_scheduler(debug: bool = debug, *cluster_args, **cluster_kwargs) -> Cli
     else:
         return start_slurm_cluster(*cluster_args, **cluster_kwargs)
 
+
 def clear_memory():
     """
     Clears the memory of the current scheduler and workers.
-    **Attention**: This function currently raises a `NotImplementedError`, 
+    **Attention**: This function currently raises a `NotImplementedError`,
     because dask currently provides no efficient way of clearning the memory of the scheduler.
 
     Group:
         Dask
     """
-    # Currently the only possible way to completely reset memory is via client.restart(), which won't work many times in a row on a SLURM Cluster.
+    # Currently the only possible way to completely reset memory is via client.restart(),
+    # which won't work many times in a row on a SLURM Cluster.
     raise NotImplementedError()
+
 
 class WorkerCountPlugin(SchedulerPlugin):
     def __init__(self, threshold: int):
@@ -211,12 +226,13 @@ class WorkerCountPlugin(SchedulerPlugin):
             self.below_event.clear()
             self.at_event.set()
         self.change_event.clear()
-    
+
     def add_worker(self, scheduler: Scheduler, worker: str):
         self.add_remove_worker(scheduler)
 
     def remove_worker(self, scheduler: Scheduler, worker: str):
         self.add_remove_worker(scheduler)
+
 
 def get_client() -> Client | None:
     """
@@ -227,6 +243,7 @@ def get_client() -> Client | None:
     """
     return client
 
+
 def scale_and_wait(n: int):
     """
     Scales the current registered cluster to `n` workers and waits for them to start up.
@@ -236,4 +253,4 @@ def scale_and_wait(n: int):
     """
     if client:
         client.cluster.scale(n)
-        client.wait_for_workers(n, timeout=config["experiments"]["scaling_timeout"])
+        client.wait_for_workers(n, timeout=finch_cfg["experiments"]["scaling_timeout"])
