@@ -253,4 +253,4 @@ def scale_and_wait(n: int):
     """
     if client:
         client.cluster.scale(n)
-        client.wait_for_workers(n, timeout=finch_cfg["experiments"]["scaling_timeout"])
+        client.wait_for_workers(n, timeout=finch_cfg.getfloat("experiments", "scaling_timeout"))
