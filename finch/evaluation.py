@@ -37,7 +37,7 @@ def get_pyplot_grouped_bar_pos(groups: int, labels: int) -> Tuple[np.ndarray, fl
     return xpos, bar_width
 
 
-def print_version_results(results: list[Any], versions: list[Input.Version]):
+def print_version_results(results: list[Any], versions: list[Input.Version]) -> None:
     """
     Prints the results of an experiment for different input versions.
 
@@ -48,7 +48,7 @@ def print_version_results(results: list[Any], versions: list[Input.Version]):
         print(f"{v}\n    {r}")
 
 
-def print_results(results: list[list[Any]], run_configs: list[RunConfig], versions: list[Input.Version]):
+def print_results(results: list[list[Any]], run_configs: list[RunConfig], versions: list[Input.Version]) -> None:
     """
     Prints the results of an experiment for different run configurations and input versions.
 
@@ -176,7 +176,9 @@ def create_cores_dimension(
 
 
 def rename_labels(
-    results: xr.Dataset, renames: dict[str, dict[Any, Any] | list[Any]] | None = None, **kwargs
+    results: xr.Dataset,
+    renames: dict[str, dict[Any, Any] | list[Any]] | None = None,
+    **kwargs: dict[Any, Any] | list[Any],
 ) -> xr.Dataset:
     """
     Rename labels for some dimensions. This changes the coordinates in the results dataset
@@ -281,7 +283,8 @@ def speedup(runtimes: np.ndarray, axis: int = -1, base: np.ndarray | None = None
         first_index[axis] = 0
         base = runtimes[tuple(first_index)]
     base = np.expand_dims(base, axis)
-    return base / runtimes
+    out: np.ndarray = base / runtimes
+    return out
 
 
 @deprecated("Serial overhead analysis should be used instead.", version="0.0.1a1")
@@ -314,7 +317,8 @@ def amdahl_speedup(f: np.ndarray, c: np.ndarray) -> np.ndarray:
     Group:
         Evaluation
     """
-    return 1 / (f + (1 - f) / c)
+    out: np.ndarray = 1 / (f + (1 - f) / c)
+    return out
 
 
 def serial_overhead_analysis(
@@ -359,7 +363,7 @@ def serial_overhead_analysis(
     f1 = np.sum(f1, axis=1)
     f2 = cf * cf
     f2 = t1.reshape(-1) * np.sum(f2, axis=1)
-    f = f1 / f2
+    f: np.ndarray = f1 / f2
     f = f.flatten()
 
     return f
@@ -398,7 +402,7 @@ def create_plots(
     plot_scaling_fits: bool = False,
     plot_scaling_baseline: bool = True,
     runtime_selection: list[str] | None = None,
-):
+) -> None:
     """
     Creates a series of plots for the results array.
     The plot creation works as follows.
@@ -448,7 +452,7 @@ def create_plots(
         runtime_type: str,
         extra: str | None = None,
         format: util.ImgSuffix = "png",
-    ):
+    ) -> None:
         name = dim + "_" + runtime_type
         if extra is not None:
             name += "_" + extra
@@ -554,7 +558,7 @@ def create_plots(
                     save_plot(d, runtime_type)
 
 
-def plot_runtime_parts(results: xr.Dataset, first_dims: list[str] = []):
+def plot_runtime_parts(results: xr.Dataset, first_dims: list[str] = []) -> None:
     """
     Plots how the full runtimes are split up.
 
@@ -613,7 +617,7 @@ def plot_runtime_parts(results: xr.Dataset, first_dims: list[str] = []):
         plt.savefig(path.joinpath("runtime_parts.png"), format="png", bbox_inches="tight")
 
 
-def store_config(results: xr.Dataset):
+def store_config(results: xr.Dataset) -> None:
     """
     Stores the configuration of the runtime experiment as a yaml.
     The configuration are the coordinate values of the results array.
