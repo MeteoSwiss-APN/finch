@@ -260,7 +260,6 @@ def load_array_grib(
     cache: bool = True,
     index_path: str = "",
     load_coords: bool = True,
-    **kwargs
 ) -> xr.DataArray:
     """
     Loads a DataArray from a given grib file.
@@ -305,7 +304,7 @@ def load_array_grib(
     return out
 
 
-def load_grib(grib_file: util.PathLike | list[util.PathLike], short_names: List[str], **kwargs) -> xr.Dataset:
+def load_grib(grib_file: util.PathLike | list[util.PathLike], short_names: List[str], **kwargs: Any) -> xr.Dataset:
     """
     Convenience function for loading multiple ``xarray.DataArray``s from a grib file with
     :func:`load_array_grib` and returning them as a dataset.
@@ -364,12 +363,12 @@ class Input:
         coords: bool | None = None
         """Whether this version holds coordinates"""
 
-        def __post_init__(self):
+        def __post_init__(self) -> None:
             # allow passing the string representation of format.
             if isinstance(self.format, str):
                 self.format = Format(self.format)
 
-        def __le__(self, other):
+        def __le__(self, other: "Input.Version") -> bool:
             """Self is less or equal to other, if other can be constructed from self
             without any relevant future differences in performance when accessing the data
             and without any changes in content."""
@@ -391,12 +390,13 @@ class Input:
                 self.format != Format.ZARR
                 or self.chunks is None
                 or other.chunks is None
-                or util.can_rechunk_no_split(self.chunks, other.chunks)
+                or can_rechunk_no_split(self.chunks, other.chunks)
             )
 
         def impose(self, ds: xr.Dataset) -> xr.Dataset:
             """Transforms the given dataset such that it conforms to this version."""
-            if self.dim_order is not None and ds.dims != self.dim_order:
+            ds_dim_order = list(ds.dims.keys())
+            if self.dim_order is not None and ds_dim_order != list(self.dim_order):
                 ds = ds.transpose(*get_dim_order_list(self.dim_order))
             if self.chunks is not None:
                 if not chunk_args_equal(self.chunks, ds.chunksizes, ds.sizes):
