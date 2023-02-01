@@ -103,6 +103,8 @@ def create_result_dataset(
                 a["impl"] = impl_name
         elif callable(impl_names):
             for a, rc in zip(rc_attrs, run_configs):
+                if rc.impl is None:
+                    raise ValueError("Run config is missing an implementation.", rc)
                 a["impl"] = impl_names(rc.impl)
     # construct coordinates
     coords = {a: list(set(va[a] for va in version_attrs)) for a in va_keys}

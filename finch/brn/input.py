@@ -36,23 +36,19 @@ def load_input_grib(version: data.Input.Version | None = None) -> xr.Dataset:
     if version.format == data.Format.FAKE:
         # create a fake dataset
         shape = {"x": 1170, "y": 700, "z": 80}
+        assert version.dim_order is not None
         dims = list(version.dim_order)
         size = [shape[d] for d in dims]
-        chunks_list = [
-            version.chunks[d] if d in version.chunks else shape[d] for d in dims
-        ]
+        chunks_list = [version.chunks[d] if d in version.chunks else shape[d] for d in dims]
         array = da.random.random(size, chunks_list)
         array = xr.DataArray(array, dims=dims)
         arrays: list[xr.DataArray] = [
-            (array + x).rename(n)
-            for n, x in zip(
-                brn_array_names, np.arange(0, 0.1 * len(brn_array_names), 0.1)
-            )
+            (array + x).rename(n) for n, x in zip(brn_array_names, np.arange(0, 0.1 * len(brn_array_names), 0.1))
         ]
         arrays[-1] = arrays[-1].loc[{"z": 0}]
         return xr.merge(arrays)
 
-    chunks = version.chunks
+    chunks = dict(version.chunks)
 
     # load data from first grib file
     grib_file = "lfff00000000"

@@ -7,7 +7,7 @@ import xarray as xr
 import zebra
 
 from .. import constants as const
-from .. import util
+from .. import ops
 from . import input
 
 
@@ -120,12 +120,8 @@ def thetav_blocked_np(dataset: xr.Dataset) -> xr.DataArray:
         THETAV
     """
     arrays = [dataset[n] for n in input.brn_array_names[:3]]
-    template = xr.DataArray(
-        arrays[0].data, coords=arrays[0].coords, dims=arrays[0].dims
-    )
-    return util.custom_map_blocks(
-        __block_thetav_np, *arrays, name="thetav", template=template
-    )
+    template = xr.DataArray(arrays[0].data, coords=arrays[0].coords, dims=arrays[0].dims)
+    return ops.custom_map_blocks(__block_thetav_np, *arrays, name="thetav", template=template)
 
 
 def brn_blocked_np(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
@@ -144,15 +140,8 @@ def brn_blocked_np(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
     """
     dataset = dataset.transpose(*"xyz")  # ensure correct dimension order
     arrays = [dataset[n] for n in input.brn_array_names]
-    template = xr.DataArray(
-        arrays[0].data, coords=arrays[0].coords, dims=arrays[0].dims
-    )
-    return util.custom_map_blocks(
-        functools.partial(__block_brn_np, reps=reps),
-        *arrays,
-        name="brn",
-        template=template
-    )
+    template = xr.DataArray(arrays[0].data, coords=arrays[0].coords, dims=arrays[0].dims)
+    return ops.custom_map_blocks(functools.partial(__block_brn_np, reps=reps), *arrays, name="brn", template=template)
 
 
 def thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
@@ -174,7 +163,7 @@ def thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
         return out
 
     arrays = [dataset[n] for n in input.brn_array_names[:3]]
-    return util.custom_map_blocks(wrapper, *arrays, name="thetav")
+    return ops.custom_map_blocks(wrapper, *arrays, name="thetav")
 
 
 def brn_blocked_cpp(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
@@ -202,4 +191,4 @@ def brn_blocked_cpp(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
         return out
 
     arrays = [dataset[n] for n in input.brn_array_names]
-    return util.custom_map_blocks(wrapper, *arrays, name="brn")
+    return ops.custom_map_blocks(wrapper, *arrays, name="brn")
