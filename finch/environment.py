@@ -93,7 +93,7 @@ class WorkerEnvironment:
     """Maps attributes of this class to environment variables"""
 
     @classmethod
-    def load(cls):
+    def load(cls) -> "WorkerEnvironment":
         """Returns a new worker environment whose attributes are initialized according to the current environment."""
         out = cls()
         for k, v in out.env_var_map.items():
@@ -107,7 +107,7 @@ class WorkerEnvironment:
         """This worker environment as a dictionary mapping environment variable names to values"""
         return {e: str(self.__dict__[v]) for v, es in self.env_var_map.items() for e in _util.arg2list(es)}
 
-    def set(self):
+    def set(self) -> None:
         """Sets environment variables according to this worker environment"""
         os.environ.update(self._env_vars)
 
