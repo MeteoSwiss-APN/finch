@@ -4,7 +4,7 @@ import pathlib
 from collections.abc import Callable, Hashable, Iterable, Mapping
 from dataclasses import dataclass
 from glob import glob
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Union, overload
 
 import numpy as np
 import xarray as xr
@@ -505,9 +505,7 @@ class Input:
 
         if dataset is None:
             # create new version to be added
-            optional = self.get_version(nu_version, create_if_not_exists=True, add_if_not_exists=False)
-            assert optional is not None  # for type checker
-            dataset, nu_version = optional
+            dataset, nu_version = self.get_version(nu_version, add_if_not_exists=False)
 
         # add missing chunk sizes
         chunks = dict(version.chunks)
@@ -539,12 +537,31 @@ class Input:
         """
         return any(util.has_attributes(version, v, excludes=["name"]) for v in self.versions)
 
+    @overload
     def get_version(
         self,
         version: Version,
-        create_if_not_exists: bool = True,
+        add_if_not_exists: bool = ...,
+        weak_compare: bool = ...,
+    ) -> tuple[xr.Dataset, Version]:
+        ...
+
+    @overload
+    def get_version(
+        self,
+        version: Version,
+        add_if_not_exists: bool = ...,
+        weak_compare: bool = ...,
+        create_if_not_exists: bool = ...,
+    ) -> tuple[xr.Dataset, Version] | None:
+        ...
+
+    def get_version(
+        self,
+        version: Version,
         add_if_not_exists: bool = False,
         weak_compare: bool = True,
+        create_if_not_exists: bool = True,
     ) -> tuple[xr.Dataset, Version] | None:
         """
         Returns a version with the given properties.

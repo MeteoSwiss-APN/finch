@@ -511,6 +511,15 @@ def is_2d_list_of(val: list[list[Any]], typ: Type[T]) -> TypeGuard[list[list[T]]
     return all(all(isinstance(vv, typ) for vv in v) for v in val)
 
 
+def is_callable_list(val: list[Any]) -> TypeGuard[list[Callable]]:
+    """Type guard for checking that a list contains callable objects.
+
+    Group:
+        Util
+    """
+    return all(callable(v) for v in val)
+
+
 ###############################
 # Miscellaneous utilities
 ###############################
