@@ -18,7 +18,7 @@ Group:
 """
 
 
-def read_config(cfg_path: str, optional: bool = False):
+def read_config(cfg_path: str, optional: bool = False) -> None:
     """
     Reads a config file.
 
@@ -54,7 +54,7 @@ if "log_level" in config["global"]:
     __log_level = config["global"]["log_level"]
 
 
-def set_log_level(level: str | int):
+def set_log_level(level: str | int) -> None:
     """Overwrite the current logging level.
 
     Group:
@@ -75,7 +75,7 @@ if "debug_mode" in config["global"] and config["global"]["debug_mode"] != "":
     debug = config.getboolean("global", "debug_mode")
 
 
-def set_debug_mode(dbg: bool):
+def set_debug_mode(dbg: bool) -> None:
     """
     Toggles the debug mode.
     If True, debug mode is enabled.
