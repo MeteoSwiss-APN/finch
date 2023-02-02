@@ -65,14 +65,14 @@ class TestBRN:
         ]
         return xr.merge([input, *inout_da[:-1]]), inout_da[-1]
 
-    def test_thetav(self):
+    def test_thetav(self) -> None:
         """Tests all thetav implementations on the test data"""
         input, output = self.get_thetav_test_data()
         for tv in brn.list_thetav_implementations():
             out = tv(input).transpose(*output.dims)
             assert da.allclose(out.data, output.data).compute(), f"Function {tv.__name__} returned a wrong array."
 
-    def test_brn(self):
+    def test_brn(self) -> None:
         """Tests all brn implementations on the test data"""
         input, output = self.get_brn_test_data()
         for fbrn in brn.list_brn_implementations():
