@@ -32,5 +32,5 @@ runs:
           activate-environment: ${{ steps.env_name.outputs.env_name }}
           use-mamba: true
       - id: env_path
-        run: echo "env_path=${{ env.CONDA_PREFIX }}"
+        run: echo "env_path=${{ env.CONDA }}/envs/${{ steps.env_name.outputs.env_name }}"
         shell: bash
