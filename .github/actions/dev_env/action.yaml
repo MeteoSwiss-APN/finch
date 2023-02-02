@@ -68,5 +68,5 @@ runs:
       if: inputs.install-zebra == 'true'
     
     - run: |
-        mamba list
+        ls ${{ steps.mamba.outputs.env_path }}
       shell: bash
