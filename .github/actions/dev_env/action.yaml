@@ -67,3 +67,6 @@ runs:
       shell: bash
       if: inputs.install-zebra == 'true'
     
+    - run: |
+      mamba list
+      shell: bash
