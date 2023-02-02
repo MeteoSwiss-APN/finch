@@ -49,6 +49,7 @@ def brn_xr(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
 
     nlevels = dataset.sizes["z"]
 
+    assert reps > 0
     for _ in range(reps):
         thetav = thetav_xr(dataset.drop_vars(input.brn_only_array_names))
         thetav_sum = thetav.isel(z=slice(None, None, -1)).cumsum(dim="z")
@@ -63,6 +64,7 @@ def brn_xr(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
         brn = brn_1 / brn_2
         dataset["P"] = brn
 
+    assert isinstance(brn, xr.DataArray)
     return brn
 
 
@@ -74,7 +76,8 @@ def __block_thetav_np(p: np.ndarray, t: np.ndarray, qv: np.ndarray) -> np.ndarra
     pc_rdocp = const.PC_R_D / const.PC_CP_D
     pc_rvd_o = pc_rvd - 1.0
 
-    return (const.P0 / p) ** pc_rdocp * t * (1.0 + (pc_rvd_o * qv / (1.0 - qv)))
+    out: np.ndarray = (const.P0 / p) ** pc_rdocp * t * (1.0 + (pc_rvd_o * qv / (1.0 - qv)))
+    return out
 
 
 def __block_brn_np(
@@ -94,6 +97,7 @@ def __block_brn_np(
     nlevels = p.shape[2]
     hsurf = np.expand_dims(hsurf, axis=2)
 
+    assert reps > 0
     for _ in range(reps):
         thetav = __block_thetav_np(p, t, qv)
         thetav_sum = np.flip(thetav, 2).cumsum(axis=2)
@@ -104,6 +108,7 @@ def __block_brn_np(
 
         brn = brn_1 / brn_2
         p = brn
+    assert isinstance(brn, np.ndarray)
     return brn
 
 
@@ -157,9 +162,10 @@ def thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
         THETAV
     """
 
-    def wrapper(p, t, qv):
+    def wrapper(p: np.ndarray, t: np.ndarray, qv: np.ndarray) -> np.ndarray:
         out = np.zeros_like(p)
-        zebra.thetav(p, t, qv, out)
+        # TODO: Provide type stubs for zebra
+        zebra.thetav(p, t, qv, out)  # type: ignore
         return out
 
     arrays = [dataset[n] for n in input.brn_array_names[:3]]
@@ -182,12 +188,13 @@ def brn_blocked_cpp(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
     """
     dataset = dataset.transpose(*"xyz")  # ensure correct dimension order
 
-    def wrapper(*arrays):
-        arrays = list(arrays)
-        out = np.empty_like(arrays[0])
+    def wrapper(*arrays: np.ndarray) -> np.ndarray:
+        array_list = list(arrays)
+        out = np.empty_like(array_list[0])
         for _ in range(reps):
-            zebra.brn(*arrays, out)
-            arrays[0] = out
+            # TODO: Provide type stubs for zebra
+            zebra.brn(*array_list, out)  # type: ignore
+            array_list[0] = out
         return out
 
     arrays = [dataset[n] for n in input.brn_array_names]

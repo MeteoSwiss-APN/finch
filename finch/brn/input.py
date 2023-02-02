@@ -4,7 +4,6 @@ from typing import Any
 import dask.array as da
 import numpy as np
 import xarray as xr
-from deprecated.sphinx import deprecated
 
 from .. import cfg, data
 
@@ -14,11 +13,6 @@ thetav_array_names = brn_array_names[:3]
 """The names of the thetav input arrays"""
 brn_only_array_names = brn_array_names[3:]
 """The names of the brn input arrays which are not used for the thetav computation"""
-
-
-@deprecated("Use ``xarray.Dataset.transpose`` instead.", version="0.0.1a1")
-def reorder_dims(input, dims):
-    return data.reorder_dims(input, dims)
 
 
 grib_input_version = data.Input.Version(
