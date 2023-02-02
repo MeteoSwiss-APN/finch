@@ -23,7 +23,6 @@ if 1:  # this is a hack to avoid flake8 to complain about E402
         DaskRunConfig,
         DefaultOperator,
         RunConfig,
-        measure_loading_times,
         measure_operator_runtimes,
         measure_runtimes,
         xr_impl_runner,
