@@ -68,5 +68,8 @@ runs:
       if: inputs.install-zebra == 'true'
     
     - run: |
-        ls ${{ steps.mamba.outputs.env_path }}
+        ls ${{ steps.mamba.outputs.env_path }}/lib/python3.10/site-packages
+        echo $CONDA_PREFIX
+        conda activate finch
+        mamba list
       shell: bash
