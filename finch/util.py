@@ -56,7 +56,7 @@ Group:
 """
 
 
-def get_absolute(path: PathLike, context: PathLike = ".") -> PathLike:
+def get_absolute(path: PathLike, context: PathLike = ".") -> pathlib.Path:
     """
     Return the abolute path in the given context if a relative path was given.
     If an absolute path is given, it is directly returned.
@@ -76,7 +76,7 @@ def get_absolute(path: PathLike, context: PathLike = ".") -> PathLike:
     return path
 
 
-def get_path(*args: PathLike) -> PathLike:
+def get_path(*args: PathLike) -> pathlib.Path:
     """
     Returns a new path by joining the given path arguments.
     If the directories do not exist yet, they will be created.
@@ -90,25 +90,27 @@ def get_path(*args: PathLike) -> PathLike:
     return out
 
 
-def remove_if_exists(path: pathlib.Path) -> pathlib.Path:
+def remove_if_exists(path: PathLike) -> pathlib.Path:
     """
     Removes the given directory if it exists and returns the original path.
 
     Group:
         Util
     """
+    path = pathlib.Path(path)
     if path.exists():
         shutil.rmtree(path)
     return path
 
 
-def clear_dir(path: pathlib.Path):
+def clear_dir(path: PathLike) -> None:
     """
     Removes the content of the given directory.
 
     Group:
         Util
     """
+    path = pathlib.Path(path)
     if not path.is_dir():
         raise ValueError("Given path is not a directory", path)
     for file in path.iterdir():

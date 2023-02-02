@@ -14,7 +14,6 @@ import dask.graph_manipulation
 import numpy as np
 import xarray as xr
 from dask.distributed import performance_report
-from deprecated.sphinx import deprecated
 
 from . import cfg, scheduler, util
 from .data import Input
@@ -47,7 +46,7 @@ class RunConfig(util.Config):
     The output dictionary of this function will be used as arguments for the implementation runner.
     """
 
-    def setup(self):
+    def setup(self) -> None:
         """
         Sets up the environment for this config.
         """
@@ -68,7 +67,7 @@ class DaskRunConfig(RunConfig):
     workers: int = 1
     """The number of dask workers to spawn"""
 
-    def setup(self):
+    def setup(self) -> None:
         """
         Start the scheduler and wait for the workers.
         """
@@ -124,7 +123,6 @@ def measure_runtimes(
     warmup: bool = False,
     pbar: PbarArg = True,
     dask_report: bool = False,
-    **kwargs
 ) -> _RTList:
     """
     Measures the runtimes of multiple functions, each accepting the same inputs.
@@ -189,7 +187,11 @@ def measure_runtimes(
 
     # prepare impl_runner
     if impl_runner is None:
-        impl_runner = lambda f, args: f(args)  # noqa: E731
+
+        def simple_runner(f: Callable, *args: Any) -> None:
+            f(args)
+
+        impl_runner = simple_runner
 
     if warmup:
         iterations += 1
@@ -273,7 +275,7 @@ def xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool = Fal
 
 
 def xr_impl_runner(
-    impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, output_exists: bool = True, **kwargs
+    impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, output_exists: bool = True, **kwargs: Any
 ) -> Runtime:
     """
     Implementation runner for standard xarray operators.
@@ -325,7 +327,7 @@ def xr_impl_runner(
     return runtime
 
 
-def clear_output():
+def clear_output() -> None:
     """
     Clears the experiment output directory
 
@@ -353,7 +355,7 @@ def xr_input_prep(input: Input, version: Input.Version) -> list[xr.Dataset]:
 
 
 def measure_operator_runtimes(
-    run_config: list[RunConfig] | RunConfig, input: Input, versions: list[Input.Version] | Input.Version, **kwargs
+    run_config: list[RunConfig] | RunConfig, input: Input, versions: list[Input.Version] | Input.Version, **kwargs: Any
 ) -> _RTList:
     """
     Measures the runtimes of different implementations of a standard xarray operator against different input versions.
@@ -378,26 +380,3 @@ def measure_operator_runtimes(
     preps = [functools.partial(xr_input_prep, input=input, version=v) for v in versions]
     assert util.is_callable_list(preps)
     return measure_runtimes(run_config, preps, impl_runner=xr_impl_runner, **kwargs)
-
-
-@deprecated("Replaced by the :class:`Runtime` class.", version="0.0.1a1")
-def measure_loading_times(input: Input, versions: list[Input.Version], **kwargs) -> list[float]:
-    """
-    Measures the loading times of different versions of an input.
-
-    This function will currently fail with a ``NotImplementedError``.
-    Due to a bug in dask's graph cloning, it is currently not possible to properly
-    measure the data loading time.
-
-    Args:
-        input: The input to be loaded
-        versions: The different versions to be measured
-        kwargs: Arguments for :func:`measure_runtimes`
-
-    Returns:
-        A list of times in seconds, indicating the loading times for the given versions of the input.
-
-    Group:
-        Experiments
-    """
-    raise NotImplementedError("Measuring pure load times is currently impossible.")
