@@ -25,6 +25,7 @@ runs:
     - name: Create Key Prefix
       id: prefix
       run: echo "prefix=conda-${{ runner.os }}--${{ runner.arch }}--${{ steps.get-date.outputs.today }}" >> $GITHUB_OUTPUT
+      shell: bash
     - name: Create Key
       id: key
       run: echo "key=${{ steps.prefix.outputs.prefix }}-${{ hashFiles('environment.yml') }}" >> $GITHUB_OUTPUT
@@ -42,6 +43,7 @@ runs:
 
     - name: Install environment
       run: mamba env update -n ${{ steps.mamba.outputs.env_name }}
+      shell: bash
       if: steps.cache.outputs.cache-hit != 'true'
 
     # save the environment in cache
