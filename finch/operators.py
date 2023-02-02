@@ -2,7 +2,7 @@
 This module adds class-, function- and type definitions for implementating new operators.
 """
 
-from typing import Callable, Hashable
+from typing import Any, Callable, Hashable
 
 import dask.array as da
 import numpy as np
@@ -15,10 +15,10 @@ def custom_map_blocks(
     f: Callable,
     *args: xr.DataArray | xr.Dataset,
     name: str | None = None,
-    dtype=None,
+    dtype: np.dtype | None = None,
     template: xr.DataArray | None = None,
-    f_in_out_type=np.ndarray,
-    **kwargs
+    f_in_out_type: type = np.ndarray,
+    **kwargs: Any
 ) -> xr.DataArray:
     """Custom implementation of map_blocks from dask for xarray data arrays based on
     dask's ``blockwise`` and ``map_blocks`` functions.
@@ -58,6 +58,8 @@ def custom_map_blocks(
             support the different interfaces for data handling.
             The data chunks must still fully fit into memory.
             Defaults to ``np.ndarray``.
+        kwargs (Any):
+            keyword arguments which will be passed directly to ``da.blockwise`` or ``da.map_blocks``
 
     Returns:
         xr.DataArray: The result of the blockwise computation.
@@ -107,7 +109,7 @@ def custom_map_blocks(
         # It creates xr.DataArrays from the numpy arrays
         # with the appropriate metadata before calling `f`.
         # Afterwards, the underlying numpy array is extracted from the data array.
-        def xr_wrap(*chunks: np.ndarray, block_info, **kwargs):
+        def xr_wrap(*chunks: np.ndarray, block_info: dict, **kwargs: Any) -> np.ndarray:
             xr_chunks = [
                 # readjust dimensions of the chunk according
                 # to the dimensions of the full array
