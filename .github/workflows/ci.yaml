@@ -90,7 +90,7 @@ jobs:
       - uses: ./.github/actions/dev_env
         with:
           install-zebra: true
-      - uses: pre-commit/action@v3
+      - uses: pre-commit/action@v3.0.0
 
   test:
     runs-on: ubuntu-latest
