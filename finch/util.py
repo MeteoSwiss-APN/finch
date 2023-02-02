@@ -185,7 +185,7 @@ def fill_none_properties(x: T, y: T) -> T:
     return out
 
 
-def add_missing_properties(x: T, y) -> T:
+def add_missing_properties(x: T, y: object) -> T:
     """
     Return ``x`` as a copy, with attributes from ``y`` added to ``x`` which were not already present.
 
@@ -198,7 +198,7 @@ def add_missing_properties(x: T, y) -> T:
     return out
 
 
-def equals_not_none(x, y) -> bool:
+def equals_not_none(x: object, y: object) -> bool:
     """
     Compares the common properties of the two given objects.
     Return ``True`` if the not-None properties present in both object are all equal.
@@ -328,7 +328,7 @@ def list_funcs_matching(
     return out
 
 
-def get_primitive_attrs_from_dataclass(dc) -> dict[str, str | numbers.Number]:
+def get_primitive_attrs_from_dataclass(dc: object) -> dict[str, str | numbers.Number]:
     """
     Returns the flattened fields from a dataclass as primitives.
     """
@@ -374,14 +374,13 @@ class Config:
     """
 
     @classmethod
-    def list_configs(cls, **kwargs) -> list:
+    def list_configs(cls, **kwargs: Any) -> list:
         """
         Returns a list of run configurations,
         which is the euclidean product between the given lists of individual configurations.
         """
         configs: list[dict[str, Any]] = []
-        for arg in kwargs:
-            vals = kwargs[arg]
+        for arg, vals in kwargs.items():
             if not isinstance(vals, list):
                 vals = [vals]
             updates = [{arg: v} for v in vals]
@@ -420,7 +419,7 @@ def flatten_dict(d: dict, separator: str = "_") -> dict:
         return out
 
 
-def flat_list(arg) -> list:
+def flat_list(arg: Any) -> list:
     """Creates a flat list from the argument.
     The argument can be any object.
     If it is not a list, a single-element list is returned.
@@ -468,19 +467,19 @@ def recursive_update(d: dict, updates: dict) -> dict:
 
 class RecursiveNamespace(types.SimpleNamespace):
     """
-     A ``types.SimpleNamespace`` which can handle nested dictionaries.
+    A ``types.SimpleNamespace`` which can handle nested dictionaries.
 
     Group:
         Util
     """
 
     @staticmethod
-    def map_entry(entry):
+    def map_entry(entry: T) -> T | "RecursiveNamespace":
         if isinstance(entry, dict):
             return RecursiveNamespace(**entry)
         return entry
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         for key, val in kwargs.items():
             if isinstance(val, dict):
