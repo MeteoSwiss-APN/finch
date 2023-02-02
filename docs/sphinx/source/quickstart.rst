@@ -23,7 +23,7 @@ Next, you can install finch in development mode with conda develop
 
 .. code-block:: text
 
-    conda-develop finch
+    conda-develop .
 
 Finally, build and install zebra
 
