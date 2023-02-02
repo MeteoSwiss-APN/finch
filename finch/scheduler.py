@@ -1,14 +1,15 @@
-import asyncio
 import logging
 import os
 from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 import dask
 import dask.config
 import dask.utils
-from dask.distributed import Client, Scheduler, SchedulerPlugin
+from dask.distributed import Client
 from dask_jobqueue import SLURMCluster  # type: ignore
+from distributed.deploy.cluster import Cluster
 
 from . import cfg as finch_cfg
 from . import debug, env, util
@@ -101,6 +102,7 @@ def start_slurm_cluster(cfg: ClusterConfig = ClusterConfig()) -> Client:
     if client is not None:
         cluster = client.cluster
         client.close()
+        assert isinstance(cluster, SLURMCluster)
         cluster.close()
         logging.info("Closed SLURM cluster")
 
@@ -165,7 +167,7 @@ def start_slurm_cluster(cfg: ClusterConfig = ClusterConfig()) -> Client:
     return client
 
 
-def start_scheduler(debug: bool = debug, *cluster_args, **cluster_kwargs) -> Client | None:
+def start_scheduler(debug: bool = debug, *cluster_args: Any, **cluster_kwargs: Any) -> Client | None:
     """
     Starts a new scheduler either in debug or run mode.
 
@@ -189,7 +191,7 @@ def start_scheduler(debug: bool = debug, *cluster_args, **cluster_kwargs) -> Cli
         return start_slurm_cluster(*cluster_args, **cluster_kwargs)
 
 
-def clear_memory():
+def clear_memory() -> None:
     """
     Clears the memory of the current scheduler and workers.
     **Attention**: This function currently raises a `NotImplementedError`,
@@ -203,37 +205,6 @@ def clear_memory():
     raise NotImplementedError()
 
 
-class WorkerCountPlugin(SchedulerPlugin):
-    def __init__(self, threshold: int):
-        self.threshold = threshold
-        self.above_event = asyncio.Event()
-        self.below_event = asyncio.Event()
-        self.at_event = asyncio.Event()
-        self.change_event = asyncio.Event()
-
-    def add_remove_worker(self, scheduler: Scheduler):
-        self.change_event.set()
-        if self.threshold > len(scheduler.workers):
-            self.above_event.clear()
-            self.at_event.clear()
-            self.below_event.set()
-        elif self.threshold < len(scheduler.workers):
-            self.at_event.clear()
-            self.below_event.clear()
-            self.above_event.set()
-        else:
-            self.above_event.clear()
-            self.below_event.clear()
-            self.at_event.set()
-        self.change_event.clear()
-
-    def add_worker(self, scheduler: Scheduler, worker: str):
-        self.add_remove_worker(scheduler)
-
-    def remove_worker(self, scheduler: Scheduler, worker: str):
-        self.add_remove_worker(scheduler)
-
-
 def get_client() -> Client | None:
     """
     Returns the currently registered client.
@@ -244,7 +215,7 @@ def get_client() -> Client | None:
     return client
 
 
-def scale_and_wait(n: int):
+def scale_and_wait(n: int) -> None:
     """
     Scales the current registered cluster to `n` workers and waits for them to start up.
 
@@ -252,5 +223,6 @@ def scale_and_wait(n: int):
         Dask
     """
     if client:
+        assert isinstance(client.cluster, Cluster)
         client.cluster.scale(n)
         client.wait_for_workers(n, timeout=finch_cfg.getfloat("experiments", "scaling_timeout"))
