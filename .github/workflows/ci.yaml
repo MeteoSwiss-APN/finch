@@ -37,13 +37,17 @@ jobs:
       - name: Build Package
         run: |
           conda mambabuild -c conda-forge conda
+      # store the current conda prefix
+      - id: dev_env_prefix
+        run: |
+          echo "dev_env_prefix=${{ env.CONDA_PREFIX }}" >> $GITHUB_OUTPUT
       # install the package in a new environment
       - uses: ./.github/actions/mamba
         with:
           env_name: finch_pkg
       - name: Installing Package
         run: |
-          mamba install -c local -c conda-forge finch_mch
+          mamba install -c file://${{ steps.dev_env_prefix.outputs.dev_env_prefix }}/conda-bld -c conda-forge finch_mch
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
 
   package_pip:
