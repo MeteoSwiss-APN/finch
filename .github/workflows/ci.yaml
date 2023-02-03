@@ -31,7 +31,11 @@ jobs:
         shell: bash -el {0}
     steps:
       - uses: actions/checkout@v3
-
+      # setup environment for installation later on
+      - uses: ./.github/actions/mamba
+        id: install_env
+        with:
+          env_name: finch_pkg
       # build the package
       - uses: ./.github/actions/dev_env
       - name: Build Package
@@ -41,14 +45,10 @@ jobs:
       - id: dev_env_prefix
         run: |
           echo "dev_env_prefix=${{ env.CONDA_PREFIX }}" >> $GITHUB_OUTPUT
-      # install the package in a new environment
-      - uses: ./.github/actions/mamba
-        with:
-          env_name: finch_pkg
+      # install the package in the install environment
       - name: Installing Package
         run: |
-          mamba install -c file://${{ steps.dev_env_prefix.outputs.dev_env_prefix }}/conda-bld -c conda-forge finch_mch
-        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+          mamba install -c local -c conda-forge -n ${{ steps.install_env.outputs.env_name }} finch_mch
 
   package_pip:
     runs-on: ubuntu-latest
