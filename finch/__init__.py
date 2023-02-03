@@ -53,4 +53,5 @@ __all__ = [
     "xr_impl_runner",
     "xr_input_prep",
     "xr_run_prep",
+    "__version__",
 ]
