@@ -41,14 +41,10 @@ jobs:
       - name: Build Package
         run: |
           conda mambabuild -c conda-forge conda
-      # store the current conda prefix
-      - id: dev_env_prefix
-        run: |
-          echo "dev_env_prefix=${{ env.CONDA_PREFIX }}" >> $GITHUB_OUTPUT
       # install the package in the install environment
       - name: Installing Package
         run: |
-          mamba install -c local -c conda-forge -n ${{ steps.install_env.outputs.env_name }} finch_mch
+          mamba install -c local -c conda-forge -p ${{ steps.install_env.outputs.env_path }} finch_mch
 
   package_pip:
     runs-on: ubuntu-latest
