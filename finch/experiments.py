@@ -2,6 +2,7 @@ import functools
 import random
 import warnings
 from collections.abc import Callable
+from configparser import ConfigParser
 from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 from time import perf_counter
@@ -18,6 +19,8 @@ from dask.distributed import performance_report
 from . import cfg, scheduler, util
 from .data import Input
 from .util import PbarArg
+
+assert isinstance(cfg, ConfigParser)
 
 DefaultOperator = Callable[[xr.Dataset], xr.DataArray]
 """
