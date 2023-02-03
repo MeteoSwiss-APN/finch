@@ -8,7 +8,7 @@ from expandvars import expand  # type: ignore
 
 from . import env
 
-config = ConfigParser(interpolation=ExtendedInterpolation())
+cfg = ConfigParser(interpolation=ExtendedInterpolation())
 """
 This variable contains the configuration of the finch core library.
 It is initialized from finch's config files when importing finch.
@@ -34,7 +34,7 @@ def read_config(cfg_path: str, optional: bool = False) -> None:
         return
     with open(cfg_path) as f:
         cfg_txt = expand(f.read(), var_symbol="%")
-        config.readfp(StringIO(cfg_txt))
+        cfg.readfp(StringIO(cfg_txt))
 
 
 # built-in config (defaults)
@@ -50,8 +50,8 @@ if env.custom_config_env_var in os.environ:
 # logging
 
 __log_level: str | int | None = None
-if "log_level" in config["global"]:
-    __log_level = config["global"]["log_level"]
+if "log_level" in cfg["global"]:
+    __log_level = cfg["global"]["log_level"]
 
 
 def set_log_level(level: str | int) -> None:
@@ -62,8 +62,8 @@ def set_log_level(level: str | int) -> None:
     """
     global __log_level
     __log_level = level
-    config["global"]["log_level"] = logging.getLevelName(level)
-    logging.basicConfig(format=config["global"]["log_format"], level=level)
+    cfg["global"]["log_level"] = logging.getLevelName(level)
+    logging.basicConfig(format=cfg["global"]["log_format"], level=level)
 
 
 # debugging
@@ -71,8 +71,8 @@ def set_log_level(level: str | int) -> None:
 debug = False
 """Debug mode toggle"""
 
-if "debug_mode" in config["global"] and config["global"]["debug_mode"] != "":
-    debug = config.getboolean("global", "debug_mode")
+if "debug_mode" in cfg["global"] and cfg["global"]["debug_mode"] != "":
+    debug = cfg.getboolean("global", "debug_mode")
 
 
 def set_debug_mode(dbg: bool) -> None:
@@ -88,7 +88,7 @@ def set_debug_mode(dbg: bool) -> None:
     """
     global debug, __log_level
     debug = dbg
-    config["global"]["debug_mode"] = str(debug)
+    cfg["global"]["debug_mode"] = str(debug)
     if __log_level is None:
         set_log_level(logging.DEBUG if debug else logging.INFO)
 
