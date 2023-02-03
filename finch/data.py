@@ -2,7 +2,7 @@ import copy
 import enum
 import pathlib
 from collections.abc import Callable, Hashable, Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from glob import glob
 from typing import Any, Dict, List, Literal, Union, overload
 
@@ -356,7 +356,7 @@ class Input:
         The dimension order.
         The type of the dimension order (``str`` or ``list[str]``) must be the same across all versions of an input.
         """
-        chunks: Chunks = {}
+        chunks: Chunks = field(default_factory=dict)
         """The chunking as a dict, mapping dimension short names to chunk sizes"""
         name: str = ""
         """The name of this version"""
