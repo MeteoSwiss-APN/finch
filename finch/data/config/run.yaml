@@ -8,7 +8,7 @@
 # Note that not all properties allow a list of configuration objects.
 #
 # For run configurations (finch.DaskRunConfig), use the !config:Run tag.
-#   You can specify an implementation ("impl" attribute) as a string following the syntax "<module_name>.<impl_name>", 
+#   You can specify an implementation ("impl" attribute) as a string following the syntax "<module_name>.<impl_name>",
 #   where <module_name> is the name of the experiment module (e.g. "brn") and <impl_name> is the name of the function.
 #   It is also possible to only use <module_name>, in which case all implementations of the experiment module will be used.
 #   You can specify the preparation ("prep" attribute) by its function name from the preparations available in finch.
@@ -40,12 +40,6 @@ general:
 brn:
   # Whether to run brn experiments
   run: true
-  # Whether to measure the different input loading times
-  load_experiment: false
-  # Wether to measure brn runtimes
-  measure_runtime: true
-  # Whether or not to run evaluation
-  evaluation: true
 
   input_management:
     # Whether to alter the brn input versions
@@ -112,7 +106,7 @@ brn:
       brn_xr: "xarray"
       brn_blocked_cpp: "C++"
       brn_blocked_np: "NumPy"
-    # The keys of this dictionary indicate the plots for which to plot a relative runtime. 
+    # The keys of this dictionary indicate the plots for which to plot a relative runtime.
     # The values indicate the label in the main dimension to use as reference runtimes.
     reference_labels:
       cores: "NumPy"
@@ -122,5 +116,3 @@ brn:
       - "cores"
     # A list of labels of the main dimension to ignore during evaluation
     ignore_labels: null
-
-  
