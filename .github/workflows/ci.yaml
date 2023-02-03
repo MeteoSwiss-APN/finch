@@ -65,8 +65,6 @@ jobs:
     defaults:
       run:
         shell: bash -el {0}
-    outputs:
-      cache: ${{ steps.cacheid.outputs.cacheid }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/dev_env
@@ -76,13 +74,11 @@ jobs:
       - name: Sphinx build
         run: |
           sphinx-build docs/sphinx/source docs/sphinx/build
-      # cache build
-      - id: cacheid
-        run: echo "cacheid=docs-$(date + '%m%d%H%M%S%N')" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v3
+      # store in artifact
+      - uses: actions/upload-artifact@v3
         with:
+          name: documentation
           path: docs/sphinx/build
-          key: ${{ steps.cacheid.outputs.cacheid }}
 
   pre-commit:
     runs-on: ubuntu-latest
