@@ -22,4 +22,16 @@ repos:
     rev: 'v0.991'
     hooks:
     -   id: mypy
-        args: [--config-file, mypy.ini, --ignore-missing-imports]
+        args: []
+        files: ^(finch/.*\.py)|(tests/.*\.py)|(docs/.*\.py)
+        additional_dependencies:
+            - types-tqdm
+            - types-deprecated
+            - types-pyyaml
+            - data-science-types
+            - typeguard
+            - wonderwords
+            - expandvars
+            - matplotx
+            - xarray
+            - dask-jobqueue
