@@ -29,7 +29,7 @@ Every runtime that was recorded will receive a dedicated array in the dataset.
 We can use xarray's built-in functions for loading and storing experiment results.
 ::
     import xarray as xr
-    
+
     results.to_netcdf("results.nc")
     results = xr.open_dataset("results.nc")
 

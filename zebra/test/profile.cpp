@@ -7,13 +7,13 @@
 void profile_brn(int max_threads = 10) {
     const int m = 1000, n = 100, o = 80;
     double *x = malloc_d(m*n*o*7 + m*n);
-    double *p = x, 
-        *t = &x[m*n*o], 
-        *qv = &x[m*n*o*2], 
-        *u = &x[m*n*o*3], 
-        *v = &x[m*n*o*4], 
-        *hhl = &x[m*n*o*5], 
-        *hsurf = &x[m*n*o*7], 
+    double *p = x,
+        *t = &x[m*n*o],
+        *qv = &x[m*n*o*2],
+        *u = &x[m*n*o*3],
+        *v = &x[m*n*o*4],
+        *hhl = &x[m*n*o*5],
+        *hsurf = &x[m*n*o*7],
         *out = &x[m*n*o*6];
     brn_mock(p, t, qv, u, v, hhl, hsurf, out, m, n, o);
 

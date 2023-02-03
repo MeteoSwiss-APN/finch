@@ -41,7 +41,7 @@ Finch provides a script for running experiments, located at ``scripts/finch``.
 You can run it with
 
 ::
-    
+
     python scripts/finch
 
 Configuration options are documented in :ref:`Run and Debug Configuration`.

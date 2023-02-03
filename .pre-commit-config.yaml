@@ -20,3 +20,4 @@ repos:
     rev: 'v0.991'
     hooks:
     -   id: mypy
+        args: [--config-file, mypy.ini, --ignore-missing-imports]

@@ -55,9 +55,7 @@ def list_brn_implementations() -> list[Operator]:
 list_implementations = list_brn_implementations
 
 
-def get_repeated_brn(
-    n: int, base: Callable[[xr.Dataset, int], xr.DataArray] = impl.brn_blocked_cpp
-) -> Operator:
+def get_repeated_brn(n: int, base: Callable[[xr.Dataset, int], xr.DataArray] = impl.brn_blocked_cpp) -> Operator:
     """Returns a repeated version of a BRN implementation.
     A repeated version repeats the brn computation iteratively,
     while the output of a previous iteration is used as an input of the next iteration.

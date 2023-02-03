@@ -52,7 +52,7 @@ The output format will then be a single list of runtimes, as expected.
 We can use :func:`finch.RunConfig.list_configs` as well as :func:`finch.Input.Version.list_configs` to easily create multiple instances.
 ::
     versions = Input.Version.list_configs(
-        format=[Format.NETCDF, Format.ZARR], 
+        format=[Format.NETCDF, Format.ZARR],
         dim_order="xyz"
     )
 

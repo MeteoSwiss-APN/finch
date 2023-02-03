@@ -8,8 +8,8 @@
 TEST(ThetaVTests, Extensive) {
     const int m = 2, n = 2, o = 8;
     double *x = malloc_d(m*n*o*5);
-    double *p = x, 
-        *t = &x[m*n*o], 
+    double *p = x,
+        *t = &x[m*n*o],
         *qv = &x[m*n*o*2],
         *out_ref = &x[m*n*o*3],
         *out = &x[m*n*o*4];
@@ -36,13 +36,13 @@ TEST(BrnTests, ZeroOutput) {
 TEST(BrnTests, Extensive) {
     const int m = 2, n = 2, o = 16;
     double *x = malloc_d(m*n*o*8 + m*n);
-    double *p = x, 
-        *t = &x[m*n*o], 
-        *qv = &x[m*n*o*2], 
-        *u = &x[m*n*o*3], 
-        *v = &x[m*n*o*4], 
-        *hhl = &x[m*n*o*5], 
-        *hsurf = &x[m*n*o*8], 
+    double *p = x,
+        *t = &x[m*n*o],
+        *qv = &x[m*n*o*2],
+        *u = &x[m*n*o*3],
+        *v = &x[m*n*o*4],
+        *hhl = &x[m*n*o*5],
+        *hsurf = &x[m*n*o*8],
         *out_ref = &x[m*n*o*6],
         *out = &x[m*n*o*7];
     brn_mock(p, t, qv, u, v, hhl, hsurf, out_ref, m, n, o);

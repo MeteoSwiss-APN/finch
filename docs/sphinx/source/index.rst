@@ -3,7 +3,7 @@
 .. toctree::
    :caption: Getting Started
    :hidden:
-   
+
    quickstart
 
 .. toctree::
@@ -22,7 +22,7 @@
 
    api
 
-.. toctree:: 
+.. toctree::
    :caption: Operator Reference
    :hidden:
 
