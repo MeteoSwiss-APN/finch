@@ -11,8 +11,7 @@ import xarray as xr
 import yaml
 from deprecated.sphinx import deprecated
 
-from . import __version__ as pkg_version
-from . import cfg, util
+from . import __version__, cfg, util
 
 data_config = cfg["data"]
 grib_dir = data_config["grib_dir"]
@@ -343,7 +342,7 @@ class Input:
 
         yaml_tag = "!Version"
         """The tag to use for encoding in yaml. DO NOT MODIFY"""
-        finch_version = pkg_version
+        finch_version = __version__
         """The finch version that was used to create this input version. DO NOT MODIFY"""
         format: Format | None = None
         """
