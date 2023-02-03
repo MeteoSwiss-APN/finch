@@ -8,7 +8,8 @@ The current version of this package.
 
 import os
 
-from .config import cfg, debug, set_debug_mode, set_log_level
+from .config import config as cfg
+from .config import debug, set_debug_mode, set_log_level
 
 os.environ["GRIB_DEFINITION_PATH"] = cfg["data"]["grib_definition_path"]
 
