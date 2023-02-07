@@ -137,4 +137,4 @@ config/custom.ini
 finch_run_config.yaml
 
 # experiments script
-experiments.py
+/experiments.py
