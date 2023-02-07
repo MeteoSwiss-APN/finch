@@ -1,9 +1,10 @@
 {% set pyproject = load_file_data('../pyproject.toml', from_recipe_dir=True, recipe_dir="conda") %}
 {% set project = pyproject.get('project') %}
+{% set version = load_file_regex(load_file='../finch/data/VERSION', regex_pattern='^\\S*', from_recipe_dir=True, recipe_dir="conda") %}
 
 package:
   name: {{ project.get('name') }}
-  version: {{ project.get('version') }}
+  version: {{ version.string }}
 
 source:
   path: ../

@@ -11,62 +11,100 @@ on:
       - "main"
 
 jobs:
-  package_conda:
+
+  install_env:
     runs-on: ubuntu-latest
     # https://github.com/marketplace/actions/setup-miniconda#use-a-default-shell
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -el {0}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: ./.github/actions/dev_env
+
+
+  package_conda:
+    runs-on: ubuntu-latest
+    needs: install_env
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v3
+      # setup environment for installation later on
+      - uses: ./.github/actions/mamba
+        id: install_env
         with:
-          python-version: "3.10"
-      - uses: ./.github/actions/conda
+          env_name: finch_pkg
+      # build the package
+      - uses: ./.github/actions/dev_env
+      - name: Build Package
+        run: |
+          conda mambabuild -c conda-forge conda
+      # install the package in the install environment
+      - name: Installing Package
+        run: |
+          mamba install -c local -c conda-forge -p ${{ steps.install_env.outputs.env_path }} finch_mch
 
   package_pip:
     runs-on: ubuntu-latest
+    needs: install_env
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-      - uses: ./.github/actions/pip
+      - uses: ./.github/actions/dev_env
+      - name: Install Package
+        run: |
+          python setup.py install
 
   build_docs:
     runs-on: ubuntu-latest
-    needs: package_pip
-    outputs:
-      cache: ${{ steps.cacheid.outputs.cacheid }}
+    needs: install_env
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: ./.github/actions/dev_env
         with:
-          python-version: "3.10"
-      - uses: ./.github/actions/pip
+          install-finch: true
+          install-zebra: true
       - name: Sphinx build
         run: |
           sphinx-build docs/sphinx/source docs/sphinx/build
-      # cache build
-      - id: cacheid
-        run: echo "cacheid=docs-$(date + '%m%d%H%M%S%N')" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v3
+      # store in artifact
+      - uses: actions/upload-artifact@v3
         with:
+          name: documentation
           path: docs/sphinx/build
-          key: ${{ steps.cacheid.outputs.cacheid }}
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    needs: install_env
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/dev_env
+        with:
+          install-zebra: true
+      - uses: pre-commit/action@v3.0.0
 
   test:
     runs-on: ubuntu-latest
-    needs: package_pip
+    needs: install_env
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: ./.github/actions/dev_env
         with:
-          python-version: "3.10"
-      - uses: ./.github/actions/pip
-      - name: Install pytest
-        run: |
-          pip install pytest
+          install-finch: true
+          install-zebra: true
       - name: Run Unit Tests
         run: |
           pytest

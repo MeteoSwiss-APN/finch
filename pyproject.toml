@@ -4,23 +4,21 @@ requires = [
   "scikit-build",
   "cmake>=3.14",
   "pybind11",
-  "ninja; platform_system!='Windows'"
+  "ninja; platform_system!='Windows'",
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "finch_mch"
 dynamic = ["version"]
-authors = [
-    { name="Tierry Hörmann", email="Tierry.Hoermann@meteoswiss.ch" },
-]
+authors = [{ name = "Tierry Hörmann", email = "Tierry.Hoermann@meteoswiss.ch" }]
 description = "Library for running experiments on parallel dataprocessing operators"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
-    "Operating System :: POSIX",
-    "Topic :: Software Development"
+  "Development Status :: 2 - Pre-Alpha",
+  "Operating System :: POSIX",
+  "Topic :: Software Development",
 ]
 
 [project.urls]
@@ -28,4 +26,4 @@ classifiers = [
 "Bug Tracker" = "https://github.com/MeteoSwiss-APN/finch/issues"
 
 [tool.setuptools.dynamic]
-version = {file = "finch/data/VERSION"}
+version = { file = "finch/data/VERSION" }

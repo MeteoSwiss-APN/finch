@@ -8,8 +8,8 @@ finch [distributed data processing for ICON data]
 **Finch** is a Python library for setting up, running and analyzing runtime experiments for data processing operators with `dask <https://www.dask.org/>`_.
 
 .. warning::
-   Finch is currently in development.
-   The documentation might at some places be outdated or incomplete.
+    Finch is currently in development.
+    The documentation might at some places be outdated or incomplete.
 
 Overview
 --------

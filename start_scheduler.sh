@@ -17,7 +17,7 @@ while [[ $# -gt 0 ]]; do
             exit 1
             ;;
     esac
-done    
+done
 
 $PREFIX python -i -c "
 import finch;

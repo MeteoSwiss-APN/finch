@@ -1,9 +1,11 @@
 import functools
 from collections.abc import Callable
+
 import xarray as xr
-from . import impl
-from .. import util
+
 from .. import DefaultOperator as Operator
+from .. import util
+from . import impl
 
 brn = impl.brn_blocked_cpp
 """
@@ -49,16 +51,19 @@ def list_brn_implementations() -> list[Operator]:
     """
     return util.list_funcs_matching(impl, BRN_REGEX, Operator)
 
+
 list_implementations = list_brn_implementations
 
 
-def get_repeated_brn(n: int, base: Callable[[xr.Dataset, int], xr.DataArray]=impl.brn_blocked_cpp) -> Operator:
+def get_repeated_brn(n: int, base: Callable[[xr.Dataset, int], xr.DataArray] = impl.brn_blocked_cpp) -> Operator:
     """Returns a repeated version of a BRN implementation.
-    A repeated version repeats the brn computation iteratively, while the output of a previous iteration is used as an input of the next iteration.
+    A repeated version repeats the brn computation iteratively,
+    while the output of a previous iteration is used as an input of the next iteration.
 
     Args:
         n (int): The number of iterations to perform.
-        base (Callable[[xr.Dataset, int], xr.DataArray], optional): The BRN implementation to repeat.
+        base (Callable[[xr.Dataset, int], xr.DataArray], optional):
+            The BRN implementation to repeat.
             This implementation must support a `reps` argument.
             Defaults to impl.brn_blocked_cpp.
 

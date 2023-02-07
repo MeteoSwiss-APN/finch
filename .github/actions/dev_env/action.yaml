@@ -1,0 +1,68 @@
+name: "Development Environment Cache Key"
+
+inputs:
+  install-finch:
+    description: "Whether to install finch (in development mode)"
+    required: false
+    default: "false"
+  install-zebra:
+    description: "Whether to install zebra (in development mode)"
+    required: false
+    default: "false"
+
+outputs:
+  key:
+    value: ${{ steps.key.outputs.key }}
+
+runs:
+  using: "composite"
+  steps:
+    # create the key
+    - name: Get Date
+      id: get-date
+      run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
+      shell: bash -el {0}
+    - name: Create Key Prefix
+      id: prefix
+      run: echo "prefix=conda-${{ runner.os }}--${{ runner.arch }}--${{ steps.get-date.outputs.today }}" >> $GITHUB_OUTPUT
+      shell: bash -el {0}
+    - name: Create Key
+      id: key
+      run: echo "key=${{ steps.prefix.outputs.prefix }}-${{ hashFiles('environment.yml') }}" >> $GITHUB_OUTPUT
+      shell: bash -el {0}
+
+    - uses: ./.github/actions/mamba
+      id: mamba
+
+    # try to restore the cache
+    - uses: actions/cache/restore@v3
+      id: cache
+      with:
+        path: ${{ steps.mamba.outputs.env_path }}
+        key: ${{ steps.key.outputs.key }}
+
+    - name: Install environment
+      run: mamba env update -n ${{ steps.mamba.outputs.env_name }}
+      shell: bash -el {0}
+      if: steps.cache.outputs.cache-hit != 'true'
+
+    # save the environment in cache
+    - uses: actions/cache/save@v3
+      with:
+        path: ${{ steps.mamba.outputs.env_path }}
+        key: ${{ steps.key.outputs.key }}
+      if: steps.cache.outputs.cache-hit != 'true'
+
+    # install finch and zebra if requested
+    - name: Install Finch
+      run: conda-develop .
+      shell: bash -el {0}
+      if: inputs.install-finch == 'true'
+    - name: Install Zebra
+      run: |
+        cmake -S zebra -B zebra/build -DINSTALL_GTEST=OFF
+        cmake --build zebra/build --target zebra --config Release
+        cmake --install zebra/build --prefix "$(pwd)/zebra"
+        conda-develop zebra
+      shell: bash -el {0}
+      if: inputs.install-zebra == 'true'

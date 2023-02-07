@@ -30,10 +30,15 @@ dependencies:
   - myst-parser
   # development tools
   - mypy
+  - types-deprecated
+  - types-pyyaml
+  - data-science-types
   - black
   - pre-commit
   - esbonio
   - pytest
+  # pip only
   - pip:
     - wonderwords
     - sphinx-immaterial
+    - types-tqdm

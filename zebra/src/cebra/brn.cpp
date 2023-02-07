@@ -24,16 +24,16 @@ void thetav_naive(const double *p, const double *t, const double *qv, double *ou
 }
 
 void brn_naive(
-    const double *p, 
-    const double *t, 
-    const double *qv, 
-    const double *u, 
-    const double *v, 
-    const double *hhl, 
-    const double *hsurf, 
-    double *out, 
+    const double *p,
+    const double *t,
+    const double *qv,
+    const double *u,
+    const double *v,
+    const double *hhl,
+    const double *hsurf,
+    double *out,
     int m, int n, int o) {
-    
+
     thetav(p, t, qv, out, m, n, o);
 
     double *tv_sum = malloc_d(o);
@@ -51,7 +51,7 @@ void brn_naive(
         double last_tv = out[i+o-1];
         for(int j = 0; j < o-1; j++) {
             int ij = i+j;
-            out[ij] = PC_G * (hhl[ij] - hsurf[hi]) * (out[ij] - last_tv) * (o-j) / 
+            out[ij] = PC_G * (hhl[ij] - hsurf[hi]) * (out[ij] - last_tv) * (o-j) /
                 (tv_sum[j]*(u[ij]*u[ij] + v[ij]*v[ij]));
         }
         out[i+o-1] = 0;
@@ -76,16 +76,16 @@ void thetav_vec(const double *p, const double *t, const double *qv, double *out,
 }
 
 void brn_vec(
-    const double *p, 
-    const double *t, 
-    const double *qv, 
-    const double *u, 
-    const double *v, 
-    const double *hhl, 
-    const double *hsurf, 
-    double *out, 
+    const double *p,
+    const double *t,
+    const double *qv,
+    const double *u,
+    const double *v,
+    const double *hhl,
+    const double *hsurf,
+    double *out,
     int m, int n, int o) {
-    
+
     thetav(p, t, qv, out, m, n, o);
 
     double *tv_sum = malloc_d(o);
@@ -112,7 +112,7 @@ void brn_vec(
             tvj.load(&tv_sum[j]);
             uij.load(&u[ij]);
             vij.load(&v[ij]);
-            Vec8d outij = PC_G * (hhlij - hsurfhi) * (oij - last_tv) * (o-j-nat) / 
+            Vec8d outij = PC_G * (hhlij - hsurfhi) * (oij - last_tv) * (o-j-nat) /
                 (tvj*(uij*uij + vij*vij));
             outij.store(&out[ij]);
         }
@@ -138,16 +138,16 @@ void thetav_vec_par(const double *p, const double *t, const double *qv, double *
 }
 
 void brn_vec_par(
-    const double *p, 
-    const double *t, 
-    const double *qv, 
-    const double *u, 
-    const double *v, 
-    const double *hhl, 
-    const double *hsurf, 
-    double *out, 
+    const double *p,
+    const double *t,
+    const double *qv,
+    const double *u,
+    const double *v,
+    const double *hhl,
+    const double *hsurf,
+    double *out,
     int m, int n, int o) {
-    
+
     thetav(p, t, qv, out, m, n, o);
 
     Vec8d nat(0, 1, 2, 3, 4, 5, 6, 7);
@@ -177,7 +177,7 @@ void brn_vec_par(
             tvj.load(&tv_sum[j]);
             uij.load(&u[ij]);
             vij.load(&v[ij]);
-            Vec8d outij = PC_G * (hhlij - hsurfhi) * (oij - last_tv) * (o-j-nat) / 
+            Vec8d outij = PC_G * (hhlij - hsurfhi) * (oij - last_tv) * (o-j-nat) /
                 (tvj*(uij*uij + vij*vij));
             outij.store(&out[ij]);
         }
@@ -191,14 +191,14 @@ void thetav(const double *p, const double *t, const double *qv, double *out, int
 }
 
 void brn(
-    const double *p, 
-    const double *t, 
-    const double *qv, 
-    const double *u, 
-    const double *v, 
-    const double *hhl, 
-    const double *hsurf, 
-    double *out, 
+    const double *p,
+    const double *t,
+    const double *qv,
+    const double *u,
+    const double *v,
+    const double *hhl,
+    const double *hsurf,
+    double *out,
     int m, int n, int o) {
     brn_vec_par(p, t, qv, u, v, hhl, hsurf, out, m, n, o);
 }

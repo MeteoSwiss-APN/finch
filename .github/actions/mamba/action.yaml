@@ -1,0 +1,36 @@
+name: "Prepare Mamba"
+
+inputs:
+  env_name:
+    description: "The name of the environment to create"
+    required: false
+    default: finch
+
+outputs:
+  env_name:
+    value: ${{ steps.env_name.outputs.env_name }}
+  env_path:
+    value: ${{ steps.env_path.outputs.env_path }}
+
+runs:
+  using: "composite"
+  steps:
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - id: env_name
+        run: echo "env_name=${{ inputs.env_name }}" >> $GITHUB_OUTPUT
+        shell: bash -el {0}
+      - name: Setup Mamba
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: "3.10"
+          auto-update-conda: true
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          channels: conda-forge,defaults
+          activate-environment: ${{ steps.env_name.outputs.env_name }}
+          use-mamba: true
+      - id: env_path
+        run: echo "env_path=${{ env.CONDA }}/envs/${{ steps.env_name.outputs.env_name }}" >> $GITHUB_OUTPUT
+        shell: bash -el {0}

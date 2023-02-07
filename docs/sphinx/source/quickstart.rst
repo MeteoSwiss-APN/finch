@@ -23,15 +23,16 @@ Next, you can install finch in development mode with conda develop
 
 .. code-block:: text
 
-    conda-develop finch
+    conda-develop .
 
-Zebra
-^^^^^
+Finally, build and install zebra
 
-The zebra package provides C++ implementations of operators in finch.
-Zebra provides a CMake setup, which can be used for development as well as installation.
+.. code-block:: text
 
-.. TODO
+    cmake -S zebra -B zebra/build -DINSTALL_GTEST=OFF
+    cmake --build zebra/build --target zebra --config Release
+    cmake --install zebra/build --prefix "$(pwd)/zebra"
+    conda-develop zebra
 
 Running experiments
 ^^^^^^^^^^^^^^^^^^^
@@ -40,7 +41,7 @@ Finch provides a script for running experiments, located at ``scripts/finch``.
 You can run it with
 
 ::
-    
+
     python scripts/finch
 
 Configuration options are documented in :ref:`Run and Debug Configuration`.
