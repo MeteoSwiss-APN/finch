@@ -23,7 +23,7 @@ repos:
     hooks:
     -   id: mypy
         args: []
-        files: ^(finch/.*\.py)|(tests/.*\.py)|(docs/.*\.py)
+        files: ^(src/finch/.*\.py)|(tests/.*\.py)|(docs/.*\.py)
         additional_dependencies:
             - types-tqdm
             - types-deprecated

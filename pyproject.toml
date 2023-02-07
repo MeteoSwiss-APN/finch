@@ -26,4 +26,4 @@ classifiers = [
 "Bug Tracker" = "https://github.com/MeteoSwiss-APN/finch/issues"
 
 [tool.setuptools.dynamic]
-version = { file = "finch/data/VERSION" }
+version = { file = "src/finch/data/VERSION" }

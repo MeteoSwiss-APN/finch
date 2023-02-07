@@ -23,16 +23,16 @@ Next, you can install finch in development mode with conda develop
 
 .. code-block:: text
 
-    conda-develop .
+    conda-develop src
 
 Finally, build and install zebra
 
 .. code-block:: text
 
-    cmake -S zebra -B zebra/build -DINSTALL_GTEST=OFF
-    cmake --build zebra/build --target zebra --config Release
-    cmake --install zebra/build --prefix "$(pwd)/zebra"
-    conda-develop zebra
+    cmake -S src/zebra -B src/zebra/build -DINSTALL_GTEST=OFF
+    cmake --build src/zebra/build --target zebra --config Release
+    cmake --install src/zebra/build --prefix "$(pwd)/src/zebra"
+    conda-develop src/zebra
 
 Running experiments
 ^^^^^^^^^^^^^^^^^^^
