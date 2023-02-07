@@ -8,7 +8,7 @@ from expandvars import expand  # type: ignore
 
 from . import env
 
-config = ConfigParser(interpolation=ExtendedInterpolation())
+config: ConfigParser = ConfigParser(interpolation=ExtendedInterpolation())
 """
 This variable contains the configuration of the finch core library.
 It is initialized from finch's config files when importing finch.

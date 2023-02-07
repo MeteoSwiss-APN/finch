@@ -1,7 +1,7 @@
 from . import _util
 from . import environment as env
 
-__version__ = env.get_version()
+__version__: env.Version = env.get_version()
 """
 The current version of this package.
 """
