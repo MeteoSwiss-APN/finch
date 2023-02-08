@@ -192,8 +192,8 @@ def brn_blocked_cpp(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
         array_list = list(arrays)
         out = np.empty_like(array_list[0])
         for _ in range(reps):
-            # TODO: Remove typing:ignore after resolving https://github.com/python/mypy/issues/14648
-            zebra.brn(*array_list, out)  # typing: ignore
+            # TODO: Remove type:ignore after resolving https://github.com/python/mypy/issues/14648
+            zebra.brn(*array_list, out)  # type: ignore
             array_list[0] = out
         return out
 
