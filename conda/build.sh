@@ -1,3 +1,3 @@
 # install finch
 
-pip install . -e --no-depss
+pip install . --no-deps
