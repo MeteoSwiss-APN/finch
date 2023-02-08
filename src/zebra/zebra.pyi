@@ -1,5 +1,19 @@
-import numpy
+import numpy as np
 
-def brn(arg0: numpy.ndarray[numpy.float64], arg1: numpy.ndarray[numpy.float64], arg2: numpy.ndarray[numpy.float64], arg3: numpy.ndarray[numpy.float64], arg4: numpy.ndarray[numpy.float64], arg5: numpy.ndarray[numpy.float64], arg6: numpy.ndarray[numpy.float64], arg7: numpy.ndarray[numpy.float64]) -> None: ...
+def brn(
+    arg0: np.ndarray,
+    arg1: np.ndarray,
+    arg2: np.ndarray,
+    arg3: np.ndarray,
+    arg4: np.ndarray,
+    arg5: np.ndarray,
+    arg6: np.ndarray,
+    arg7: np.ndarray,
+) -> None: ...
 def set_threads(arg0: int) -> None: ...
-def thetav(arg0: numpy.ndarray[numpy.float64], arg1: numpy.ndarray[numpy.float64], arg2: numpy.ndarray[numpy.float64], arg3: numpy.ndarray[numpy.float64]) -> None: ...
+def thetav(
+    arg0: np.ndarray,
+    arg1: np.ndarray,
+    arg2: np.ndarray,
+    arg3: np.ndarray,
+) -> None: ...
