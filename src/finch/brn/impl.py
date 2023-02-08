@@ -165,7 +165,7 @@ def thetav_blocked_cpp(dataset: xr.Dataset) -> xr.DataArray:
     def wrapper(p: np.ndarray, t: np.ndarray, qv: np.ndarray) -> np.ndarray:
         out = np.zeros_like(p)
         # TODO: Provide type stubs for zebra
-        zebra.thetav(p, t, qv, out)  # type: ignore
+        zebra.thetav(p, t, qv, out)
         return out
 
     arrays = [dataset[n] for n in input.brn_array_names[:3]]
@@ -193,7 +193,7 @@ def brn_blocked_cpp(dataset: xr.Dataset, reps: int = 1) -> xr.DataArray:
         out = np.empty_like(array_list[0])
         for _ in range(reps):
             # TODO: Provide type stubs for zebra
-            zebra.brn(*array_list, out)  # type: ignore
+            zebra.brn(*array_list, out)
             array_list[0] = out
         return out
 
