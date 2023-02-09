@@ -57,7 +57,7 @@ jobs:
       - uses: ./.github/actions/dev_env
       - name: Install Package
         run: |
-          python setup.py install
+          pip install .
 
   build_docs:
     runs-on: ubuntu-latest

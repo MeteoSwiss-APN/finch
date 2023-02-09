@@ -21,6 +21,9 @@ You can install and activate it as follows:
 
 Next, you can install finch in development mode with conda develop
 
+.. TODO: Maybe we can switch to `pip install -e .` at some point.
+.. Curently, this does not properly install zebra however.
+
 .. code-block:: text
 
     conda-develop src
@@ -84,12 +87,11 @@ A few dependecies are only provided via PyPI. You can install them manually with
     pip install wonderwords
 
 
-setuptools (pip)
-^^^^^^^^^^^^^^^^
+pip
+^^^
 
 Requires at least CMake 3.14 as well as a C++-Compiler with C++-20 (concepts) support.
 
 .. code-block:: text
 
-    pip install scikit-build "pybind11[global]"
-    python setup.py install
+    pip install .
