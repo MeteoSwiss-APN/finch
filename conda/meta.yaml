@@ -22,10 +22,10 @@ requirements:
     - cmake >=3.14
     - python =3.10
     - {{ compiler('cxx') }}
-    - scikit-build
     - ninja
   host:
     - python =3.10
+    - scikit-build
     - pybind11
     - openmp
   run:
