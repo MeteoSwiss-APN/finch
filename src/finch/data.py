@@ -88,7 +88,7 @@ def get_chunk_sizes(s: int, d: int) -> list[int]:
     Returns a list of explicit chunk sizes from a single chunk size.
 
     Args:
-        i (int): The single chunk size
+        s (int): The single chunk size
         d (int): The size of the dimension.
 
     Group:

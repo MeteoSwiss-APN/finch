@@ -1,20 +1,23 @@
 .. include:: ../../../README.rst
 
 .. toctree::
-   :caption: Getting Started
-   :hidden:
-
-   quickstart
-
-.. toctree::
    :caption: Usage
    :hidden:
 
-   usage/custom_operator
-   usage/input
-   usage/experiments
-   usage/evaluation
+   usage/installation
+   usage/introduction
+   usage/script
    usage/config
+   usage/library/main
+
+.. toctree::
+   :caption: Development
+   :hidden:
+
+   dev/setup
+   dev/input
+   dev/experiments
+   dev/evaluation
 
 .. toctree::
    :caption: API Reference
