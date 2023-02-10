@@ -6,6 +6,7 @@
 
    usage/installation
    usage/introduction
+   usage/script
    usage/config
    usage/custom_operator
 
@@ -14,7 +15,6 @@
    :hidden:
 
    dev/setup
-   dev/config
    dev/input
    dev/experiments
    dev/evaluation
