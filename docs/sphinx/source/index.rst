@@ -1,12 +1,6 @@
 .. include:: ../../../README.rst
 
 .. toctree::
-   :caption: Getting Started
-   :hidden:
-
-   quickstart
-
-.. toctree::
    :caption: Usage
    :hidden:
 
