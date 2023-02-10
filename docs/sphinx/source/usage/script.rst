@@ -2,11 +2,13 @@ Running Finch
 =============
 
 If you've installed finch regularly, the run script should be available on your path.
-Make sure that you run finch on a system with `SLURM <https://slurm.schedmd.com/>`_ support.
 
 .. code-block:: bash
 
     finch
+
+.. attention:: Finch assumes that it is running on a system which supports the `SLURM workload manager <https://slurm.schedmd.com/>`_.
+    Finch will fail, if you try to run it on a normal system.
 
 Configuration
 -------------

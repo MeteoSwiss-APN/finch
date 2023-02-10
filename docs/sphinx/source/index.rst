@@ -8,7 +8,7 @@
    usage/introduction
    usage/script
    usage/config
-   usage/custom_operator
+   usage/library/main
 
 .. toctree::
    :caption: Development
