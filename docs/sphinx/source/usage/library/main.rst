@@ -1,7 +1,7 @@
 Using the library
 =================
 
-.. toctree:: 
+.. toctree::
 
     input
     experiments
