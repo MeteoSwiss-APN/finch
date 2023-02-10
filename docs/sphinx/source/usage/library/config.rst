@@ -161,7 +161,7 @@ Configurable Values
 .. confval:: grib_index_dir
 
     :type: string
-    :default: ${global:tmp_dir}
+    :default: ``${global:tmp_dir}``
 
     The path where grib index files for BRN experiments are stored and loaded.
 
