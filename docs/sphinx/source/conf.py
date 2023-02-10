@@ -11,8 +11,8 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 
-from sphinx.application import Sphinx
-from sphinx.util.docfields import Field
+from sphinx.application import Sphinx  # type: ignore
+from sphinx.util.docfields import Field  # type: ignore
 
 import finch
 
