@@ -70,8 +70,8 @@ Configurable Values
     Toggles debug mode for finch.
     This sets the default :confval:`log_level` to ``DEBUG`` and runs finch on a local dask cluster instead of a SLURM cluster.
 
-[data]
-""""""
+``[data]``
+""""""""""
 
 .. confval:: grib_definition_path
 
@@ -87,8 +87,8 @@ Configurable Values
 
     The path to a directory which holds the input store for finch.
 
-[experiments]
-"""""""""""""
+``[experiments]``
+"""""""""""""""""
 
 .. confval:: results_dir
 
@@ -106,8 +106,8 @@ Configurable Values
 
     The timeout for waiting for worker startup in seconds, when scaling the dask cluster.
 
-[evaluation]
-""""""""""""
+``[evaluation]``
+""""""""""""""""
 
 .. confval:: dir
 
@@ -155,8 +155,8 @@ Configurable Values
 
     Path to a directory where experiment results are stored.
 
-[brn]
-"""""
+``[brn]``
+"""""""""
 
 .. confval:: grib_index_dir
 
@@ -165,8 +165,8 @@ Configurable Values
 
     The path where grib index files for BRN experiments are stored and loaded.
 
-[run]
-"""""
+``[run]``
+"""""""""
 
 .. confval:: config_path
 
