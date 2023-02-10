@@ -135,7 +135,7 @@ dmypy.json
 .vscode
 
 # custom config
-config/custom.ini
+finch.ini
 finch_run_config.yaml
 
 # experiments script

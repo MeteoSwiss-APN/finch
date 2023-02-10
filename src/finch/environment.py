@@ -26,7 +26,7 @@ Group:
     Finch
 """
 
-proj_config = os.path.join(data_dir, "config", "finch.ini")
+proj_config = os.path.join(data_dir, "config", "default.ini")
 """
 The location of the project configuration file.
 
@@ -42,7 +42,7 @@ Group:
     Finch
 """
 
-default_custom_config = os.path.join(data_dir, "config", "custom.ini")
+default_custom_config = "finch.ini"
 """
 The default location for a custom configuration file
 

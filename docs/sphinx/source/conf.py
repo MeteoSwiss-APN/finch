@@ -11,6 +11,9 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 
+from sphinx.application import Sphinx  # type: ignore
+from sphinx.util.docfields import Field  # type: ignore
+
 import finch
 
 # -- Project information -----------------------------------------------------
@@ -126,3 +129,16 @@ python_apigen_default_groups = [
     (r"method:.*\.__(init|new)__", "Constructors"),
     (r"method:.*\.__(str|repr)__", "String representation"),
 ]
+
+
+def setup(app: Sphinx) -> None:
+    app.add_object_type(
+        "confval",
+        "confval",
+        objname="configuration value",
+        indextemplate="pair: %s; configuration value",
+        doc_field_types=[
+            Field("type", label="Type", has_arg=False, names=("type",)),
+            Field("default", label="Default", has_arg=False, names=("default",)),
+        ],
+    )
