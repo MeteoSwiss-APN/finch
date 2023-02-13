@@ -15,6 +15,7 @@ dependencies:
   - matplotx
   - expandvars
   - netcdf4
+  - zarr
   # conda build dependencies
   - conda-build
   - boa
