@@ -38,6 +38,13 @@ Input management is documented in detail in :ref:`input-management`.
 In finch, an input is an object, which contains data for an experiment run.
 An input can have different versions, which describe how the data is provided.
 An operator can use different inputs for different experiments.
+You create a new input from the class :py:class:`finch.data.Input` ::
+
+    input = Input(
+        name="foo",
+        source=source,
+        source_version=src_version
+    )
 
 The data of an input is provided by its source, which needs to be provided when creating a new input.
 The source describes how the data of the input is loaded initially.
@@ -57,6 +64,17 @@ For example, it is often more efficient to directly load the requested chunk siz
 
     def source(version: Input.Version) -> xr.Dataset:
         return xr.open_dataset("data.nc", chunks=version.chunks)
+
+Along with the source, you need to provide a source version to the constructor of :py:class:`finch.data.Input`.
+The source version fully describes the source data, which is returned by default from the source.
+It must be complete, i.e. no fields are allowed to be ``None``. ::
+
+    src_version = Input.Version(
+        format=data.Format.NetCDF,
+        dim_order="xyz",
+        chunks={"x": 10, "y": 10, "z": 1},
+        coords=True,
+    )
 
 .. _custom_signature:
 
