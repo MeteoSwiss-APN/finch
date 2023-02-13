@@ -375,8 +375,18 @@ def measure_operator_runtimes(
     Group:
         Experiments
     """
+
+    # transform versions into input preps
     if isinstance(versions, Input.Version):
         versions = [versions]
     preps = [functools.partial(xr_input_prep, input=input, version=v) for v in versions]
     assert util.is_callable_list(preps)
+
+    # set run prep if missing
+    if isinstance(run_config, RunConfig):
+        run_config = [run_config]
+    for rc in run_config:
+        if rc.prep is None:
+            rc.prep = xr_run_prep
+
     return measure_runtimes(run_config, preps, impl_runner=xr_impl_runner, **kwargs)
