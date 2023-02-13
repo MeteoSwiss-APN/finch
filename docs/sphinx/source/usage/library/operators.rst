@@ -1,18 +1,8 @@
 Using a Custom Operator
 =======================
 
-Finch provides some built-in operators, which can be used for running experiments, in order to get a general understanding on how we can use finch for evaluating parallel operators and finding common bottlenecks when parallelizing with dask.
-However, a basic design principle of finch is to provide an interface with which we can plug in custom operators and evaluate them using the tooling available in finch.
-
-The following steps are required to create a custom operator for finch.
-
-- Write an implementation (or multiple) of the operator.
-- Define one or multiple input objects. Each of which requires the following steps.
-    - Define an input source
-    - Define the source version
-    - Define a name for the input
-- Integrate it into your experiment script
-
+Finch makes it easy to create runtime experiments for custom data processing operators.
+In this chapter we will go through the process of creating a new operator and running and evaluating experiments on it.
 If you want to add your operator to the built-in operators of finch, make sure to read :ref:`new_builtin_ops`.
 
 Implementing the Operator
