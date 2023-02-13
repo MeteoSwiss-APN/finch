@@ -254,7 +254,7 @@ def translate_order(order: List[str] | str, index: Dict[str, str]) -> str | List
 def load_array_grib(
     path: util.PathLike | list[util.PathLike],
     shortName: str,
-    chunks: dict[str, int] | None,
+    chunks: dict[str, int] | None = None,
     key_filters: dict[str, Any] = {},
     parallel: bool = True,
     cache: bool = True,
