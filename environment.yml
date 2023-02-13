@@ -14,6 +14,7 @@ dependencies:
   - deprecated
   - matplotx
   - expandvars
+  - netcdf4
   # conda build dependencies
   - conda-build
   - boa
