@@ -508,28 +508,28 @@ class Input:
             dataset, nu_version = self.get_version(nu_version, add_if_not_exists=False)
 
         # add missing chunk sizes
-        chunks = dict(version.chunks)
+        chunks = dict(nu_version.chunks)
         for d in self.source_version.chunks:
             if d not in chunks or chunks[d] is None or chunks[d] == "auto":
                 chunks[d] = -1
-        version.chunks = chunks
+        nu_version.chunks = chunks
 
         # store data
-        filename = str(self._path.joinpath(version.name))
-        if version.format == Format.NETCDF:
+        filename = str(self._path.joinpath(nu_version.name))
+        if nu_version.format == Format.NETCDF:
             dataset.to_netcdf(filename + ".nc", mode="w")
-        elif version.format == Format.ZARR:
+        elif nu_version.format == Format.ZARR:
             dataset.to_zarr(filename, mode="w")
         else:
             raise ValueError  # grib case was already caught, so we can raise a ValueError here
 
         # store yaml
-        with open(self._path.joinpath(version.name + ".yml"), mode="w") as f:
-            yaml.dump(version, f)
+        with open(self._path.joinpath(nu_version.name + ".yml"), mode="w") as f:
+            yaml.dump(nu_version, f)
 
         # register
-        self.versions.append(version)
-        return version
+        self.versions.append(nu_version)
+        return nu_version
 
     def has_version(self, version: Version) -> bool:
         """
