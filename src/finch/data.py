@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from glob import glob
 from typing import Any, Dict, List, Literal, Union, overload
 
+import dask.config
 import numpy as np
 import xarray as xr
 import yaml
@@ -56,7 +57,7 @@ Group:
 
 Chunks = Mapping[Hashable, int | tuple[int, ...] | None | Literal["auto"]]
 """
-A typehint for xarray chunks, capturing all the possible options.
+A type alias for xarray chunks, capturing all the possible options.
 In xarray, chunks are specified per dimension in a dictionary with the key being the dimension name.
 The values can be one of the following:
 
@@ -81,6 +82,24 @@ See Also:
 Group:
     Data
 """
+
+auto_chunk_size: int = dask.config.get("array.chunk-size")
+"""
+The chunk size used for the "auto" keyword.
+
+Group:
+    Data
+"""
+
+
+def simplify_chunks(c: Chunks) -> Mapping[Hashable, int | tuple[int, ...]]:
+    """
+    Simplyfies a chunks dictionary by resolving "auto" and removing None entries.
+
+    Group:
+        Data
+    """
+    return {k: auto_chunk_size if v == "auto" else v for k, v in c.items() if v is not None}
 
 
 def get_chunk_sizes(s: int, d: int) -> list[int]:
@@ -535,7 +554,10 @@ class Input:
         """
         Returns whether a version with the given properties already exists
         """
-        return any(util.has_attributes(version, v, excludes=["name"]) for v in self.versions)
+        normal_matches = [util.has_attributes(version, v, excludes=["name", "chunks"]) for v in self.versions]
+        chunks = simplify_chunks(version.chunks)
+        chunk_matches = [version.chunks[k] == v for k, v in chunks.items() for version in self.versions]
+        return any(n and c for n, c in zip(normal_matches, chunk_matches))
 
     @overload
     def get_version(
