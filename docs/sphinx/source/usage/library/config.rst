@@ -53,7 +53,7 @@ Configurable Values
 
     Sets the log level for finch.
     This can be one of the levels from python's `logging <https://docs.python.org/3/library/logging.html#logging-levels>`_ library.
-    This defaults to ``INFO`` if :confval:`debug_mode` is disabled and ``DEBUG`` otherwise.
+    This defaults to ``WARNING`` if :confval:`debug_mode` is disabled and ``DEBUG`` otherwise.
 
 .. confval:: log_format
 
@@ -61,6 +61,7 @@ Configurable Values
     :default: ``"[%(levelname)s]: %(message)s"``
 
     The format to use for logging, as documented in python's `logging <https://docs.python.org/3/howto/logging.html#changing-the-format-of-displayed-messages>`_ library.
+    
 
 .. confval:: debug_mode
 
