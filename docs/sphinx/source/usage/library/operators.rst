@@ -3,7 +3,7 @@ Using a Custom Operator
 
 Finch makes it easy to create runtime experiments for custom data processing operators.
 In this chapter we will go through the process of creating a new operator and running and evaluating experiments on it.
-You can find the final example script, which we will be writing :ref:`below <ops-full-script>`.
+We will incrementally create a small experiment script. The full script can be found :ref:`below <ops-full-script>`.
 If you want to add your operator to the built-in operators of finch, make sure to read :ref:`new_builtin_ops`.
 
 Implementing the Operator
