@@ -39,6 +39,7 @@ dependencies:
   - pre-commit
   - esbonio
   - pytest
+  - memray
   # pip only
   - pip:
     - wonderwords
