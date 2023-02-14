@@ -99,9 +99,9 @@ Let's compare how well the two operators scale.
 We can use :py:func:`finch.measure_operator_runtimes` to measure the runtimes of our operators. ::
 
     runtimes = finch.measure_operator_runtimes(
-        run_configs, 
-        avg_input, 
-        avg_src_version, 
+        run_configs,
+        avg_input,
+        avg_src_version,
         iterations=5
     )
 
@@ -119,10 +119,10 @@ We could inspect them manually, but finch provides some features for evaluation.
 For this purpose, we can first transform our runtime objects into a "results dataset". ::
 
     results = finch.eval.create_result_dataset(
-        runtimes, 
-        run_configs, 
-        avg_src_version, 
-        avg_input, 
+        runtimes,
+        run_configs,
+        avg_src_version,
+        avg_input,
         experiment_name="avg_scaling"
     )
 
@@ -132,8 +132,8 @@ It can be used as an input for the different evaluation function of the :py:mod:
 Let's create a plot which compares the scalability of our two operators. ::
 
     finch.eval.create_plots(
-        results, 
-        scaling_dims=["workers"], 
+        results,
+        scaling_dims=["workers"],
         estimate_serial=False
     )
 
@@ -202,8 +202,8 @@ Full Script
 
 
     avg_input = finch.data.Input(
-        name="average", 
-        source=avg_source, 
+        name="average",
+        source=avg_source,
         source_version=avg_src_version
     )
 
@@ -218,9 +218,9 @@ Full Script
     )
 
     runtimes = finch.measure_operator_runtimes(
-        run_configs, 
-        avg_input, 
-        avg_src_version, 
+        run_configs,
+        avg_input,
+        avg_src_version,
         iterations=5
     )
 
@@ -229,16 +229,15 @@ Full Script
 
 
     results = finch.eval.create_result_dataset(
-        runtimes, 
-        run_configs, 
-        avg_src_version, 
-        avg_input, 
+        runtimes,
+        run_configs,
+        avg_src_version,
+        avg_input,
         experiment_name="avg_scaling"
     )
 
     finch.eval.create_plots(
-        results, 
-        scaling_dims=["workers"], 
+        results,
+        scaling_dims=["workers"],
         estimate_serial=False
     )
-
