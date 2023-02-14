@@ -32,14 +32,15 @@ Group:
 @dataclass
 class RunConfig(util.Config):
     """
-    Abstract class for configuring and setting up the environment for experiments.
+    Class for configuring and setting up the environment for experiments.
 
     Group:
         Experiments
     """
 
-    impl: Callable | None = None
+    impl: Callable
     """The operator implementation to run"""
+
     prep: Callable[[], dict] | None = None
     """
     A function with preparations to be made before running the implementation.
