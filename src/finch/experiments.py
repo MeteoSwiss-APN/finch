@@ -118,7 +118,7 @@ _RTList = list[list[Runtime]]
 def measure_runtimes(
     run_config: list[RunConfig] | RunConfig,
     inputs: list[Callable[[], list]] | Callable[[], list] | list[list] | None = None,
-    iterations: int = 1,
+    iterations: int = 5,
     impl_runner: Callable[..., Runtime | None] | None = None,
     reduction: Callable[[np.ndarray, int], np.ndarray] = np.nanmean,
     warmup: bool = False,
