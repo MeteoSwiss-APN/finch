@@ -61,7 +61,7 @@ Configurable Values
     :default: ``"[\%(levelname)s]: (\%(name)s): \%(message)s"``
 
     The format to use for logging, as documented in python's `logging <https://docs.python.org/3/howto/logging.html#changing-the-format-of-displayed-messages>`_ library.
-    
+
 
 .. confval:: debug_mode
 
