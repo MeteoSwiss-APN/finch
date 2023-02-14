@@ -1,5 +1,6 @@
 import copy
 import enum
+import logging
 import pathlib
 from collections.abc import Callable, Hashable, Iterable, Mapping
 from dataclasses import dataclass, field
@@ -506,7 +507,7 @@ class Input:
         """
         # check whether version already exists
         if self.has_version(version):
-            print("This version already exists and won't be added")
+            logging.info("The given version already exists and won't be added.", version)
             return version
 
         nu_version = copy.copy(version)
