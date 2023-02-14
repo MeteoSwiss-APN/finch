@@ -89,7 +89,7 @@ def set_debug_mode(dbg: bool) -> None:
     global debug, __log_level
     debug = dbg
     config["global"]["debug_mode"] = str(debug)
-    if __log_level is None:
+    if __log_level is None or __log_level == "":
         set_log_level(logging.DEBUG if debug else logging.WARNING)
 
 
