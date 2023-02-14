@@ -58,7 +58,7 @@ Configurable Values
 .. confval:: log_format
 
     :type: string
-    :default: ``"[\%(levelname)s]: \%(message)s"``
+    :default: ``"[\%(levelname)s]: (\%(name)s): \%(message)s"``
 
     The format to use for logging, as documented in python's `logging <https://docs.python.org/3/howto/logging.html#changing-the-format-of-displayed-messages>`_ library.
     
