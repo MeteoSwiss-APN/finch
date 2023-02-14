@@ -1,4 +1,5 @@
 import functools
+import gc
 import random
 import warnings
 from collections.abc import Callable
@@ -200,6 +201,10 @@ def measure_runtimes(
 
     reportfile = util.get_path(cfg["evaluation"]["perf_report_dir"], "dask-report.html")
 
+    # disable garbage collection
+    gc_enabled: bool = gc.isenabled()
+    gc.disable()
+
     times: list[list[Runtime]] = []
     for c in rc_list:
         c.setup()
@@ -212,6 +217,7 @@ def measure_runtimes(
             for in_prep in in_preps:
                 cur_times = []
                 for _ in range(iterations):
+                    gc.collect()  # manually clear garbage
                     start = perf_counter()
                     args = in_prep()
                     end = perf_counter()
@@ -234,6 +240,11 @@ def measure_runtimes(
                     cur_times = cur_times[1:]
                 f_times.append(_reduce_runtimes(cur_times, reduction))
             times.append(f_times)
+
+    # re-enable garbage collection
+    if gc_enabled:
+        gc.enable()
+
     # reorder according to original run config order
     out: list[list[Runtime]] = [[]] * len(times)
     for i, t in zip(rc_order, times):
@@ -270,12 +281,18 @@ def xr_run_prep(remove_existing_output: bool = True, clear_scheduler: bool = Fal
         clear_output()
         impl_runner_args["output_exists"] = False
     if clear_scheduler:
-        scheduler.clear_memory()
+        client = scheduler.get_client()
+        assert client is not None
+        client.restart()
     return impl_runner_args
 
 
 def xr_impl_runner(
-    impl: Callable[[xr.Dataset], xr.DataArray], ds: xr.Dataset, output_exists: bool = True, **kwargs: Any
+    impl: Callable[[xr.Dataset], xr.DataArray],
+    ds: xr.Dataset,
+    store_output: bool = False,
+    output_exists: bool = True,
+    **kwargs: Any
 ) -> Runtime:
     """
     Implementation runner for standard xarray operators.
@@ -283,7 +300,12 @@ def xr_impl_runner(
     Args:
         impl: The operator implementation to be run
         ds: The input for the implementation
-        output_exists: Whether an output already exists at the output path and should be overwritten.
+        store_output (bool, optional): Whether to store the output to zarr or not.
+            Defaults to False.
+        output_exists (bool, optional):
+            Whether an output already exists at the output path and should be overwritten.
+            Only relevant if ``store_output=True``.
+            Defaults to True.
         kwargs: Additional arguments, which will be ignored
 
     Returns:
@@ -300,7 +322,10 @@ def xr_impl_runner(
     out = impl(ds)
     # clone the graph to ensure that the scheduler does not use results computed in an earlier round
     # cloned: da.Array = dask.graph_manipulation.clone(out.data)
-    stored = out.data.to_zarr(str(output_dir), overwrite=output_exists, compute=False)
+    if store_output:
+        stored: da.Array = out.data.to_zarr(str(output_dir), overwrite=output_exists, compute=False)
+    else:
+        stored = out.data
     end = perf_counter()
     runtime.graph_construction = end - start
     # optimize the graph
@@ -319,11 +344,16 @@ def xr_impl_runner(
         dask.distributed.wait(fut)
         end = perf_counter()
         runtime.compute = end - start
+        del fut
     else:
         start = perf_counter()
         optimized.compute()
         end = perf_counter()
         runtime.compute = end - start
+    # cleanup
+    del optimized
+    del stored
+    del out
     return runtime
 
 
