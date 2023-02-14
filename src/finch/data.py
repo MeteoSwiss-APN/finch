@@ -506,7 +506,7 @@ class Input:
         """
         # check whether version already exists
         if self.has_version(version):
-            print("This verion already exists and won't be added")
+            print("This version already exists and won't be added")
             return version
 
         nu_version = copy.copy(version)
