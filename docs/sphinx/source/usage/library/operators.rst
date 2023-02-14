@@ -134,7 +134,8 @@ Let's create a plot which compares the scalability of our two operators. ::
     finch.eval.create_plots(
         results,
         scaling_dims=["workers"],
-        estimate_serial=False
+        estimate_serial=False,
+        runtime_selection=["full"]
     )
 
 The :py:func:`finch.eval.create_plots` function creates a plot per configuration attribute, for which we have selected more than a single value.
@@ -239,5 +240,6 @@ Full Script
     finch.eval.create_plots(
         results,
         scaling_dims=["workers"],
-        estimate_serial=False
+        estimate_serial=False,
+        runtime_selection=["full"]
     )
