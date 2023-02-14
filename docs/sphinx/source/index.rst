@@ -15,9 +15,7 @@
    :hidden:
 
    dev/setup
-   dev/input
-   dev/experiments
-   dev/evaluation
+   dev/operators
 
 .. toctree::
    :caption: API Reference

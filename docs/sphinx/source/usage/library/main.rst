@@ -5,7 +5,7 @@ Using the library
     :maxdepth: 2
 
     config
+    operators
     input
     experiments
     evaluation
-    operators
