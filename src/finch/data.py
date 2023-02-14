@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from glob import glob
 from typing import Any, Dict, List, Literal, Union, overload
 
+import dask.config
 import numpy as np
 import xarray as xr
 import yaml
@@ -56,7 +57,7 @@ Group:
 
 Chunks = Mapping[Hashable, int | tuple[int, ...] | None | Literal["auto"]]
 """
-A typehint for xarray chunks, capturing all the possible options.
+A type alias for xarray chunks, capturing all the possible options.
 In xarray, chunks are specified per dimension in a dictionary with the key being the dimension name.
 The values can be one of the following:
 
@@ -81,6 +82,24 @@ See Also:
 Group:
     Data
 """
+
+auto_chunk_size: int = dask.config.get("array.chunk-size", -1)
+"""
+The chunk size used for the "auto" keyword.
+
+Group:
+    Data
+"""
+
+
+def simplify_chunks(c: Chunks) -> Mapping[Hashable, int | tuple[int, ...]]:
+    """
+    Simplyfies a chunks dictionary by resolving "auto" and removing None entries.
+
+    Group:
+        Data
+    """
+    return {k: auto_chunk_size if v == "auto" else v for k, v in c.items() if v is not None}
 
 
 def get_chunk_sizes(s: int, d: int) -> list[int]:
@@ -254,7 +273,7 @@ def translate_order(order: List[str] | str, index: Dict[str, str]) -> str | List
 def load_array_grib(
     path: util.PathLike | list[util.PathLike],
     shortName: str,
-    chunks: dict[str, int] | None,
+    chunks: dict[str, int] | None = None,
     key_filters: dict[str, Any] = {},
     parallel: bool = True,
     cache: bool = True,
@@ -508,34 +527,37 @@ class Input:
             dataset, nu_version = self.get_version(nu_version, add_if_not_exists=False)
 
         # add missing chunk sizes
-        chunks = dict(version.chunks)
+        chunks = dict(nu_version.chunks)
         for d in self.source_version.chunks:
             if d not in chunks or chunks[d] is None or chunks[d] == "auto":
                 chunks[d] = -1
-        version.chunks = chunks
+        nu_version.chunks = chunks
 
         # store data
-        filename = str(self._path.joinpath(version.name))
-        if version.format == Format.NETCDF:
+        filename = str(self._path.joinpath(nu_version.name))
+        if nu_version.format == Format.NETCDF:
             dataset.to_netcdf(filename + ".nc", mode="w")
-        elif version.format == Format.ZARR:
+        elif nu_version.format == Format.ZARR:
             dataset.to_zarr(filename, mode="w")
         else:
             raise ValueError  # grib case was already caught, so we can raise a ValueError here
 
         # store yaml
-        with open(self._path.joinpath(version.name + ".yml"), mode="w") as f:
-            yaml.dump(version, f)
+        with open(self._path.joinpath(nu_version.name + ".yml"), mode="w") as f:
+            yaml.dump(nu_version, f)
 
         # register
-        self.versions.append(version)
-        return version
+        self.versions.append(nu_version)
+        return nu_version
 
     def has_version(self, version: Version) -> bool:
         """
         Returns whether a version with the given properties already exists
         """
-        return any(util.has_attributes(version, v, excludes=["name"]) for v in self.versions)
+        normal_matches = [util.has_attributes(version, v, excludes=["name", "chunks"]) for v in self.versions]
+        chunks = simplify_chunks(version.chunks)
+        chunk_matches = [version.chunks[k] == v for k, v in chunks.items() for version in self.versions]
+        return any(n and c for n, c in zip(normal_matches, chunk_matches))
 
     @overload
     def get_version(
