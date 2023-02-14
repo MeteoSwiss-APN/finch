@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-import logging
-import sys
 import argparse
+import functools
+import logging
 import os
+import pathlib
+import sys
+
 import matplotx
 import yaml
-import pathlib
-import functools
 
 # command line arguments
 parser = argparse.ArgumentParser()
@@ -23,16 +24,17 @@ debug = cmd_args.debug
 """Debug mode"""
 os.environ["DEBUG"] = str(debug)
 
+import xarray as xr
+
 import finch
 import finch.brn
-import xarray as xr
 
 # script
 
 if __name__ == "__main__":
 
     # configure logging
-    logging.basicConfig(format=finch.logging_format, level=logging.INFO)
+    logging.basicConfig(format=finch.logging_format, level=logging.WARNING)
 
     # configure debug setup
     if debug:
@@ -41,7 +43,9 @@ if __name__ == "__main__":
 
     # prepare yaml parsing
     # create config cunstructor to handle config objects
-    def config_constructor(loader: yaml.Loader, tag_suffix: str, node: yaml.Node) -> list[finch.util.Config] | finch.util.Config:
+    def config_constructor(
+        loader: yaml.Loader, tag_suffix: str, node: yaml.Node
+    ) -> list[finch.util.Config] | finch.util.Config:
         node_line = node.start_mark.line
         if isinstance(node, yaml.MappingNode):
             """Handles a single config node"""
@@ -60,7 +64,9 @@ if __name__ == "__main__":
                             fname = p
                             args = None
                         else:
-                            raise yaml.YAMLError(f"Invalid specification of 'prep' attribute in Run config at line {node_line}")
+                            raise yaml.YAMLError(
+                                f"Invalid specification of 'prep' attribute in Run config at line {node_line}"
+                            )
                         func = getattr(finch, fname)
                         if args:
                             if isinstance(args, dict):
@@ -113,7 +119,6 @@ if __name__ == "__main__":
         else:
             raise yaml.YAMLError(f"!config: tag is only supported for mappings and lists. Error at line {node_line}")
 
-
     yaml.add_multi_constructor("!config:", config_constructor, Loader=yaml.SafeLoader)
 
     # load configurations
@@ -144,11 +149,7 @@ if __name__ == "__main__":
 
     if rc.brn.run:
 
-        measure_cfg = dict(
-            iterations = rc.general.iterations,
-            warmup = rc.general.warmup,
-            pbar = rc.general.pbar
-        )
+        measure_cfg = dict(iterations=rc.general.iterations, warmup=rc.general.warmup, pbar=rc.general.pbar)
 
         rcc = rc.brn.input_management
         if rcc.run:
@@ -161,11 +162,7 @@ if __name__ == "__main__":
         rcc = rc.brn.loadtime_measurement
         if rcc.run:
             logging.info("Measuring brn input load times")
-            times = finch.measure_loading_times(
-                brn_input,
-                brn_input.versions,
-                **measure_cfg
-            )
+            times = finch.measure_loading_times(brn_input, brn_input.versions, **measure_cfg)
             print(times)
             print()
 
@@ -173,13 +170,11 @@ if __name__ == "__main__":
         if rcc.run:
             logging.info(f"Measuring runtimes of brn implementations")
             times = finch.measure_operator_runtimes(
-                rcc.run_configs,
-                brn_input,
-                rcc.input_versions,
-                dask_report = rcc.dask_report,
-                **measure_cfg
+                rcc.run_configs, brn_input, rcc.input_versions, dask_report=rcc.dask_report, **measure_cfg
             )
-            results = finch.eval.create_result_dataset(times, rcc.run_configs, rcc.input_versions, finch.brn.brn_input, "brn_"+rcc.exp_name)
+            results = finch.eval.create_result_dataset(
+                times, rcc.run_configs, rcc.input_versions, finch.brn.brn_input, "brn_" + rcc.exp_name
+            )
             results.to_netcdf(rc.results_file)
 
         rcc = rc.brn.evaluation
@@ -189,22 +184,27 @@ if __name__ == "__main__":
                 finch.eval.plot_style = matplotx.styles.dufte
             if rcc.exp_name is None:
                 results = xr.open_dataset(rc.results_file)
-                results.to_netcdf(finch.util.get_path(finch.config["evaluation"]["results_dir"], results.attrs["name"], "results.nc"))
+                results.to_netcdf(
+                    finch.util.get_path(finch.config["evaluation"]["results_dir"], results.attrs["name"], "results.nc")
+                )
             else:
-                results = xr.open_dataset(finch.util.get_path(finch.config["evaluation"]["results_dir"], rcc.exp_name, "results.nc"))
+                results = xr.open_dataset(
+                    finch.util.get_path(finch.config["evaluation"]["results_dir"], rcc.exp_name, "results.nc")
+                )
             results = finch.eval.create_cores_dimension(results)
             if rcc.rename_labels:
-                brn_eval_rename_labels = {rcc.main_dim : rcc.rename_labels}
+                brn_eval_rename_labels = {rcc.main_dim: rcc.rename_labels}
                 results = finch.eval.rename_labels(results, brn_eval_rename_labels)
             if rcc.ignore_labels:
                 results = finch.eval.remove_labels(results, rcc.ignore_labels, rcc.main_dim)
-            finch.eval.create_plots(results,
+            finch.eval.create_plots(
+                results,
                 main_dim=rcc.main_dim,
                 scaling_dims=rcc.speedup_dims,
                 relative_rt_dims=rcc.reference_labels,
                 runtime_selection=rcc.runtimes_plot,
                 estimate_serial=rcc.estimate_serial,
-                plot_scaling_fits=rcc.plot_fit
+                plot_scaling_fits=rcc.plot_fit,
             )
             if len(results.data_vars) > 1:
                 finch.eval.plot_runtime_parts(results, first_dims=rcc.rt_parts_order)
