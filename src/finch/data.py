@@ -83,7 +83,7 @@ Group:
     Data
 """
 
-auto_chunk_size: int = dask.config.get("array.chunk-size")
+auto_chunk_size: int = dask.config.get("array.chunk-size", -1)
 """
 The chunk size used for the "auto" keyword.
 
