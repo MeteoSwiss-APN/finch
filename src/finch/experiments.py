@@ -277,14 +277,14 @@ class DaskRunConfig(RunConfig):
         graph_construction = end - start
         # optimize the graph
         start = perf_counter()
-        optimized: list[dask.typing.DaskCollection] = dask.optimize(output)
+        optimized: list[dask.typing.DaskCollection] = dask.optimize(*output)
         end = perf_counter()
         optimization_time = end - start
         # compute
         client = scheduler.get_client()
         if client is not None:
             start = perf_counter()
-            fut = client.persist(optimized)
+            fut = client.persist(*optimized)
             end = perf_counter()
             serialization_time = end - start
             start = perf_counter()
@@ -295,8 +295,7 @@ class DaskRunConfig(RunConfig):
         else:
             serialization_time = None
             start = perf_counter()
-            for collection in optimized:
-                collection.compute()
+            dask.compute(*optimized)
             end = perf_counter()
             compute_time = end - start
         full_end = perf_counter()
