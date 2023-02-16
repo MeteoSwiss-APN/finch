@@ -92,13 +92,14 @@ def create_result_dataset(
     # get attributes from run configs and versions
     rc_attrs = [util.get_primitive_attrs_from_dataclass(rc) for rc in run_configs]
     # join attributes into coordinates
-    coords: dict[str, set] = {}
+    coords_set: dict[str, set] = {}
     for attrs in rc_attrs:
         for k, v in attrs.items():
-            if k not in coords:
-                coords[k] = set()
-            coords[k].add(v)
+            if k not in coords_set:
+                coords_set[k] = set()
+            coords_set[k].add(v)
 
+    coords = {k: list(v) for k, v in coords_set.items()}
     dim_sizes = [len(coords[a]) for a in coords]
 
     # create dataset
