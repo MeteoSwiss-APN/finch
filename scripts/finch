@@ -50,7 +50,7 @@ if __name__ == "__main__":
         node_line = node.start_mark.line
         if isinstance(node, yaml.MappingNode):
             """Handles a single config node"""
-            mapping = loader.construct_mapping(node)
+            mapping = loader.construct_mapping(node, deep=True)
             if tag_suffix == "Run":
                 if "prep" in mapping and mapping["prep"]:
                     prep = mapping["prep"]
@@ -100,8 +100,10 @@ if __name__ == "__main__":
             elif tag_suffix == "Cluster":
                 cfg_lister = finch.scheduler.ClusterConfig.list_configs
             elif tag_suffix == "Version":
-                if "format" in mapping and isinstance(mapping["format"], str):
-                    mapping["format"] = finch.data.Format(mapping["format"])
+                if fmt := mapping.get("format"):
+                    if isinstance(fmt, str):
+                        fmt = [fmt]
+                    mapping["format"] = [finch.data.Format(f) for f in fmt]
                 cfg_lister = finch.data.Input.Version.list_configs
             else:
                 raise yaml.YAMLError(f"Unsupported config '{tag_suffix}' at line {node_line}")
