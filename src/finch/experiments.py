@@ -332,7 +332,7 @@ class OperatorRunConfig(DaskRunConfig):
     The input version to use.
     """
 
-    store_output: bool = False
+    store_output: bool = True
     """
     Whether to store the output to zarr or not.
     """
@@ -358,7 +358,7 @@ class OperatorRunConfig(DaskRunConfig):
 
     def measure(self) -> DaskRuntime:
         # clear output
-        if self.store_output:
+        if self.store_output and hasattr(self, "output_dir"):
             util.remove_if_exists(self.output_dir)
             self.output_dir = util.get_path(self.output_dir)
         # run measurements
