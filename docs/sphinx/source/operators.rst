@@ -1,3 +1,5 @@
+.. _ops_api:
+
 Operators
 =========
 
