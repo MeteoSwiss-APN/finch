@@ -70,7 +70,7 @@ def load_input_grib(version: data.Input.Version | None = None) -> xr.Dataset:
     hhl = hhl[:-1, :, :]  # TODO shouldn't be necessary
 
     out = xr.merge([out1, hhl, hsurf])
-    out.rename({"generalVerticalLayer": "z"})
+    out = out.rename({"generalVerticalLayer": "z"})
     return out
 
 
