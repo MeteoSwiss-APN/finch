@@ -35,6 +35,7 @@ dependencies:
   - mypy
   - types-deprecated
   - types-pyyaml
+  - pandas-stubs
   - black
   - pre-commit
   - esbonio

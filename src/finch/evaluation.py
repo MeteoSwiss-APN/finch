@@ -3,7 +3,7 @@ import warnings
 from collections.abc import Callable
 from typing import Any, Hashable, Tuple
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 import matplotx  # type: ignore
 import numpy as np
 import xarray as xr
