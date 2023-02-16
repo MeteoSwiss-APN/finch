@@ -1,3 +1,4 @@
+import dataclasses
 import pathlib
 import warnings
 from collections.abc import Callable
@@ -12,7 +13,7 @@ from deprecated.sphinx import deprecated
 
 from . import cfg, util
 from .data import Input
-from .experiments import RunConfig, Runtime, _RTList
+from .experiments import RunConfig, Runtime
 
 
 def get_pyplot_grouped_bar_pos(groups: int, labels: int) -> Tuple[np.ndarray, float]:
@@ -63,12 +64,9 @@ def print_results(results: list[list[Any]], run_configs: list[RunConfig], versio
 
 
 def create_result_dataset(
-    results: _RTList,
+    results: list[Runtime],
     run_configs: list[RunConfig] | RunConfig,
-    versions: list[Input.Version] | Input.Version,
-    input: Input,
     experiment_name: str | None = None,
-    impl_names: list[str] | Callable[[Callable], str] | None = None,
 ) -> xr.Dataset:
     """
     Constructs a dataset from the results of an experiment.
@@ -85,50 +83,35 @@ def create_result_dataset(
     # unify arguments
     if isinstance(run_configs, RunConfig):
         run_configs = [run_configs]
-    if isinstance(versions, Input.Version):
-        versions = [versions]
+
+    assert len(results) == len(run_configs) and len(results) > 0
 
     if experiment_name is None:
         experiment_name = util.random_entity_name()
 
     # get attributes from run configs and versions
-    version_attrs = [util.get_primitive_attrs_from_dataclass(v) for v in versions]
-    va_keys = list(version_attrs[0].keys())
     rc_attrs = [util.get_primitive_attrs_from_dataclass(rc) for rc in run_configs]
-    rca_keys = list(rc_attrs[0].keys())
-    if impl_names is not None:
-        # set implementation names
-        if isinstance(impl_names, list):
-            for a, impl_name in zip(rc_attrs, impl_names):
-                a["impl"] = impl_name
-        elif callable(impl_names):
-            for a, rc in zip(rc_attrs, run_configs):
-                if rc.impl is None:
-                    raise ValueError("Run config is missing an implementation.", rc)
-                a["impl"] = impl_names(rc.impl)
-    # construct coordinates
-    coords = {a: list(set(va[a] for va in version_attrs)) for a in va_keys}
-    coords.update({a: list(set(ra[a] for ra in rc_attrs)) for a in rca_keys})
+    # join attributes into coordinates
+    coords: dict[str, set] = {}
+    for attrs in rc_attrs:
+        for k, v in attrs.items():
+            if k not in coords:
+                coords[k] = set()
+            coords[k].add(v)
 
     dim_sizes = [len(coords[a]) for a in coords]
 
     # create dataset
-    ds = xr.Dataset(coords=coords)
-    for attr in util.get_class_attribute_names(Runtime):
-        # initialize data
-        data = np.full(dim_sizes, np.nan, dtype=float)
+    arrays: dict[str, xr.DataArray] = {}
+    for rt_obj, rca in zip(results, rc_attrs):
+        for rt_type, rt in dataclasses.asdict(rt_obj).items():
+            if rt_type not in arrays and rt is not None:
+                data = np.full(dim_sizes, np.nan, dtype=float)
+                arrays[rt_type] = xr.DataArray(data, coords, name=rt_type)
+            # set runtime for the correct coordinates
+            arrays[rt_type].loc[rca] = rt
 
-        array = xr.DataArray(data, coords, name=attr)
-        has_entries = False  # indicates whether the current runtime attribute has entries
-        for result, rca in zip(results, rc_attrs):
-            for r, va in zip(result, version_attrs):
-                entry = r.__dict__[attr]  # get the runtime entry
-                if entry is not None:
-                    has_entries = True
-                array.loc[va | rca] = entry
-        if has_entries:  # only add runtimes which were actually recorded
-            ds[attr] = array
-    ds.attrs["name"] = experiment_name
+    ds = xr.Dataset(arrays, attrs={"name": experiment_name})
     return ds
 
 
