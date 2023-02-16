@@ -357,16 +357,9 @@ class OperatorRunConfig(DaskRunConfig):
         return [out_array]
 
     def measure(self) -> DaskRuntime:
-        # clear output
-        if self.store_output and hasattr(self, "output_dir"):
-            util.remove_if_exists(self.output_dir)
-            self.output_dir = util.get_path(self.output_dir)
         # run measurements
-        return super().measure()
-
-    def cleanup(self) -> None:
-        # remove output directory
+        out = super().measure()
+        # clear output
         if self.store_output:
             util.remove_if_exists(self.output_dir)
-        # other cleanups
-        super().cleanup()
+        return out
