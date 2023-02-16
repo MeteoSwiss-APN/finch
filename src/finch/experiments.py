@@ -181,7 +181,10 @@ def measure_runtimes(
     for c in run_config:
         c.setup()
         cur_times: list[Runtime] = []
-        for _ in range(c.iterations):
+        iterations = c.iterations
+        if c.warmup:
+            iterations += 1
+        for _ in range(iterations):
             gc.collect()  # manually clear garbage
             runtime = c.measure()
             cur_times.append(runtime)
