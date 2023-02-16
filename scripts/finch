@@ -35,7 +35,7 @@ if 1:  # hack for flake8 to ignore E402
 if __name__ == "__main__":
 
     # configure logging
-    logging.basicConfig(format=finch.logging_format, level=logging.WARNING)
+    logging.basicConfig(format=finch.cfg.get("global", "log_format"), level=logging.WARNING)
 
     # configure debug setup
     if debug:
@@ -123,20 +123,20 @@ if __name__ == "__main__":
     yaml.add_multi_constructor("!config:", config_constructor, Loader=yaml.SafeLoader)
 
     # load configurations
-    default_config_path = pathlib.Path("config", "run.yaml")
+    default_config_path = pathlib.Path(finch.env.data_dir, "config", "run.yaml")
     with open(default_config_path) as f:
         rc: dict = yaml.safe_load(f)
-    custom_config_path = pathlib.Path(cmd_args.config or finch.config["run"]["config_path"])
+    custom_config_path = pathlib.Path(cmd_args.config or finch.cfg.get("run", "config_path"))
     if custom_config_path.exists():
         with open(custom_config_path) as f:
             custom_config: dict = yaml.safe_load(f)
             rc = finch.util.recursive_update(rc, custom_config)
     if debug:
-        debug_config_path = pathlib.Path("config", "debug.yaml")
+        debug_config_path = pathlib.Path(finch.env.data_dir, "config", "debug.yaml")
         with open(debug_config_path) as f:
             dbg_config: dict = yaml.safe_load(f)
             rc = finch.util.recursive_update(rc, dbg_config)
-        custom_debug_config_path = pathlib.Path(cmd_args.debug_config or finch.config["run"]["debug_config_path"])
+        custom_debug_config_path = pathlib.Path(cmd_args.debug_config or finch.cfg.get("run", "debug_config_path"))
         if custom_debug_config_path.exists():
             with open(custom_debug_config_path) as f:
                 dbg_config: dict = yaml.safe_load(f)
@@ -186,11 +186,11 @@ if __name__ == "__main__":
             if rcc.exp_name is None:
                 results = xr.open_dataset(rc.results_file)
                 results.to_netcdf(
-                    finch.util.get_path(finch.config["evaluation"]["results_dir"], results.attrs["name"], "results.nc")
+                    finch.util.get_path(finch.cfg.get("evaluation", "results_dir"), results.attrs["name"], "results.nc")
                 )
             else:
                 results = xr.open_dataset(
-                    finch.util.get_path(finch.config["evaluation"]["results_dir"], rcc.exp_name, "results.nc")
+                    finch.util.get_path(finch.cfg.get("evaluation", "results_dir"), rcc.exp_name, "results.nc")
                 )
             results = finch.eval.create_cores_dimension(results)
             if rcc.rename_labels:
