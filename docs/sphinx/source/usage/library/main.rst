@@ -4,8 +4,8 @@ Using the library
 .. toctree::
     :maxdepth: 2
 
-    config
-    operators
+    first_steps
     input
     experiments
     evaluation
+    config
