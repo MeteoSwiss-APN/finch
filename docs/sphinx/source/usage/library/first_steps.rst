@@ -122,8 +122,8 @@ We could inspect them manually, but finch provides some features for evaluation.
 For this purpose, we can first transform our runtime objects into a "result dataset". ::
 
     results = finch.eval.create_result_dataset(
-        runtimes, 
-        run_configs, 
+        runtimes,
+        run_configs,
         experiment_name="avg_scaling"
     )
 
@@ -133,9 +133,9 @@ It can be used as an input for the different evaluation function of the :py:mod:
 Let's create a plot which compares the scalability of our two operators. ::
 
     finch.eval.create_plots(
-        results, 
-        scaling_dims=["workers"], 
-        estimate_serial=False, 
+        results,
+        scaling_dims=["workers"],
+        estimate_serial=False,
         runtime_selection=["full"]
     )
 
@@ -166,54 +166,54 @@ Full Script
 ::
 
     #!/usr/bin/env python3
-    
+
     import dask.array as da
     import xarray as xr
-    
+
     import finch
-    
+
     # Operator definition
-    
-    
+
+
     def avg_xr(data: xr.Dataset, array="A", dim="x") -> xr.DataArray:
         return data[array].mean(dim)
-    
-    
+
+
     def avg_split(data: xr.Dataset, array="A", dim="x") -> xr.DataArray:
         dim_len = data[array].sizes[dim]
         part1 = data[array].isel({dim: slice(0, dim_len // 2)})
         part2 = data[array].isel({dim: slice(dim_len // 2, None)})
         return (part1.mean(dim) + part2.mean(dim)) / 2
-    
-    
+
+
     # Input management
-    
+
     avg_src_version = finch.data.Input.Version(
         format=finch.data.Format.FAKE,
         dim_order="xy",
         chunks={"x": -1, "y": 100},
         coords=True,
     )
-    
-    
+
+
     def avg_source(version: finch.data.Input.Version) -> xr.Dataset:
         chunks = (version.chunks.get("x", -1), version.chunks.get("y", -1))
         state = da.random.RandomState(1234)
         dask_array = state.random((10_000, 100_000), chunks=chunks)
         array = xr.DataArray(dask_array, dims=("x", "y"))
         return array.to_dataset(name="A")
-    
-    
+
+
     avg_input = finch.data.Input(
-        name="average", 
-        source=avg_source, 
+        name="average",
+        source=avg_source,
         source_version=avg_src_version
     )
-    
-    
+
+
     # Run experiments
-    
-    
+
+
     run_configs = finch.OperatorRunConfig.list_configs(
         impl=[avg_xr, avg_split],
         cluster_config=finch.scheduler.ClusterConfig(cores_per_worker=1),
@@ -222,22 +222,22 @@ Full Script
         input_version=avg_src_version,
         iterations=5,
     )
-    
+
     runtimes = finch.measure_runtimes(run_configs)
-    
-    
+
+
     # Evaluation
-    
-    
+
+
     results = finch.eval.create_result_dataset(
-        runtimes, 
-        run_configs, 
+        runtimes,
+        run_configs,
         experiment_name="avg_scaling"
     )
-    
+
     finch.eval.create_plots(
-        results, 
-        scaling_dims=["workers"], 
-        estimate_serial=False, 
+        results,
+        scaling_dims=["workers"],
+        estimate_serial=False,
         runtime_selection=["full"]
     )
