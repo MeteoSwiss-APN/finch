@@ -327,7 +327,7 @@ class OperatorRunConfig(DaskRunConfig):
     The input object to use.
     """
 
-    version: Input.Version
+    input_version: Input.Version
     """
     The input version to use.
     """
@@ -338,7 +338,7 @@ class OperatorRunConfig(DaskRunConfig):
     """
 
     def load_input(self) -> list[Any]:
-        inp, _ = self.input_obj.get_version(self.version)
+        inp, _ = self.input_obj.get_version(self.input_version)
         return [inp]
 
     def construct_output(self, *args: xr.Dataset) -> list[dask.typing.DaskCollection]:

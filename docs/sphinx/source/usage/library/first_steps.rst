@@ -113,7 +113,7 @@ Let's use dask with a single core per worker and go up to 40 cores. ::
         cluster_config=finch.scheduler.ClusterConfig(cores_per_worker=1),
         workers=list(range(5, 45, 5)),
         input_obj=avg_input,
-        version=avg_src_version,
+        input_version=avg_src_version,
         iterations=5,
     )
 
@@ -219,7 +219,7 @@ Full Script
         cluster_config=finch.scheduler.ClusterConfig(cores_per_worker=1),
         workers=list(range(5, 45, 5)),
         input_obj=avg_input,
-        version=avg_src_version,
+        input_version=avg_src_version,
         iterations=5,
     )
     
