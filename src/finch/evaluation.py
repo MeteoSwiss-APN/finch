@@ -427,7 +427,7 @@ def create_plots(
     """
 
     # disable debug logs from matplotlib
-    plt.set_loglevel("warning")  # type: ignore
+    plt.set_loglevel("warning")
 
     path = pathlib.Path(get_plots_dir(results))
 
@@ -458,7 +458,7 @@ def create_plots(
                 if isinstance(relative_rt_dims, list):
                     ref_idx = 0
                 else:
-                    ref_idx = to_plot.indexes[main_dim].get_loc(relative_rt_dims[d])  # type: ignore
+                    ref_idx = to_plot.indexes[main_dim].get_loc(relative_rt_dims[d])
             # reorder dimensions
             to_plot = to_plot.transpose(main_dim, d)
             for runtime_type, runtime_data in to_plot.data_vars.items():
@@ -480,12 +480,12 @@ def create_plots(
                 runtime_array: np.ndarray = runtime_data.data
                 # plot
                 plt.clf()
-                with plt.style.context(plot_style):  # type: ignore
+                with plt.style.context(plot_style):
                     if isinstance(ticks[0], str):
                         # bar plot
                         xpos, bar_width = get_pyplot_grouped_bar_pos(len(ticks), len(labels))
                         for lb, rt, xp in zip(labels, runtime_array, xpos):
-                            plt.bar(xp, rt, width=bar_width, label=lb)  # type: ignore
+                            plt.bar(xp, rt, width=bar_width, label=lb)
                         plt.xticks(range(len(ticks)), ticks)
                         plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
                         plt.xlabel(d)
@@ -504,7 +504,7 @@ def create_plots(
                                 spd_labels = [lb + r", $f=" + "%.2f" % (f * 100) + r"$%" for lb, f in zip(labels, fs)]
                             # plot fitted scaling functions
                             if plot_scaling_fits and estimate_serial:
-                                cycler = plt.rcParams["axes.prop_cycle"]  # type: ignore
+                                cycler = plt.rcParams["axes.prop_cycle"]
                                 for f, c in zip(fs, cycler):
                                     x = np.linspace(ticks[0], ticks[-1], 100)
                                     xt = x / ticks[0]
@@ -537,7 +537,7 @@ def create_plots(
                         # plt.xticks(ticks)
                         matplotx.ylabel_top(ylabel)
                         matplotx.line_labels()
-                        plt.margins(y=0.05)  # type: ignore
+                        plt.margins(y=0.05)
                     # save plot
                     save_plot(d, runtime_type)
 
@@ -574,7 +574,7 @@ def plot_runtime_parts(results: xr.Dataset, first_dims: list[str] = []) -> None:
     array /= np.sum(array, axis=0)[np.newaxis, :]
 
     plt.clf()
-    with plt.style.context(plot_style):  # type: ignore
+    with plt.style.context(plot_style):
         # get ticks
         bars = array.shape[1]
         if first_dims:
@@ -587,7 +587,7 @@ def plot_runtime_parts(results: xr.Dataset, first_dims: list[str] = []) -> None:
         bottom: float | np.ndarray = 0.0
         for i, rt_type in enumerate(rt_types):
             row = array[i, :]
-            plt.bar(xpos, row, bottom=bottom, label=rt_type, width=bar_width)  # type: ignore
+            plt.bar(xpos, row, bottom=bottom, label=rt_type, width=bar_width)
             bottom += row
         path = pathlib.Path(get_plots_dir(results))
         plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
