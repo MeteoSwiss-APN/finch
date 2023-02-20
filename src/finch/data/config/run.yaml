@@ -71,7 +71,7 @@ brn:
       # List of input versions for the runtime experiment
       # Must be an object or a list of objects of type finch.data.Input.Version
       # Null represents all available input versions
-      version: null
+      input_version: null
       cluster_config: !config:Cluster
         cores_per_worker: 1
         omp_parallelism: false

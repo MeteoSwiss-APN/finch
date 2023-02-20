@@ -71,6 +71,8 @@ if __name__ == "__main__":
                     mapping["impl"] = impl
                 else:
                     raise yaml.YAMLError(f"'impl' attribute must be specified in Run config at line {node_line}")
+                # add dummy input object
+                mapping["input_obj"] = finch.brn.get_brn_input()
                 cfg_lister = finch.OperatorRunConfig.list_configs
             elif tag_suffix == "Cluster":
                 cfg_lister = finch.scheduler.ClusterConfig.list_configs
@@ -141,7 +143,7 @@ if __name__ == "__main__":
         if rcc.run:
             logging.info("Measuring runtimes of brn implementations")
             for run_config in rcc.run_configs:
-                run_config.input_obj = finch.brn.get_brn_input()
+                run_config.input_obj = brn_input
             times = finch.measure_runtimes(rcc.run_configs, **measure_cfg)
             results = finch.eval.create_result_dataset(times, rcc.run_configs, "brn_" + rcc.exp_name)
             results.to_netcdf(rc.results_file)
