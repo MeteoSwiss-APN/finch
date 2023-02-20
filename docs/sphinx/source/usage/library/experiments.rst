@@ -66,7 +66,8 @@ With this function we can easily create a list of configuration objects.
 We can use it the same way we use the constructor of a configuration class, but we also have the ability to provide a list for an argument instead of a single one.
 The resulting list of configuration objects will be the cross product between all the argument lists which were provided.
 
-For example, we can produce a list of run configurations with different numbers of dask workers for all possible input formats as follows.::
+For example, we can produce a list of run configurations with different numbers of dask workers for all possible input formats as follows.
+::
     run_config = finch.OperatorRunConfig(
         impl=finch.brn.brn,
         input_obj=finch.brn.get_brn_input(),
