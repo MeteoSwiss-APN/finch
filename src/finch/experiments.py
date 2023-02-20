@@ -180,12 +180,16 @@ def measure_runtimes(
     times: list[Runtime] = []
     for c in run_config:
         c.setup()
+        # manually clear garbage
+        distributed_log_level = dask.config.get("logging.distributed")
+        dask.config.set({"logging.distributed": "error"})
+        gc.collect()
+        dask.config.set({"logging.distributed": distributed_log_level})
         cur_times: list[Runtime] = []
         iterations = c.iterations
         if c.warmup:
             iterations += 1
         for _ in range(iterations):
-            gc.collect()  # manually clear garbage
             runtime = c.measure()
             cur_times.append(runtime)
             if progress:
