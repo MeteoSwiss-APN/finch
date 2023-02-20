@@ -105,6 +105,10 @@ brn:
       brn_xr: "xarray"
       brn_blocked_cpp: "C++"
       brn_blocked_np: "NumPy"
+    # Used for combining multiple runtimes together into a new runtime.
+    # This is a dictionary, mapping the name of the new runtime to the list of runtime names to add together.
+    add_runtimes:
+      no_inp_loading: ["compute", "graph_construction", "optimization", "serialization"]
     # The keys of this dictionary indicate the plots for which to plot a relative runtime.
     # The values indicate the label in the main dimension to use as reference runtimes.
     reference_labels:

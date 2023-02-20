@@ -203,6 +203,27 @@ def remove_labels(results: xr.Dataset, labels: list[str], main_dim: str) -> xr.D
     return results.drop_sel({main_dim: labels})
 
 
+def add_runtimes(results: xr.Dataset, new_runtime: str, to_add: list[str]) -> xr.Dataset:
+    """
+    Combines different runtimes together into a new runtime by adding them up.
+
+    Args:
+        results (xr.Dataset): The results dataset
+        new_runtime (str): The name of the new runtime to insert
+        to_add (list[str]): The names of the runtimes to add
+
+    Returns:
+        xr.Dataset The new results dataset with the newly created runtime inserted added as a data variable.
+
+    Group:
+        Evaluation
+    """
+    assert len(to_add) > 0
+    new_rt_arr = sum([results[a] for a in to_add])
+    assert isinstance(new_rt_arr, xr.DataArray)
+    return results.assign({new_runtime: new_rt_arr})
+
+
 def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int | None = None) -> Tuple[np.ndarray, np.ndarray]:
     """
     Performs simple linear regression along the given axis.
