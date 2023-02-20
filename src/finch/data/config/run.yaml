@@ -51,7 +51,7 @@ brn:
       omp_parallelism: false
       exclusive_jobs: false
     # The number of workers used for input management
-    workers: 1
+    workers: 10
     # New brn input version to add
     # If null, no new version will be added
     add_version: null
