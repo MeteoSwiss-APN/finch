@@ -26,10 +26,6 @@
 
 # general configurations
 general:
-  # The number of iterations when measuring runtime
-  iterations: 10
-  # Whether to perform a warmup before measuring the runtimes
-  warmup: true
   # Whether to print a progress bar
   pbar: true
   # The file where runtime results are temporarily stored.
