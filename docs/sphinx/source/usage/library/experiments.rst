@@ -1,75 +1,102 @@
-Experiments
+.. _experiments:
+
+Running Experiments
 ===================
 
-Introduction
-------------
-
-The experiment setup, mainly the function :func:`finch.measure_runtimes` can be considered the heart of finch.
-This function does not run any implementation itself, neither does it load the input.
-However, it puts all those individual modules together into one experiment.
-As a result, finch uses a modular approach for setting up experiments.
-This allows a high level of configuration for all sorts of experiments.
-While finch defines a default workflow which can be used out of the box, it is also possible to overwrite the individual components.
-Finally, they are being passed down to :func:`finch.measure_runtimes`, which glues them together.
-
-Following is a list of the most important components with a brief description for each of them.
-
-:RunConfig:
-    The run configuration contains everything for setting up the environment of the experiment.
-    The implementation of the operator is also specified here.
-:Inputs:
-    Defines which inputs are being passed to the operator to run and how the input is loaded.
-    The standard way of providing inputs is via finch's built-in input management. However, this can be overwritten.
-:Implementation Runner:
-    The implementation runner runs the operator implementation.
-    It can introduce more fine-grained runtime measurements.
-    The simplest implementation runner just runs the provided implementation on the provided arguments without doing anything else.
-    The :func:`finch.measure_runtimes` will measure the runtime of the input preparation and the full execution of the implementation runner on its own.
+The :mod:`finch.experiments` module is the core module of finch.
+Most prominently, it features the :func:`finch.measure_runtimes` function, with which we run experiments.
+We can configure the experiment via a :class:`finch.RunConfig` object, which we pass to :func:`finch.measure_runtimes`.
+The :class:`finch.RunConfig` class is an abstract class, which can be used to launch runtime experiments for any python function.
+For functions conforming to the default operator signature of finch, a specialized class :class:`finch.OperatorRunConfig` is provided, which provides more support.
+Users who want to measure runtimes for different function signatures must provide their own implementation of :class:`finch.RunConfig`.
 
 
 Measuring Operator Runtimes
-----------------------------------
+---------------------------
 
-For standard finch operators, you do not have to call :func:`finch.measure_runtimes` explicitly.
-Instead, finch provides a function :func:`finch.measure_operator_runtimes`.
-This function will take a run configuration along with an input and some input version from finch's input management.
+There are two required ingredients when creating a :class:`finch.OperatorRunConfig` instance: an operator conforming to the default operator signature and an input with a version, as explained in :ref:`input_management`.
+
+The default operator signature is defined by :attr:`finch.DefaultOperator`. It is a function which takes a `xarray.Dataset` and returns a `xarray.DataArray`.
+Let's use the built-in :func:`finch.brn.brn` operator for our examples.
 ::
-    from finch import RunConfig, measure_operator_runtimes
-    from finch.data import Input, Format
-    from finch.scheduler import ClusterConfig
+    import finch
     import finch.brn
 
-    brn_input = finch.brn.get_brn_input()
-    version = Input.Version(format=Format.GRIB)
-    brn_config = RunConfig(impl=finch.brn.impl.brn_xr)
-
-    time = measure_operator_runtimes(brn_config, brn_input, version)
-
-If we want to create a series of runtime measurements, we can pass multiple run configurations and multiple input versions.
-The output will be a list of lists of runtimes, where the outer list is for the different run configurations and the inner list for the different input versions.
-It is also possible to pass a single run configuration and multiple input versions and vice-versa.
-The output format will then be a single list of runtimes, as expected.
-We can use :func:`finch.RunConfig.list_configs` as well as :func:`finch.Input.Version.list_configs` to easily create multiple instances.
-::
-    versions = Input.Version.list_configs(
-        format=[Format.NETCDF, Format.ZARR],
-        dim_order="xyz"
+    run_config = finch.OperatorRunConfig(
+        impl=finch.brn.brn,
+        input_obj=finch.brn.get_brn_input(),
+        input_version=finch.data.Input.Version(
+            format=finch.data.Format.ZARR
+        )
     )
 
-    brn_configs = RunConfig.list_configs(
-        impl=finch.brn.list_brn_implementations(),
-        cluster_config=finch.scheduler.ClusterConfig.list_configs(
-            cores_per_worker=[1,5]
+    runtimes = finch.measure_runtimes(run_config)
+
+The above script will measure the runtime of the BRN operator when using ZARR as an input format.
+By default, the execution will be repeated five times and the average runtime will be reported. Additionally, a warmup iteration is added at the beginning, whose runtime will be discarded.
+We can control this behavior by setting `iterations` and `warmup` of our `run_config` object.
+
+Also by default, the output of the operator will be stored to zarr.
+This might blow up the parallel runtime of the operator unexpectedly. It can be disabled by setting `store_output=False`.
+
+Dask Configurations
+^^^^^^^^^^^^^^^^^^^
+
+The :class:`finch.OperatorRunConfig` inherits from :class:`finch.DaskRunConfig`, which let's us control dask-specific configurations.
+For example, we might want to adjust the number of workers, with which dask runs our experiment.
+We can do this by setting the `workers` attribute of the `run_config` object.
+
+Additionally, we can configure some more fine-grained properties of the dask cluster by setting `cluster_config`.
+The `cluster_config` attribute takes a :class:`finch.scheduler.ClusterConfig` object.
+Take a look at the class definition to find out which properties can be set.
+
+
+Configuration Classes
+---------------------
+
+Finch provides the class :class:`finch.util.Config`, from which specific configuration classes inherit.
+This currently includes:
+
+- :class:`finch.OperatorRunConfig` (and its subclasses :class:`finch.DaskRunConfig` and :class:`finch.RunConfig`)
+- :class:`finch.data.Input.Version`
+- :class:`finch.scheduler.ClusterConfig`
+
+The :class:`finch.util.Config` class provides the class function :func:`finch.util.Config.list_configs`.
+With this function we can easily create a list of configuration objects.
+We can use it the same way we use the constructor of a configuration class, but we also have the ability to provide a list for an argument instead of a single one.
+The resulting list of configuration objects will be the cross product between all the argument lists which were provided.
+
+For example, we can produce a list of run configurations with different numbers of dask workers for all possible input formats as follows.::
+    run_config = finch.OperatorRunConfig(
+        impl=finch.brn.brn,
+        input_obj=finch.brn.get_brn_input(),
+        input_version=finch.data.Input.Version(
+            format=[f for f in finch.data.Format]
         ),
-        workers=[1, 10, 20]
+        workers=[5, 10, 15, 20]
     )
 
-    times = measure_operator_runtimes(brn_configs, brn_input, versions)
+We can then use this list as an argument for :func:`finch.measure_runtimes` to run them all after another, allowing us to easily setup all kinds of experiments.::
+    runtimes = finch.measure_runtimes(run_config)
+
+.. info:: 
+    Classes which inherit the :class:`finch.util.Config` class are expected to be keyword-only dataclasses.
+    Hence, you can also use `dataclass-specific features <https://docs.python.org/3/library/dataclasses.html>`_ on them.
 
 
-Configuration
--------------
+Runtime Objects
+---------------
 
-The configuration of the environment is specified with the :class:`finch.RunConfig` class.
+The :func:`finch.measure_runtimes` function returns a list of :class:`finch.Runtime` objects.
+The :class:`finch.Runtime` class and its derivates are dataclasses containing only `float` attributes.
+These attributes are specific runtime measurements which will be populated when running :func:`finch.measure_runtimes` (more concretely, when running :func:`finch.RunConfig.measure`).
+The base :class:`finch.Runtime` class has the attributes `full`, `input_loading` and `compute`.
+The `full` attribute is required and captures the runtime of the full experiment, including loading and storing the data.
+The `input_loading` attribute captures the runtime for loading the input while `compute` captures the runtime of the actual execution time of the operator.
 
-.. TODO Write this section of the documentation after generalizing the run config and providing a dask specific configuration
+.. note::
+    When using dask, `input_loading` will only include the time used for setting up the input.
+    Because of dask's lazy loading, the effective load time of the input will be captured in `compute`.
+
+The :class:`finch.DaskRunConfig` and therefore also the :class:`finch.OperatorRunConfig` are implemented to return a :class:`finch.DaskRuntime` object, which contains more fine-grained dask-specific runtime measurements.
+Take a look at the class specification to find out what is included.
