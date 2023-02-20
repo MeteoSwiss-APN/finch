@@ -168,6 +168,9 @@ if __name__ == "__main__":
                 results = finch.eval.rename_labels(results, brn_eval_rename_labels)
             if rcc.ignore_labels:
                 results = finch.eval.remove_labels(results, rcc.ignore_labels, rcc.main_dim)
+            if rcc.add_runtimes:
+                for k, v in rcc.add_runtimes.items():
+                    results = finch.eval.add_runtimes(results, k, v)
             finch.eval.create_plots(
                 results,
                 main_dim=rcc.main_dim,

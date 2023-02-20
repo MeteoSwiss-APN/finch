@@ -214,6 +214,9 @@ def add_runtimes(results: xr.Dataset, new_runtime: str, to_add: list[str]) -> xr
 
     Returns:
         xr.Dataset The new results dataset with the newly created runtime inserted added as a data variable.
+
+    Group:
+        Evaluation
     """
     assert len(to_add) > 0
     new_rt_arr = sum([results[a] for a in to_add])
