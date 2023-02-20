@@ -8,6 +8,7 @@ dependencies:
   - distributed >=2022.11.0
   - dask-jobqueue
   - xarray >=2022.11.0
+  - numpy >=1.20
   - pyyaml
   - cfgrib
   - tqdm
@@ -34,7 +35,7 @@ dependencies:
   - mypy
   - types-deprecated
   - types-pyyaml
-  - data-science-types
+  - pandas-stubs
   - black
   - pre-commit
   - esbonio

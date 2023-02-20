@@ -21,13 +21,12 @@ if 1:  # this is a hack to avoid flake8 to complain about E402
     from . import scheduler, util
     from .experiments import (
         DaskRunConfig,
+        DaskRuntime,
         DefaultOperator,
+        OperatorRunConfig,
         RunConfig,
-        measure_operator_runtimes,
+        Runtime,
         measure_runtimes,
-        xr_impl_runner,
-        xr_input_prep,
-        xr_run_prep,
     )
 
 __all__ = [
@@ -47,11 +46,10 @@ __all__ = [
     "DaskRunConfig",
     "DefaultOperator",
     "RunConfig",
-    "measure_loading_times",
-    "measure_operator_runtimes",
+    "DaskRunConfig",
+    "OperatorRunConfig",
+    "Runtime",
+    "DaskRuntime",
     "measure_runtimes",
-    "xr_impl_runner",
-    "xr_input_prep",
-    "xr_run_prep",
     "__version__",
 ]

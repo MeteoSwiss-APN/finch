@@ -48,6 +48,9 @@ templates_path: list[str] = []
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns: list[str] = []
 
+# Set single backticks to display code
+default_role = "code"
+
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -115,6 +118,11 @@ python_apigen_modules = {
     "finch.data": "api/finch/data/",
     "finch.brn": "api/finch/brn/",
     "finch.evaluation": "api/finch/eval/",
+    "finch.util": "api/finch/util/",
+    "finch.operators": "api/finch/operators/",
+    "finch.config": "api/finch/config/",
+    "finch.constants": "api/finch/constants/",
+    "finch.environment": "api/finch/environment/",
 }
 
 python_apigen_default_groups = [
