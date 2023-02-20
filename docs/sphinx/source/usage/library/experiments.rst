@@ -79,7 +79,7 @@ For example, we can produce a list of run configurations with different numbers 
 We can then use this list as an argument for :func:`finch.measure_runtimes` to run them all after another, allowing us to easily setup all kinds of experiments.::
     runtimes = finch.measure_runtimes(run_config)
 
-.. info:: 
+.. info::
     Classes which inherit the :class:`finch.util.Config` class are expected to be keyword-only dataclasses.
     Hence, you can also use `dataclass-specific features <https://docs.python.org/3/library/dataclasses.html>`_ on them.
 
