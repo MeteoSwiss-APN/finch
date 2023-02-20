@@ -226,7 +226,7 @@ class DaskRuntime(Runtime):
     """
 
 
-@dataclass
+@dataclass(kw_only=True)
 class DaskRunConfig(RunConfig):
     """
     A run configuration class for running operators on a dask cluster.
