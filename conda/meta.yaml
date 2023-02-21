@@ -39,6 +39,8 @@ requirements:
     - deprecated
     - matplotx
     - expandvars
+    - zarr
+    - netcdf4
 
 about:
   home: {{ project.get('urls').get('Homepage') }}
