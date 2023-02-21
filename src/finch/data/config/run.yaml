@@ -26,10 +26,6 @@
 
 # general configurations
 general:
-  # The number of iterations when measuring runtime
-  iterations: 10
-  # Whether to perform a warmup before measuring the runtimes
-  warmup: true
   # Whether to print a progress bar
   pbar: true
   # The file where runtime results are temporarily stored.
@@ -51,7 +47,7 @@ brn:
       omp_parallelism: false
       exclusive_jobs: false
     # The number of workers used for input management
-    workers: 1
+    workers: 10
     # New brn input version to add
     # If null, no new version will be added
     add_version: null
