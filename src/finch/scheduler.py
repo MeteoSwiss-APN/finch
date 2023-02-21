@@ -15,6 +15,20 @@ from . import cfg as finch_cfg
 from . import debug, env, util
 
 
+def dask_config_get_not_none(key: str, default: Any) -> Any:
+    """
+    Returns the value of `dask.config.get(key, default)` and returns the default if `None` would be returned.
+
+    Group:
+        Util
+    """
+    out = dask.config.get(key, default)
+    if out is None:
+        return default
+    else:
+        return out
+
+
 def parse_slurm_time(t: str) -> timedelta:
     """
     Returns a timedelta from the given duration as is being passed to SLURM
@@ -55,7 +69,7 @@ class ClusterConfig(util.Config):
 
     workers_per_job: int = 1
     """The number of workers to spawn per SLURM job"""
-    cores_per_worker: int = dask.config.get("jobqueue.slurm.cores", 1)
+    cores_per_worker: int = dask_config_get_not_none("jobqueue.slurm.cores", 1)
     """The number of cores available per worker"""
     omp_parallelism: bool = False
     """
@@ -108,9 +122,15 @@ def start_slurm_cluster(cfg: ClusterConfig = ClusterConfig()) -> Client:
 
     worker_env = env.WorkerEnvironment()
 
-    walltime = dask.config.get("jobqueue.slurm.walltime", "01:00:00")
-    node_cores = dask.config.get("jobqueue.slurm.cores", 1)
-    node_memory: str = dask.config.get("jobqueue.slurm.memory", "1GB")
+    walltime = dask_config_get_not_none("jobqueue.slurm.walltime", "01:00:00")
+    if walltime is None:
+        walltime = "01:00:00"
+    node_cores = dask_config_get_not_none("jobqueue.slurm.cores", 1)
+    if node_cores is None:
+        node_cores = 1
+    node_memory: str = dask_config_get_not_none("jobqueue.slurm.memory", "1GB")
+    if node_memory is None:
+        node_memory = "1GB"
     node_memory_bytes = dask.utils.parse_bytes(node_memory)
 
     job_cpu = cfg.cores_per_worker * cfg.workers_per_job
