@@ -63,6 +63,28 @@ def print_results(results: list[list[Any]], run_configs: list[RunConfig], versio
         print()
 
 
+exp_name_attr = "name"
+"""
+The name of the attribute storing the experiment name in the results dataset.
+
+Group:
+    Evaluation
+"""
+
+rt_combined_attr = "rt_combined"
+"""
+The name of the attribute storing the list of combined runtimes in the results dataset.
+
+Group:
+    Evaluation
+"""
+
+__rt_combined_attr_sep = ":"
+"""
+Separator for separating the combined runtimes in the rt_combined_attr.
+"""
+
+
 def create_result_dataset(
     results: list[Runtime],
     run_configs: list[RunConfig] | RunConfig,
@@ -112,7 +134,7 @@ def create_result_dataset(
             # set runtime for the correct coordinates
             arrays[rt_type].loc[rca] = rt
 
-    ds = xr.Dataset(arrays, attrs={"name": experiment_name})
+    ds = xr.Dataset(arrays, attrs={exp_name_attr: experiment_name, rt_combined_attr: "full"})
     return ds
 
 
@@ -203,7 +225,7 @@ def remove_labels(results: xr.Dataset, labels: list[str], main_dim: str) -> xr.D
     return results.drop_sel({main_dim: labels})
 
 
-def add_runtimes(results: xr.Dataset, new_runtime: str, to_add: list[str]) -> xr.Dataset:
+def combine_runtimes(results: xr.Dataset, new_runtime: str, to_add: list[str]) -> xr.Dataset:
     """
     Combines different runtimes together into a new runtime by adding them up.
 
@@ -221,7 +243,9 @@ def add_runtimes(results: xr.Dataset, new_runtime: str, to_add: list[str]) -> xr
     assert len(to_add) > 0
     new_rt_arr = sum([results[a] for a in to_add])
     assert isinstance(new_rt_arr, xr.DataArray)
-    return results.assign({new_runtime: new_rt_arr})
+    out = results.assign({new_runtime: new_rt_arr})
+    out.attrs[rt_combined_attr] += __rt_combined_attr_sep + new_runtime
+    return out
 
 
 def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int | None = None) -> Tuple[np.ndarray, np.ndarray]:
@@ -382,7 +406,7 @@ def get_plots_dir(results: xr.Dataset) -> util.PathLike:
         Plot
     """
     base = cfg["evaluation"]["plot_dir"]
-    args = [base, results.attrs["name"]]
+    args = [base, results.attrs[exp_name_attr]]
     if base == cfg["evaluation"]["dir"]:
         args.append("plots")
     return util.get_path(*args)
@@ -483,15 +507,11 @@ def create_plots(
             # reorder dimensions
             to_plot = to_plot.transpose(main_dim, d)
             for runtime_type, runtime_data in to_plot.data_vars.items():
-                if (
-                    runtime_selection is not None
-                    and runtime_type not in runtime_selection
-                    or d in scaling_dims
-                    and runtime_type not in ["full", "compute"]
-                ):
+                # only plot runtimes which are in runtime_selection
+                if runtime_selection is not None and runtime_type not in runtime_selection:
                     continue
+                # only create plots where all runtime data is provided
                 if np.isnan(runtime_data).any():
-                    # only create plots where all runtime data is provided
                     continue
                 # get plotting arguments
                 labels = to_plot.coords[main_dim].data
@@ -576,7 +596,7 @@ def plot_runtime_parts(results: xr.Dataset, first_dims: list[str] = []) -> None:
         Plot
     """
     # drop full runtimes
-    results = results.drop_vars("full")
+    results = results.drop_vars(results.attrs[rt_combined_attr].split(__rt_combined_attr_sep))
     # create array
     data_arr = results.to_array(dim="rt_types")
     rt_types = data_arr["rt_types"].data
@@ -630,7 +650,7 @@ def store_config(results: xr.Dataset) -> None:
     Group:
         Evaluation
     """
-    path = util.get_path(cfg["evaluation"]["config_dir"], results.attrs["name"], "config.yaml")
+    path = util.get_path(cfg["evaluation"]["config_dir"], results.attrs[exp_name_attr], "config.yaml")
     # create config dict
     res_config = {c: a.data.tolist() for c, a in results.coords.items()}
     res_config = {k: a[0] if len(a) == 1 else a for k, a in res_config.items()}

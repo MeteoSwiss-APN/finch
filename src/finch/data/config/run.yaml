@@ -67,7 +67,14 @@ brn:
       # List of input versions for the runtime experiment
       # Must be an object or a list of objects of type finch.data.Input.Version
       # Null represents all available input versions
-      input_version: null
+      input_version: !config:Version
+        format: "grib"
+        dim_order: "zyx"
+        chunks:
+          x: -1
+          y: -1
+          z: 1
+        coords: true
       cluster_config: !config:Cluster
         cores_per_worker: 1
         omp_parallelism: false
@@ -103,7 +110,7 @@ brn:
       brn_blocked_np: "NumPy"
     # Used for combining multiple runtimes together into a new runtime.
     # This is a dictionary, mapping the name of the new runtime to the list of runtime names to add together.
-    add_runtimes:
+    combine_runtimes:
       no_inp_loading: ["compute", "graph_construction", "optimization", "serialization"]
     # The keys of this dictionary indicate the plots for which to plot a relative runtime.
     # The values indicate the label in the main dimension to use as reference runtimes.
