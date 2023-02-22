@@ -99,6 +99,7 @@ if __name__ == "__main__":
         else:
             raise yaml.YAMLError(f"!config: tag is only supported for mappings and lists. Error at line {node_line}")
 
+    # add the constructor as a multi constructor to the SafeLoader
     yaml.add_multi_constructor("!config:", config_constructor, Loader=yaml.SafeLoader)
 
     # load configurations
@@ -136,6 +137,7 @@ if __name__ == "__main__":
 
         measure_cfg = dict(pbar=rc.general.pbar)
 
+        # input management
         rcc = rc.brn.input_management
         if rcc.run:
             logging.info("Adding new input version")
@@ -144,6 +146,7 @@ if __name__ == "__main__":
                 finch.scheduler.scale_and_wait(rcc.workers)
                 brn_input.add_version(rcc.add_version)
 
+        # runtime measurements
         rcc = rc.brn.runtime_measurement
         if rcc.run:
             logging.info("Measuring runtimes of brn implementations")
@@ -153,13 +156,18 @@ if __name__ == "__main__":
             results = finch.eval.create_result_dataset(times, rcc.run_configs, "brn_" + rcc.exp_name)
             results.to_netcdf(rc.general.results_file)
 
+        # evaluation
         rcc = rc.brn.evaluation
         if rcc.run:
             logging.info("Evaluating experiment results")
+            # plot style
             if not rcc.plot_dark_mode:
                 finch.eval.plot_style = matplotx.styles.dufte
+            # load results dataset
+            # if exp_name is set, load the results dataset from the experiment-specific evaluation directory
             if rcc.exp_name is None:
                 results = xr.open_dataset(rc.general.results_file)
+                # store results dataset inside experiment-specific evaluation directory
                 results.to_netcdf(
                     finch.util.get_path(finch.cfg.get("evaluation", "results_dir"), results.attrs["name"], "results.nc")
                 )
@@ -167,24 +175,31 @@ if __name__ == "__main__":
                 results = xr.open_dataset(
                     finch.util.get_path(finch.cfg.get("evaluation", "results_dir"), rcc.exp_name, "results.nc")
                 )
+            # create cores dimension
             results = finch.eval.create_cores_dimension(results)
+            # rename labels
             if rcc.rename_labels:
-                brn_eval_rename_labels = {rcc.main_dim: rcc.rename_labels}
+                brn_eval_rename_labels = {rcc.main_dim: rcc.rename_labels.__dict__}
                 results = finch.eval.rename_labels(results, brn_eval_rename_labels)
+            # remove ignored labels from dataset
             if rcc.ignore_labels:
                 results = finch.eval.remove_labels(results, rcc.ignore_labels, rcc.main_dim)
-            if rcc.add_runtimes:
-                for k, v in rcc.add_runtimes.items():
+            # combine runtimes
+            if rcc.combine_runtimes:
+                for k, v in rcc.add_runtimes.__dict__.items():
                     results = finch.eval.add_runtimes(results, k, v)
+            # create plots
             finch.eval.create_plots(
                 results,
                 main_dim=rcc.main_dim,
                 scaling_dims=rcc.speedup_dims,
-                relative_rt_dims=rcc.reference_labels,
+                relative_rt_dims=rcc.reference_labels.__dict__,
                 runtime_selection=rcc.runtimes_plot,
                 estimate_serial=rcc.estimate_serial,
                 plot_scaling_fits=rcc.plot_fit,
             )
+            # create runtime part plots
             if len(results.data_vars) > 1:
                 finch.eval.plot_runtime_parts(results, first_dims=rcc.rt_parts_order)
+            # store experiment config
             finch.eval.store_config(results)
