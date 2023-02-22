@@ -191,7 +191,7 @@ if __name__ == "__main__":
             # combine runtimes
             if rcc.combine_runtimes:
                 for k, v in rcc.combine_runtimes.__dict__.items():
-                    results = finch.eval.add_runtimes(results, k, v)
+                    results = finch.eval.combine_runtimes(results, k, v)
             # create plots
             finch.eval.create_plots(
                 results,

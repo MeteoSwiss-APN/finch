@@ -79,6 +79,11 @@ Group:
     Evaluation
 """
 
+__rt_combined_attr_sep = ":"
+"""
+Separator for separating the combined runtimes in the rt_combined_attr.
+"""
+
 
 def create_result_dataset(
     results: list[Runtime],
@@ -129,7 +134,7 @@ def create_result_dataset(
             # set runtime for the correct coordinates
             arrays[rt_type].loc[rca] = rt
 
-    ds = xr.Dataset(arrays, attrs={exp_name_attr: experiment_name, rt_combined_attr: ["full"]})
+    ds = xr.Dataset(arrays, attrs={exp_name_attr: experiment_name, rt_combined_attr: "full"})
     return ds
 
 
@@ -239,7 +244,7 @@ def combine_runtimes(results: xr.Dataset, new_runtime: str, to_add: list[str]) -
     new_rt_arr = sum([results[a] for a in to_add])
     assert isinstance(new_rt_arr, xr.DataArray)
     out = results.assign({new_runtime: new_rt_arr})
-    out.attrs["rt_combined"] += [new_runtime]
+    out.attrs[rt_combined_attr] += __rt_combined_attr_sep + new_runtime
     return out
 
 
@@ -595,7 +600,7 @@ def plot_runtime_parts(results: xr.Dataset, first_dims: list[str] = []) -> None:
         Plot
     """
     # drop full runtimes
-    results = results.drop_vars(results.attrs[rt_combined_attr])
+    results = results.drop_vars(results.attrs[rt_combined_attr].split(__rt_combined_attr_sep))
     # create array
     data_arr = results.to_array(dim="rt_types")
     rt_types = data_arr["rt_types"].data
