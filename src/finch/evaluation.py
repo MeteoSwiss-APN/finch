@@ -507,15 +507,11 @@ def create_plots(
             # reorder dimensions
             to_plot = to_plot.transpose(main_dim, d)
             for runtime_type, runtime_data in to_plot.data_vars.items():
-                if (
-                    runtime_selection is not None
-                    and runtime_type not in runtime_selection
-                    or d in scaling_dims
-                    and runtime_type not in ["full", "compute"]
-                ):
+                # only plot runtimes which are in runtime_selection
+                if runtime_selection is not None and runtime_type not in runtime_selection:
                     continue
+                # only create plots where all runtime data is provided
                 if np.isnan(runtime_data).any():
-                    # only create plots where all runtime data is provided
                     continue
                 # get plotting arguments
                 labels = to_plot.coords[main_dim].data
