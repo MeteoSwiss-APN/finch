@@ -168,17 +168,17 @@ if __name__ == "__main__":
             if rcc.exp_name is None:
                 results = xr.open_dataset(rc.general.results_file)
                 # store results dataset inside experiment-specific evaluation directory
-                results.to_netcdf(
-                    finch.util.get_path(
-                        finch.cfg.get("evaluation", "results_dir"),
-                        results.attrs[finch.eval.exp_name_attr],
-                        "results.nc",
-                    )
+                results_file = finch.util.get_path(
+                    finch.cfg.get("evaluation", "results_dir"),
+                    results.attrs[finch.eval.exp_name_attr],
+                    "results.nc",
                 )
+                results.to_netcdf(results_file)
             else:
-                results = xr.open_dataset(
-                    finch.util.get_path(finch.cfg.get("evaluation", "results_dir"), rcc.exp_name, "results.nc")
+                results_file = finch.util.get_path(
+                    finch.cfg.get("evaluation", "results_dir"), rcc.exp_name, "results.nc"
                 )
+                results = xr.open_dataset(results_file)
             # create cores dimension
             results = finch.eval.create_cores_dimension(results)
             # rename labels
