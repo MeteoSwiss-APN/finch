@@ -81,7 +81,7 @@ def set_debug_mode(dbg: bool) -> None:
     If True, debug mode is enabled.
     If False, it is disabled.
     If the log level was not set explicitely,
-    it will be set to INFO if debug is disabled and to DEBUG if it is enabled.
+    it will be set to WARNING if debug is disabled and to DEBUG if it is enabled.
 
     Group:
         Config
@@ -89,8 +89,8 @@ def set_debug_mode(dbg: bool) -> None:
     global debug, __log_level
     debug = dbg
     config["global"]["debug_mode"] = str(debug)
-    if __log_level is None:
-        set_log_level(logging.DEBUG if debug else logging.INFO)
+    if __log_level is None or __log_level == "":
+        set_log_level(logging.DEBUG if debug else logging.WARNING)
 
 
 set_debug_mode(debug)

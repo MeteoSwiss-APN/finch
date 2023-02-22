@@ -26,10 +26,6 @@
 
 # general configurations
 general:
-  # The number of iterations when measuring runtime
-  iterations: 10
-  # Whether to perform a warmup before measuring the runtimes
-  warmup: true
   # Whether to print a progress bar
   pbar: true
   # The file where runtime results are temporarily stored.
@@ -51,34 +47,40 @@ brn:
       omp_parallelism: false
       exclusive_jobs: false
     # The number of workers used for input management
-    workers: 1
+    workers: 10
     # New brn input version to add
     # If null, no new version will be added
     add_version: null
-
-  loadtime_measurement:
-  # Whether to measure loading times
-    run: false
 
   runtime_measurement:
     # Wether to measure brn runtimes
     run: true
     # The name of the runtime experiment
     exp_name: "all"
-    # List of input versions for the runtime experiment
-    # Must be an object or a list of objects of type finch.data.Input.Version
-    # Null represents all available input versions
-    input_versions: null
     # The run configuration(s)
     run_configs: !config:Run
-      workers: 1
+      # the implementation(s) to run
+      # must be single or a list of function names available from the brn module
       impl: "brn"
+      # the number of dask workers to spawn
+      workers: 1
+      # List of input versions for the runtime experiment
+      # Must be an object or a list of objects of type finch.data.Input.Version
+      # Null represents all available input versions
+      input_version: !config:Version
+        format: "grib"
+        dim_order: "zyx"
+        chunks:
+          x: -1
+          y: -1
+          z: 1
+        coords: true
       cluster_config: !config:Cluster
         cores_per_worker: 1
         omp_parallelism: false
         exclusive_jobs: false
-    # Whether to write a dask performance report
-    dask_report: false
+      # Whether to write a dask performance report
+      create_report: false
 
   evaluation:
     # Whether to run evaluation or not
@@ -106,6 +108,10 @@ brn:
       brn_xr: "xarray"
       brn_blocked_cpp: "C++"
       brn_blocked_np: "NumPy"
+    # Used for combining multiple runtimes together into a new runtime.
+    # This is a dictionary, mapping the name of the new runtime to the list of runtime names to add together.
+    combine_runtimes:
+      no_inp_loading: ["compute", "graph_construction", "optimization", "serialization"]
     # The keys of this dictionary indicate the plots for which to plot a relative runtime.
     # The values indicate the label in the main dimension to use as reference runtimes.
     reference_labels:

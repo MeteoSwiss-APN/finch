@@ -28,7 +28,7 @@ repos:
             - types-tqdm
             - types-deprecated
             - types-pyyaml
-            - data-science-types
+            - pandas-stubs
             - typeguard
             - wonderwords
             - expandvars

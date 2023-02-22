@@ -43,6 +43,8 @@ def load_input_grib(version: data.Input.Version | None = None) -> xr.Dataset:
         return xr.merge(arrays)
 
     chunks = dict(version.chunks)
+    if "z" in chunks:
+        chunks["generalVerticalLayer"] = chunks.pop("z")
 
     # load data from first grib file
     grib_file = "lfff00000000"
@@ -70,7 +72,7 @@ def load_input_grib(version: data.Input.Version | None = None) -> xr.Dataset:
     hhl = hhl[:-1, :, :]  # TODO shouldn't be necessary
 
     out = xr.merge([out1, hhl, hsurf])
-    out.rename({"generalVerticalLayer": "z"})
+    out = out.rename({"generalVerticalLayer": "z"})
     return out
 
 

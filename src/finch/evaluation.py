@@ -1,9 +1,10 @@
+import dataclasses
 import pathlib
 import warnings
 from collections.abc import Callable
 from typing import Any, Hashable, Tuple
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 import matplotx  # type: ignore
 import numpy as np
 import xarray as xr
@@ -12,7 +13,7 @@ from deprecated.sphinx import deprecated
 
 from . import cfg, util
 from .data import Input
-from .experiments import RunConfig, Runtime, _RTList
+from .experiments import RunConfig, Runtime
 
 
 def get_pyplot_grouped_bar_pos(groups: int, labels: int) -> Tuple[np.ndarray, float]:
@@ -62,13 +63,32 @@ def print_results(results: list[list[Any]], run_configs: list[RunConfig], versio
         print()
 
 
+exp_name_attr = "name"
+"""
+The name of the attribute storing the experiment name in the results dataset.
+
+Group:
+    Evaluation
+"""
+
+rt_combined_attr = "rt_combined"
+"""
+The name of the attribute storing the list of combined runtimes in the results dataset.
+
+Group:
+    Evaluation
+"""
+
+__rt_combined_attr_sep = ":"
+"""
+Separator for separating the combined runtimes in the rt_combined_attr.
+"""
+
+
 def create_result_dataset(
-    results: _RTList,
+    results: list[Runtime],
     run_configs: list[RunConfig] | RunConfig,
-    versions: list[Input.Version] | Input.Version,
-    input: Input,
     experiment_name: str | None = None,
-    impl_names: list[str] | Callable[[Callable], str] | None = None,
 ) -> xr.Dataset:
     """
     Constructs a dataset from the results of an experiment.
@@ -85,50 +105,36 @@ def create_result_dataset(
     # unify arguments
     if isinstance(run_configs, RunConfig):
         run_configs = [run_configs]
-    if isinstance(versions, Input.Version):
-        versions = [versions]
+
+    assert len(results) == len(run_configs) and len(results) > 0
 
     if experiment_name is None:
         experiment_name = util.random_entity_name()
 
     # get attributes from run configs and versions
-    version_attrs = [util.get_primitive_attrs_from_dataclass(v) for v in versions]
-    va_keys = list(version_attrs[0].keys())
     rc_attrs = [util.get_primitive_attrs_from_dataclass(rc) for rc in run_configs]
-    rca_keys = list(rc_attrs[0].keys())
-    if impl_names is not None:
-        # set implementation names
-        if isinstance(impl_names, list):
-            for a, impl_name in zip(rc_attrs, impl_names):
-                a["impl"] = impl_name
-        elif callable(impl_names):
-            for a, rc in zip(rc_attrs, run_configs):
-                if rc.impl is None:
-                    raise ValueError("Run config is missing an implementation.", rc)
-                a["impl"] = impl_names(rc.impl)
-    # construct coordinates
-    coords = {a: list(set(va[a] for va in version_attrs)) for a in va_keys}
-    coords.update({a: list(set(ra[a] for ra in rc_attrs)) for a in rca_keys})
+    # join attributes into coordinates
+    coords_set: dict[str, set] = {}
+    for attrs in rc_attrs:
+        for k, v in attrs.items():
+            if k not in coords_set:
+                coords_set[k] = set()
+            coords_set[k].add(v)
 
+    coords = {k: list(v) for k, v in coords_set.items()}
     dim_sizes = [len(coords[a]) for a in coords]
 
     # create dataset
-    ds = xr.Dataset(coords=coords)
-    for attr in util.get_class_attribute_names(Runtime):
-        # initialize data
-        data = np.full(dim_sizes, np.nan, dtype=float)
+    arrays: dict[str, xr.DataArray] = {}
+    for rt_obj, rca in zip(results, rc_attrs):
+        for rt_type, rt in dataclasses.asdict(rt_obj).items():
+            if rt_type not in arrays and rt is not None:
+                data = np.full(dim_sizes, np.nan, dtype=float)
+                arrays[rt_type] = xr.DataArray(data, coords, name=rt_type)
+            # set runtime for the correct coordinates
+            arrays[rt_type].loc[rca] = rt
 
-        array = xr.DataArray(data, coords, name=attr)
-        has_entries = False  # indicates whether the current runtime attribute has entries
-        for result, rca in zip(results, rc_attrs):
-            for r, va in zip(result, version_attrs):
-                entry = r.__dict__[attr]  # get the runtime entry
-                if entry is not None:
-                    has_entries = True
-                array.loc[va | rca] = entry
-        if has_entries:  # only add runtimes which were actually recorded
-            ds[attr] = array
-    ds.attrs["name"] = experiment_name
+    ds = xr.Dataset(arrays, attrs={exp_name_attr: experiment_name, rt_combined_attr: "full"})
     return ds
 
 
@@ -217,6 +223,29 @@ def remove_labels(results: xr.Dataset, labels: list[str], main_dim: str) -> xr.D
         Evaluation
     """
     return results.drop_sel({main_dim: labels})
+
+
+def combine_runtimes(results: xr.Dataset, new_runtime: str, to_add: list[str]) -> xr.Dataset:
+    """
+    Combines different runtimes together into a new runtime by adding them up.
+
+    Args:
+        results (xr.Dataset): The results dataset
+        new_runtime (str): The name of the new runtime to insert
+        to_add (list[str]): The names of the runtimes to add
+
+    Returns:
+        xr.Dataset The new results dataset with the newly created runtime inserted added as a data variable.
+
+    Group:
+        Evaluation
+    """
+    assert len(to_add) > 0
+    new_rt_arr = sum([results[a] for a in to_add])
+    assert isinstance(new_rt_arr, xr.DataArray)
+    out = results.assign({new_runtime: new_rt_arr})
+    out.attrs[rt_combined_attr] += __rt_combined_attr_sep + new_runtime
+    return out
 
 
 def simple_lin_reg(x: np.ndarray, y: np.ndarray, axis: int | None = None) -> Tuple[np.ndarray, np.ndarray]:
@@ -377,7 +406,7 @@ def get_plots_dir(results: xr.Dataset) -> util.PathLike:
         Plot
     """
     base = cfg["evaluation"]["plot_dir"]
-    args = [base, results.attrs["name"]]
+    args = [base, results.attrs[exp_name_attr]]
     if base == cfg["evaluation"]["dir"]:
         args.append("plots")
     return util.get_path(*args)
@@ -443,7 +472,7 @@ def create_plots(
     """
 
     # disable debug logs from matplotlib
-    plt.set_loglevel("warning")  # type: ignore
+    plt.set_loglevel("warning")
 
     path = pathlib.Path(get_plots_dir(results))
 
@@ -474,19 +503,15 @@ def create_plots(
                 if isinstance(relative_rt_dims, list):
                     ref_idx = 0
                 else:
-                    ref_idx = to_plot.indexes[main_dim].get_loc(relative_rt_dims[d])  # type: ignore
+                    ref_idx = to_plot.indexes[main_dim].get_loc(relative_rt_dims[d])
             # reorder dimensions
             to_plot = to_plot.transpose(main_dim, d)
             for runtime_type, runtime_data in to_plot.data_vars.items():
-                if (
-                    runtime_selection is not None
-                    and runtime_type not in runtime_selection
-                    or d in scaling_dims
-                    and runtime_type not in ["full", "compute"]
-                ):
+                # only plot runtimes which are in runtime_selection
+                if runtime_selection is not None and runtime_type not in runtime_selection:
                     continue
+                # only create plots where all runtime data is provided
                 if np.isnan(runtime_data).any():
-                    # only create plots where all runtime data is provided
                     continue
                 # get plotting arguments
                 labels = to_plot.coords[main_dim].data
@@ -496,12 +521,12 @@ def create_plots(
                 runtime_array: np.ndarray = runtime_data.data
                 # plot
                 plt.clf()
-                with plt.style.context(plot_style):  # type: ignore
+                with plt.style.context(plot_style):
                     if isinstance(ticks[0], str):
                         # bar plot
                         xpos, bar_width = get_pyplot_grouped_bar_pos(len(ticks), len(labels))
                         for lb, rt, xp in zip(labels, runtime_array, xpos):
-                            plt.bar(xp, rt, width=bar_width, label=lb)  # type: ignore
+                            plt.bar(xp, rt, width=bar_width, label=lb)
                         plt.xticks(range(len(ticks)), ticks)
                         plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
                         plt.xlabel(d)
@@ -520,7 +545,7 @@ def create_plots(
                                 spd_labels = [lb + r", $f=" + "%.2f" % (f * 100) + r"$%" for lb, f in zip(labels, fs)]
                             # plot fitted scaling functions
                             if plot_scaling_fits and estimate_serial:
-                                cycler = plt.rcParams["axes.prop_cycle"]  # type: ignore
+                                cycler = plt.rcParams["axes.prop_cycle"]
                                 for f, c in zip(fs, cycler):
                                     x = np.linspace(ticks[0], ticks[-1], 100)
                                     xt = x / ticks[0]
@@ -553,7 +578,7 @@ def create_plots(
                         # plt.xticks(ticks)
                         matplotx.ylabel_top(ylabel)
                         matplotx.line_labels()
-                        plt.margins(y=0.05)  # type: ignore
+                        plt.margins(y=0.05)
                     # save plot
                     save_plot(d, runtime_type)
 
@@ -571,7 +596,7 @@ def plot_runtime_parts(results: xr.Dataset, first_dims: list[str] = []) -> None:
         Plot
     """
     # drop full runtimes
-    results = results.drop_vars("full")
+    results = results.drop_vars(results.attrs[rt_combined_attr].split(__rt_combined_attr_sep))
     # create array
     data_arr = results.to_array(dim="rt_types")
     rt_types = data_arr["rt_types"].data
@@ -590,7 +615,7 @@ def plot_runtime_parts(results: xr.Dataset, first_dims: list[str] = []) -> None:
     array /= np.sum(array, axis=0)[np.newaxis, :]
 
     plt.clf()
-    with plt.style.context(plot_style):  # type: ignore
+    with plt.style.context(plot_style):
         # get ticks
         bars = array.shape[1]
         if first_dims:
@@ -603,7 +628,7 @@ def plot_runtime_parts(results: xr.Dataset, first_dims: list[str] = []) -> None:
         bottom: float | np.ndarray = 0.0
         for i, rt_type in enumerate(rt_types):
             row = array[i, :]
-            plt.bar(xpos, row, bottom=bottom, label=rt_type, width=bar_width)  # type: ignore
+            plt.bar(xpos, row, bottom=bottom, label=rt_type, width=bar_width)
             bottom += row
         path = pathlib.Path(get_plots_dir(results))
         plt.legend(loc="upper left", bbox_to_anchor=(1.04, 1))
@@ -625,7 +650,7 @@ def store_config(results: xr.Dataset) -> None:
     Group:
         Evaluation
     """
-    path = util.get_path(cfg["evaluation"]["config_dir"], results.attrs["name"], "config.yaml")
+    path = util.get_path(cfg["evaluation"]["config_dir"], results.attrs[exp_name_attr], "config.yaml")
     # create config dict
     res_config = {c: a.data.tolist() for c, a in results.coords.items()}
     res_config = {k: a[0] if len(a) == 1 else a for k, a in res_config.items()}
