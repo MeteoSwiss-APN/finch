@@ -169,7 +169,11 @@ if __name__ == "__main__":
                 results = xr.open_dataset(rc.general.results_file)
                 # store results dataset inside experiment-specific evaluation directory
                 results.to_netcdf(
-                    finch.util.get_path(finch.cfg.get("evaluation", "results_dir"), results.attrs["name"], "results.nc")
+                    finch.util.get_path(
+                        finch.cfg.get("evaluation", "results_dir"),
+                        results.attrs[finch.eval.exp_name_attr],
+                        "results.nc",
+                    )
                 )
             else:
                 results = xr.open_dataset(
@@ -186,7 +190,7 @@ if __name__ == "__main__":
                 results = finch.eval.remove_labels(results, rcc.ignore_labels, rcc.main_dim)
             # combine runtimes
             if rcc.combine_runtimes:
-                for k, v in rcc.add_runtimes.__dict__.items():
+                for k, v in rcc.combine_runtimes.__dict__.items():
                     results = finch.eval.add_runtimes(results, k, v)
             # create plots
             finch.eval.create_plots(
